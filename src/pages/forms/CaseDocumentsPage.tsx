@@ -5,20 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  Search, 
-  Upload, 
-  FileText, 
-  Image, 
-  File, 
-  Download, 
-  Eye, 
-  Edit, 
+import {
+  ArrowLeft,
+  Search,
+  Upload,
+  FileText,
+  Image,
+  File,
+  Download,
+  Eye,
+  Edit,
   Trash2,
   Plus
 } from 'lucide-react';
 import { getDocumentsByCase, Document, deleteDocument } from '@/lib/dataManager';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function CaseDocumentsPage() {
   const navigate = useNavigate();
@@ -45,21 +46,21 @@ export default function CaseDocumentsPage() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     if (!value.trim()) {
       setFilteredDocuments(allDocuments);
       return;
     }
-    
+
     const filtered = allDocuments.filter(
-      (doc) => 
-        doc.title.includes(value) || 
+      (doc) =>
+        doc.title.includes(value) ||
         doc.description.includes(value) ||
         doc.tags.includes(value) ||
         doc.category.includes(value) ||
         doc.fileName.includes(value)
     );
-    
+
     setFilteredDocuments(filtered);
   };
 
@@ -68,8 +69,8 @@ export default function CaseDocumentsPage() {
   };
 
   const handleUploadNew = () => {
-    navigate(`/cases/${caseId}/documents/upload`, { 
-      state: { caseTitle } 
+    navigate(`/cases/${caseId}/documents/upload`, {
+      state: { caseTitle }
     });
   };
 
@@ -105,8 +106,8 @@ export default function CaseDocumentsPage() {
     switch (fileType) {
       case 'תמונה': return <Image className="h-5 w-5 text-green-600" />;
       case 'PDF': return <FileText className="h-5 w-5 text-red-600" />;
-      case 'Word': return <FileText className="h-5 w-5 text-blue-600" />;
-      default: return <File className="h-5 w-5 text-gray-600" />;
+      case 'Word': return <FileText className="h-5 w-5 text-primary" />;
+      default: return <File className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -134,12 +135,12 @@ export default function CaseDocumentsPage() {
             חזרה לתיקים
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-blue-900">מסמכי התיק</h1>
-            <p className="text-blue-600 mt-2">
+            <h1 className="text-2xl font-display font-bold text-foreground">מסמכי התיק</h1>
+            <p className="text-muted-foreground mt-1">
               {caseTitle ? `תיק: ${caseTitle}` : 'מסמכי התיק'}
             </p>
             {caseId && (
-              <p className="text-sm text-gray-500 mt-1">מספר תיק: {caseId}</p>
+              <p className="text-sm text-muted-foreground mt-1">מספר תיק: {caseId}</p>
             )}
           </div>
         </div>
@@ -148,10 +149,10 @@ export default function CaseDocumentsPage() {
         </Button>
       </div>
 
-      <Card className="bg-slate-50 border-slate-400 shadow-lg">
+      <Card className="shadow-sm">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <CardTitle className="text-blue-900">
+            <CardTitle className="text-foreground">
               מסמכים ({filteredDocuments.length})
             </CardTitle>
             <div className="relative w-full sm:max-w-sm">
@@ -165,25 +166,25 @@ export default function CaseDocumentsPage() {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
-          <div className="rounded-md border border-slate-400 bg-white shadow-md">
+          <div className="rounded-md border border-border">
             <Table>
-              <TableHeader className="bg-slate-100">
-                <TableRow className="border-slate-300">
-                  <TableHead className="text-slate-800 font-semibold">סוג</TableHead>
-                  <TableHead className="text-slate-800 font-semibold">שם המסמך</TableHead>
-                  <TableHead className="hidden md:table-cell text-slate-800 font-semibold">קטגוריה</TableHead>
-                  <TableHead className="hidden md:table-cell text-slate-800 font-semibold">גודל</TableHead>
-                  <TableHead className="hidden lg:table-cell text-slate-800 font-semibold">תאריך העלאה</TableHead>
-                  <TableHead className="text-slate-800 font-semibold">פעולות</TableHead>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-semibold">סוג</TableHead>
+                  <TableHead className="font-semibold">שם המסמך</TableHead>
+                  <TableHead className="hidden md:table-cell font-semibold">קטגוריה</TableHead>
+                  <TableHead className="hidden md:table-cell font-semibold">גודל</TableHead>
+                  <TableHead className="hidden lg:table-cell font-semibold">תאריך העלאה</TableHead>
+                  <TableHead className="font-semibold">פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDocuments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                      {allDocuments.length === 0 ? 
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {allDocuments.length === 0 ?
                         "אין מסמכים בתיק זה. לחץ על 'הוסף מסמך' כדי להתחיל." :
                         "לא נמצאו מסמכים התואמים לחיפוש."
                       }
@@ -191,7 +192,7 @@ export default function CaseDocumentsPage() {
                   </TableRow>
                 ) : (
                   filteredDocuments.map((document) => (
-                    <TableRow key={document.id} className="border-slate-300">
+                    <TableRow key={document.id}>
                       <TableCell>
                         <div className="flex items-center justify-center">
                           {getFileIcon(document.fileType)}
@@ -199,10 +200,10 @@ export default function CaseDocumentsPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-slate-900">{document.title}</p>
-                          <p className="text-sm text-slate-600">{document.fileName}</p>
+                          <p className="font-medium text-foreground">{document.title}</p>
+                          <p className="text-sm text-muted-foreground">{document.fileName}</p>
                           {document.description && (
-                            <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               {document.description}
                             </p>
                           )}
@@ -210,49 +211,49 @@ export default function CaseDocumentsPage() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {document.category && (
-                          <Badge variant="outline" className="text-blue-700">
+                          <Badge variant="outline" className="text-primary">
                             {getCategoryText(document.category)}
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-slate-700">
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
                         {document.fileSize}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-700">
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
                         {new Date(document.createdAt).toLocaleDateString('he-IL')}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8"
                             onClick={() => handleViewDocument(document.id)}
                             title="צפייה במסמך"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8 text-green-600 hover:text-green-700"
                             onClick={() => handleDownloadDocument(document.id, document.fileName)}
                             title="הורדת מסמך"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8"
                             onClick={() => handleEditDocument(document.id)}
                             title="עריכת מסמך"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700"
                             onClick={() => handleDeleteDocument(document.id, document.title)}
                             title="מחיקת מסמך"
@@ -272,4 +273,3 @@ export default function CaseDocumentsPage() {
     </div>
   );
 }
-

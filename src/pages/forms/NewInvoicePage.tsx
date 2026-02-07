@@ -7,18 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Save, 
-  X, 
-  FileText, 
-  User, 
-  Calendar, 
-  DollarSign, 
+import {
+  Save,
+  X,
+  FileText,
+  User,
+  Calendar,
+  DollarSign,
   Plus,
   Trash2,
   Calculator
 } from 'lucide-react';
 import { getClients, Client } from '@/lib/dataManager';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface InvoiceItem {
   id: string;
@@ -123,7 +124,7 @@ export default function NewInvoicePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.clientId) {
       alert('יש לבחור לקוח');
       return;
@@ -156,22 +157,22 @@ export default function NewInvoicePage() {
 
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">חשבונית חדשה</h1>
-          <p className="text-blue-600 mt-2">יצירת חשבונית חדשה ללקוח</p>
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="חשבונית חדשה"
+        subtitle="יצירת חשבונית חדשה ללקוח"
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Invoice Header */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900 flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <FileText className="h-5 w-5" />
               פרטי החשבונית
             </CardTitle>
@@ -179,18 +180,18 @@ export default function NewInvoicePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="invoiceNumber" className="text-blue-900">מספר חשבונית</Label>
+                <Label htmlFor="invoiceNumber" className="text-foreground">מספר חשבונית</Label>
                 <Input
                   id="invoiceNumber"
                   value={formData.invoiceNumber}
                   onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})}
-                  className="bg-gray-50"
+                  className="bg-muted/50"
                   readOnly
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="issueDate" className="text-blue-900">תאריך הנפקה</Label>
+                <Label htmlFor="issueDate" className="text-foreground">תאריך הנפקה</Label>
                 <Input
                   id="issueDate"
                   type="date"
@@ -199,9 +200,9 @@ export default function NewInvoicePage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="dueDate" className="text-blue-900">תאריך פירעון *</Label>
+                <Label htmlFor="dueDate" className="text-foreground">תאריך פירעון *</Label>
                 <Input
                   id="dueDate"
                   type="date"
@@ -215,16 +216,16 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Client Selection */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900 flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <User className="h-5 w-5" />
               פרטי לקוח
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="client" className="text-blue-900">בחר לקוח *</Label>
+              <Label htmlFor="client" className="text-foreground">בחר לקוח *</Label>
               <Select value={formData.clientId} onValueChange={handleClientSelect} required>
                 <SelectTrigger>
                   <SelectValue placeholder="בחר לקוח מהרשימה" />
@@ -235,7 +236,7 @@ export default function NewInvoicePage() {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         <span>{client.name}</span>
-                        {client.email && <span className="text-gray-500">({client.email})</span>}
+                        {client.email && <span className="text-muted-foreground">({client.email})</span>}
                       </div>
                     </SelectItem>
                   ))}
@@ -243,7 +244,7 @@ export default function NewInvoicePage() {
               </Select>
               {formData.clientName && (
                 <div className="mt-2">
-                  <Badge className="bg-blue-100 text-blue-800">
+                  <Badge className="bg-primary/10 text-primary">
                     נבחר: {formData.clientName}
                   </Badge>
                 </div>
@@ -252,7 +253,7 @@ export default function NewInvoicePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="paymentTerms" className="text-blue-900">תנאי תשלום</Label>
+                <Label htmlFor="paymentTerms" className="text-foreground">תנאי תשלום</Label>
                 <Select value={formData.paymentTerms} onValueChange={(value) => setFormData({...formData, paymentTerms: value})}>
                   <SelectTrigger>
                     <SelectValue />
@@ -271,9 +272,9 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Invoice Items */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900 flex items-center justify-between">
+            <CardTitle className="text-foreground flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calculator className="h-5 w-5" />
                 פריטי החשבונית
@@ -286,9 +287,9 @@ export default function NewInvoicePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {items.map((item, index) => (
-              <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-gray-200 rounded-lg">
+              <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-border rounded-lg">
                 <div className="md:col-span-5 space-y-2">
-                  <Label className="text-sm text-blue-900">תיאור</Label>
+                  <Label className="text-sm text-foreground">תיאור</Label>
                   <Input
                     value={item.description}
                     onChange={(e) => updateItem(item.id, 'description', e.target.value)}
@@ -296,9 +297,9 @@ export default function NewInvoicePage() {
                     required
                   />
                 </div>
-                
+
                 <div className="md:col-span-2 space-y-2">
-                  <Label className="text-sm text-blue-900">כמות</Label>
+                  <Label className="text-sm text-foreground">כמות</Label>
                   <Input
                     type="number"
                     value={item.quantity}
@@ -308,9 +309,9 @@ export default function NewInvoicePage() {
                     required
                   />
                 </div>
-                
+
                 <div className="md:col-span-2 space-y-2">
-                  <Label className="text-sm text-blue-900">מחיר יחידה</Label>
+                  <Label className="text-sm text-foreground">מחיר יחידה</Label>
                   <Input
                     type="number"
                     value={item.rate}
@@ -320,14 +321,14 @@ export default function NewInvoicePage() {
                     required
                   />
                 </div>
-                
+
                 <div className="md:col-span-2 space-y-2">
-                  <Label className="text-sm text-blue-900">סכום</Label>
-                  <div className="flex items-center h-10 px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                  <Label className="text-sm text-foreground">סכום</Label>
+                  <div className="flex items-center h-10 px-3 py-2 border border-border rounded-md bg-muted/50">
                     ₪{item.amount.toFixed(2)}
                   </div>
                 </div>
-                
+
                 <div className="md:col-span-1 flex items-end">
                   {items.length > 1 && (
                     <Button
@@ -348,14 +349,14 @@ export default function NewInvoicePage() {
             <div className="border-t pt-4">
               <div className="space-y-2 max-w-sm ml-auto">
                 <div className="flex justify-between">
-                  <span className="text-blue-900">סכום ביניים:</span>
+                  <span className="text-foreground">סכום ביניים:</span>
                   <span className="font-medium">₪{calculateSubtotal().toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-900">מע"מ (17%):</span>
+                  <span className="text-foreground">מע"מ (17%):</span>
                   <span className="font-medium">₪{calculateVAT().toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold text-blue-900 border-t pt-2">
+                <div className="flex justify-between text-lg font-bold text-foreground border-t pt-2">
                   <span>סה"כ לתשלום:</span>
                   <span>₪{calculateTotal().toFixed(2)}</span>
                 </div>
@@ -365,9 +366,9 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Notes */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900">הערות נוספות</CardTitle>
+            <CardTitle className="text-foreground">הערות נוספות</CardTitle>
           </CardHeader>
           <CardContent>
             <Textarea
@@ -385,7 +386,7 @@ export default function NewInvoicePage() {
             <X className="h-4 w-4 ml-2" />
             ביטול
           </Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+          <Button type="submit">
             <Save className="h-4 w-4 ml-2" />
             שמור חשבונית
           </Button>

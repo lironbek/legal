@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import {
   Select,
   SelectContent,
@@ -10,8 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  BarChart3, 
+import {
+  BarChart3,
   Download,
   Calendar,
   DollarSign,
@@ -138,36 +139,30 @@ export default function ReportsPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900 font-display">דוחות וניתוחים</h1>
-          <p className="text-blue-600 mt-2">
-            מעקב ביצועים, ניתוח נתונים ודוחות עסקיים
-          </p>
-        </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex gap-2">
-          <Button variant="outline" className="gap-2 border-blue-200">
-            <BarChart3 className="h-4 w-4" /> צור דוח מותאם
-          </Button>
-          <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Download className="h-4 w-4" /> ייצא דוחות
-          </Button>
-        </motion.div>
-      </motion.div>
+      <PageHeader
+        title="דוחות וניתוחים"
+        subtitle="מעקב ביצועים, ניתוח נתונים ודוחות עסקיים"
+        actions={
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex gap-2">
+            <Button variant="outline" className="gap-2 border-border">
+              <BarChart3 className="h-4 w-4" /> צור דוח מותאם
+            </Button>
+            <Button className="gap-2">
+              <Download className="h-4 w-4" /> ייצא דוחות
+            </Button>
+          </motion.div>
+        }
+      />
 
       {/* Filters */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="flex flex-wrap gap-4"
       >
         <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-          <SelectTrigger className="w-[180px] border-blue-200">
+          <SelectTrigger className="w-[180px] border-border">
             <SelectValue placeholder="בחר תקופה" />
           </SelectTrigger>
           <SelectContent>
@@ -179,7 +174,7 @@ export default function ReportsPage() {
         </Select>
 
         <Select value={selectedReportType} onValueChange={setSelectedReportType}>
-          <SelectTrigger className="w-[180px] border-blue-200">
+          <SelectTrigger className="w-[180px] border-border">
             <SelectValue placeholder="סוג דוח" />
           </SelectTrigger>
           <SelectContent>
@@ -193,7 +188,7 @@ export default function ReportsPage() {
       </motion.div>
 
       {/* Report Type Cards */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -208,15 +203,15 @@ export default function ReportsPage() {
             whileHover={{ scale: 1.02 }}
             className="cursor-pointer"
           >
-            <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-all">
+            <Card className="border-border shadow-sm hover:shadow-md transition-all">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 ${report.color} rounded-lg flex items-center justify-center`}>
                     <report.icon className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-blue-900 text-lg">{report.title}</CardTitle>
-                    <p className="text-blue-600 text-sm">{report.description}</p>
+                    <CardTitle className="text-foreground text-lg">{report.title}</CardTitle>
+                    <p className="text-muted-foreground text-sm">{report.description}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -224,8 +219,8 @@ export default function ReportsPage() {
                 <div className="space-y-2">
                   {Object.entries(report.data).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-center text-sm">
-                      <span className="text-blue-600 capitalize">{key}:</span>
-                      <span className="font-medium text-blue-900">{value}</span>
+                      <span className="text-muted-foreground capitalize">{key}:</span>
+                      <span className="font-medium text-foreground">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -236,16 +231,16 @@ export default function ReportsPage() {
       </motion.div>
 
       {/* Charts Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="grid grid-cols-1 lg:grid-cols-2 gap-8"
       >
         {/* Revenue Chart */}
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display flex items-center gap-2">
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               מגמת הכנסות חודשית
             </CardTitle>
@@ -254,12 +249,12 @@ export default function ReportsPage() {
             <div className="h-64 flex items-end justify-between gap-2">
               {chartData.map((data, index) => (
                 <div key={data.month} className="flex flex-col items-center flex-1">
-                  <div 
+                  <div
                     className="w-full bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-md transition-all hover:from-blue-600 hover:to-blue-400"
                     style={{ height: `${(data.revenue / 70000) * 200}px` }}
                   />
-                  <span className="text-xs text-blue-600 mt-2">{data.month}</span>
-                  <span className="text-xs font-medium text-blue-900">₪{(data.revenue / 1000).toFixed(0)}K</span>
+                  <span className="text-xs text-muted-foreground mt-2">{data.month}</span>
+                  <span className="text-xs font-medium text-foreground">₪{(data.revenue / 1000).toFixed(0)}K</span>
                 </div>
               ))}
             </div>
@@ -267,9 +262,9 @@ export default function ReportsPage() {
         </Card>
 
         {/* Cases Chart */}
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display flex items-center gap-2">
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display flex items-center gap-2">
               <PieChart className="h-5 w-5" />
               התפלגות תיקים
             </CardTitle>
@@ -279,25 +274,25 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  <span className="text-blue-700">תיקים שהושלמו</span>
+                  <span className="text-muted-foreground">תיקים שהושלמו</span>
                 </div>
-                <span className="font-bold text-blue-900">25 (37%)</span>
+                <span className="font-bold text-foreground">25 (37%)</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                  <span className="text-blue-700">תיקים פעילים</span>
+                  <span className="text-muted-foreground">תיקים פעילים</span>
                 </div>
-                <span className="font-bold text-blue-900">42 (63%)</span>
+                <span className="font-bold text-foreground">42 (63%)</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
-                  <span className="text-blue-700">תיקים חדשים החודש</span>
+                  <span className="text-muted-foreground">תיקים חדשים החודש</span>
                 </div>
-                <span className="font-bold text-blue-900">8 (12%)</span>
+                <span className="font-bold text-foreground">8 (12%)</span>
               </div>
-              <div className="mt-6 bg-gray-200 rounded-full h-2">
+              <div className="mt-6 bg-muted rounded-full h-2">
                 <div className="bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 h-2 rounded-full" style={{ width: '100%' }}></div>
               </div>
             </div>
@@ -311,9 +306,9 @@ export default function ReportsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display flex items-center gap-2">
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display flex items-center gap-2">
               <Activity className="h-5 w-5" />
               דוחות אחרונים
             </CardTitle>
@@ -326,15 +321,15 @@ export default function ReportsPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-4 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-blue-900">{report.name}</h3>
-                      <div className="flex items-center gap-4 text-sm text-blue-600">
+                      <h3 className="font-semibold text-foreground">{report.name}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Target className="h-3 w-3" />
                           <span>{report.type}</span>
@@ -350,16 +345,16 @@ export default function ReportsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <Badge className={`${report.statusColor} text-white mb-1`}>
                         {report.status}
                       </Badge>
-                      <p className="text-xs text-blue-600">{report.fileSize}</p>
+                      <p className="text-xs text-muted-foreground">{report.fileSize}</p>
                     </div>
-                    <Button variant="ghost" size="icon" className="hover:bg-blue-100">
-                      <Download className="h-4 w-4 text-blue-600" />
+                    <Button variant="ghost" size="icon" className="hover:bg-muted">
+                      <Download className="h-4 w-4 text-primary" />
                     </Button>
                   </div>
                 </motion.div>
@@ -370,23 +365,23 @@ export default function ReportsPage() {
       </motion.div>
 
       {/* Quick Actions */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="bg-primary/5 border-border hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6 text-center">
             <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">דוח מותאם אישית</h3>
-            <p className="text-blue-600 text-sm">יצירת דוח בהתאמה אישית לצרכים</p>
+            <h3 className="text-lg font-semibold text-foreground mb-2">דוח מותאם אישית</h3>
+            <p className="text-muted-foreground text-sm">יצירת דוח בהתאמה אישית לצרכים</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="bg-green-50 border-green-200 hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6 text-center">
             <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-4">
               <TrendingUp className="h-6 w-6 text-white" />
@@ -396,7 +391,7 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="bg-purple-50 border-purple-200 hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6 text-center">
             <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="h-6 w-6 text-white" />

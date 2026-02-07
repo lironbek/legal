@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Calendar, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const recentCases = [
   {
@@ -10,7 +11,7 @@ const recentCases = [
     title: 'תביעת נזיקין - אברהם נגד החברה הכלכלית',
     client: 'יוסף אברהם',
     status: 'בטיפול',
-    statusColor: 'bg-blue-600',
+    statusColor: 'bg-blue-500',
     lastActivity: 'לפני 2 שעות',
     nextDeadline: '15/06/2024',
   },
@@ -19,7 +20,7 @@ const recentCases = [
     title: 'הסכם מקרקעין - רכישת דירה',
     client: 'משפחת לוי',
     status: 'ממתין לחתימה',
-    statusColor: 'bg-blue-600',
+    statusColor: 'bg-amber-500',
     lastActivity: 'לפני יום',
     nextDeadline: '20/06/2024',
   },
@@ -28,57 +29,64 @@ const recentCases = [
     title: 'תיק פלילי - הגנה על נהג',
     client: 'דוד כהן',
     status: 'הושלם',
-    statusColor: 'bg-green-600',
+    statusColor: 'bg-emerald-500',
     lastActivity: 'לפני 3 ימים',
     nextDeadline: '-',
   },
 ];
 
 export function RecentCases() {
+  const navigate = useNavigate();
+
   return (
-    <Card className="bg-white border-gray-200 shadow-lg">
-      <CardHeader>
+    <Card>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-blue-900 font-display">
+          <CardTitle className="text-lg font-display font-semibold text-foreground">
             תיקים אחרונים
           </CardTitle>
-          <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-primary text-sm"
+            onClick={() => navigate('/cases')}
+          >
             צפה בכל התיקים
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {recentCases.map((case_) => (
             <div
               key={case_.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors bg-white shadow-sm"
+              className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-4">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <FileText className="h-5 w-5 text-blue-600" />
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-2 rounded-lg">
+                  <FileText className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-blue-900 mb-1 text-base">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-foreground text-sm truncate">
                     {case_.title}
                   </h4>
-                  <div className="flex items-center gap-4 text-sm text-blue-600">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                     <div className="flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      <span className="font-medium">{case_.client}</span>
+                      <User className="h-3 w-3" />
+                      <span>{case_.client}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span className="font-medium">{case_.nextDeadline}</span>
+                      <Calendar className="h-3 w-3" />
+                      <span>{case_.nextDeadline}</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="text-left">
-                <Badge className={`${case_.statusColor} text-white mb-2 font-medium`}>
+              <div className="text-left shrink-0 mr-3">
+                <Badge className={`${case_.statusColor} text-white text-xs`}>
                   {case_.status}
                 </Badge>
-                <p className="text-xs text-blue-500 font-medium">{case_.lastActivity}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{case_.lastActivity}</p>
               </div>
             </div>
           ))}

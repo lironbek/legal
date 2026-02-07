@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Calendar, Clock, MapPin, User } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function NewEventPage() {
   const navigate = useNavigate();
@@ -35,20 +36,20 @@ export default function NewEventPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">אירוע חדש</h1>
-          <p className="text-blue-600 mt-2">צור אירוע חדש ביומן</p>
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="אירוע חדש"
+        subtitle="צור אירוע חדש ביומן"
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             פרטי האירוע
           </CardTitle>
@@ -56,7 +57,7 @@ export default function NewEventPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-blue-900">כותרת האירוע</Label>
+              <Label htmlFor="title" className="text-foreground">כותרת האירוע</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -68,7 +69,7 @@ export default function NewEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type" className="text-blue-900">סוג האירוע</Label>
+                <Label htmlFor="type" className="text-foreground">סוג האירוע</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר סוג אירוע" />
@@ -82,9 +83,9 @@ export default function NewEventPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="priority" className="text-blue-900">עדיפות</Label>
+                <Label htmlFor="priority" className="text-foreground">עדיפות</Label>
                 <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
                   <SelectTrigger>
                     <SelectValue />
@@ -101,7 +102,7 @@ export default function NewEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date" className="text-blue-900">תאריך</Label>
+                <Label htmlFor="date" className="text-foreground">תאריך</Label>
                 <Input
                   id="date"
                   type="date"
@@ -110,9 +111,9 @@ export default function NewEventPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="startTime" className="text-blue-900">שעת התחלה</Label>
+                <Label htmlFor="startTime" className="text-foreground">שעת התחלה</Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -125,7 +126,7 @@ export default function NewEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="endTime" className="text-blue-900">שעת סיום</Label>
+                <Label htmlFor="endTime" className="text-foreground">שעת סיום</Label>
                 <Input
                   id="endTime"
                   type="time"
@@ -134,9 +135,9 @@ export default function NewEventPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="client" className="text-blue-900">לקוח</Label>
+                <Label htmlFor="client" className="text-foreground">לקוח</Label>
                 <Select value={formData.client} onValueChange={(value) => setFormData({...formData, client: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר לקוח" />
@@ -152,7 +153,7 @@ export default function NewEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location" className="text-blue-900 flex items-center gap-2">
+              <Label htmlFor="location" className="text-foreground flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 מיקום
               </Label>
@@ -165,7 +166,7 @@ export default function NewEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-blue-900">תיאור</Label>
+              <Label htmlFor="description" className="text-foreground">תיאור</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -176,7 +177,7 @@ export default function NewEventPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 <Save className="h-4 w-4 ml-2" />
                 שמור אירוע
               </Button>
@@ -190,5 +191,3 @@ export default function NewEventPage() {
     </div>
   );
 }
-
-

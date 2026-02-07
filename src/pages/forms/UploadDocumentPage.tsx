@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Upload, FileText, FolderOpen, User } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function UploadDocumentPage() {
   const navigate = useNavigate();
@@ -43,20 +44,20 @@ export default function UploadDocumentPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">העלאת מסמך</h1>
-          <p className="text-blue-600 mt-2">העלה מסמך חדש למערכת</p>
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="העלאת מסמך"
+        subtitle="העלה מסמך חדש למערכת"
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Upload className="h-5 w-5" />
             פרטי המסמך
           </CardTitle>
@@ -64,7 +65,7 @@ export default function UploadDocumentPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-blue-900">כותרת המסמך</Label>
+              <Label htmlFor="title" className="text-foreground">כותרת המסמך</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -76,7 +77,7 @@ export default function UploadDocumentPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-blue-900">קטגוריה</Label>
+                <Label htmlFor="category" className="text-foreground">קטגוריה</Label>
                 <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר קטגוריה" />
@@ -93,9 +94,9 @@ export default function UploadDocumentPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="client" className="text-blue-900">לקוח</Label>
+                <Label htmlFor="client" className="text-foreground">לקוח</Label>
                 <Select value={formData.client} onValueChange={(value) => setFormData({...formData, client: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר לקוח" />
@@ -111,7 +112,7 @@ export default function UploadDocumentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="case" className="text-blue-900">תיק קשור</Label>
+              <Label htmlFor="case" className="text-foreground">תיק קשור</Label>
               <Select value={formData.case} onValueChange={(value) => setFormData({...formData, case: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="בחר תיק (אופציונלי)" />
@@ -126,7 +127,7 @@ export default function UploadDocumentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-blue-900">תיאור</Label>
+              <Label htmlFor="description" className="text-foreground">תיאור</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -137,7 +138,7 @@ export default function UploadDocumentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tags" className="text-blue-900">תגיות</Label>
+              <Label htmlFor="tags" className="text-foreground">תגיות</Label>
               <Input
                 id="tags"
                 value={formData.tags}
@@ -147,13 +148,13 @@ export default function UploadDocumentPage() {
             </div>
 
             <div className="space-y-4">
-              <Label className="text-blue-900 text-lg font-semibold">בחירת קובץ</Label>
-              
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <Label className="text-foreground text-lg font-semibold">בחירת קובץ</Label>
+
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-muted/50 transition-colors">
+                <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <div className="space-y-2">
-                  <p className="text-gray-600">גרור קובץ לכאן או לחץ לבחירה</p>
-                  <p className="text-sm text-gray-500">תמיכה בקבצי PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</p>
+                  <p className="text-muted-foreground">גרור קובץ לכאן או לחץ לבחירה</p>
+                  <p className="text-sm text-muted-foreground">תמיכה בקבצי PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</p>
                   <Button type="button" variant="outline" onClick={() => document.getElementById('fileInput')?.click()}>
                     בחר קובץ
                   </Button>
@@ -168,11 +169,11 @@ export default function UploadDocumentPage() {
               </div>
 
               {selectedFile && (
-                <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                <div className="flex items-center gap-3 p-3 bg-primary/5 border border-border rounded-lg">
+                  <FileText className="h-5 w-5 text-primary" />
                   <div className="flex-1">
-                    <p className="font-medium text-blue-900">{selectedFile.name}</p>
-                    <p className="text-sm text-blue-600">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="font-medium text-foreground">{selectedFile.name}</p>
+                    <p className="text-sm text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                   <Button
                     type="button"
@@ -188,7 +189,7 @@ export default function UploadDocumentPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={!selectedFile}>
+              <Button type="submit" disabled={!selectedFile}>
                 <Save className="h-4 w-4 ml-2" />
                 העלה מסמך
               </Button>
@@ -202,5 +203,3 @@ export default function UploadDocumentPage() {
     </div>
   );
 }
-
-

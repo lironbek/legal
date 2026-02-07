@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, Save, X, Users, Plus } from 'lucide-react';
 import { addCase, getClients, Client, addClient } from '@/lib/dataManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function NewCasePage() {
   const navigate = useNavigate();
@@ -44,15 +45,15 @@ export default function NewCasePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Save the case using dataManager
     const newCase = addCase({
       ...formData,
       status: 'בטיפול'
     });
-    
+
     console.log('Case saved:', newCase);
-    
+
     // Navigate back to cases page
     navigate('/cases');
   };
@@ -63,7 +64,7 @@ export default function NewCasePage() {
 
   const handleCreateNewClient = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const newClient = addClient(newClientData);
       setClients([...clients, newClient]);
@@ -88,26 +89,26 @@ export default function NewCasePage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">תיק חדש</h1>
-          <p className="text-blue-600 mt-2">צור תיק משפטי חדש</p>
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="תיק חדש"
+        subtitle="צור תיק משפטי חדש"
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-blue-900">פרטי התיק</CardTitle>
+          <CardTitle className="text-foreground">פרטי התיק</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-blue-900">כותרת התיק</Label>
+                <Label htmlFor="title" className="text-foreground">כותרת התיק</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -116,9 +117,9 @@ export default function NewCasePage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="client" className="text-blue-900">שם הלקוח</Label>
+                <Label htmlFor="client" className="text-foreground">שם הלקוח</Label>
                 <div className="flex gap-2">
                   <Select value={formData.client} onValueChange={(value) => setFormData({...formData, client: value})}>
                     <SelectTrigger className="flex-1">
@@ -129,13 +130,13 @@ export default function NewCasePage() {
                         <SelectItem key={client.id} value={client.name}>
                           <div className="flex items-center gap-2">
                             <span>{client.name}</span>
-                            <span className="text-xs text-gray-500">({client.phone})</span>
+                            <span className="text-xs text-muted-foreground">({client.phone})</span>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  
+
                   <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
                     <DialogTrigger asChild>
                       <Button type="button" variant="outline" size="icon" title="צור לקוח חדש">
@@ -168,7 +169,7 @@ export default function NewCasePage() {
                             />
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="newClientEmail">אימייל</Label>
@@ -237,7 +238,7 @@ export default function NewCasePage() {
                         </div>
 
                         <div className="flex gap-4 pt-4">
-                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                          <Button type="submit">
                             <Save className="h-4 w-4 ml-2" />
                             שמור לקוח
                           </Button>
@@ -254,7 +255,7 @@ export default function NewCasePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="caseType" className="text-blue-900">סוג התיק</Label>
+                <Label htmlFor="caseType" className="text-foreground">סוג התיק</Label>
                 <Select value={formData.caseType} onValueChange={(value) => setFormData({...formData, caseType: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר סוג תיק" />
@@ -270,9 +271,9 @@ export default function NewCasePage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="priority" className="text-blue-900">עדיפות</Label>
+                <Label htmlFor="priority" className="text-foreground">עדיפות</Label>
                 <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
                   <SelectTrigger>
                     <SelectValue />
@@ -288,7 +289,7 @@ export default function NewCasePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-blue-900">תיאור התיק</Label>
+              <Label htmlFor="description" className="text-foreground">תיאור התיק</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -300,7 +301,7 @@ export default function NewCasePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="estimatedDuration" className="text-blue-900">משך משוער</Label>
+                <Label htmlFor="estimatedDuration" className="text-foreground">משך משוער</Label>
                 <Input
                   id="estimatedDuration"
                   value={formData.estimatedDuration}
@@ -308,9 +309,9 @@ export default function NewCasePage() {
                   placeholder="למשל: 3 חודשים"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="budget" className="text-blue-900">תקציב משוער</Label>
+                <Label htmlFor="budget" className="text-foreground">תקציב משוער</Label>
                 <Input
                   id="budget"
                   value={formData.budget}
@@ -321,7 +322,7 @@ export default function NewCasePage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 <Save className="h-4 w-4 ml-2" />
                 שמור תיק
               </Button>

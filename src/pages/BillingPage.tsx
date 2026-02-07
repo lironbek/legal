@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { PageHeader } from '@/components/layout/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Select,
@@ -20,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  FileText, 
+import {
+  FileText,
   Plus,
   Calendar,
   User,
@@ -85,7 +86,7 @@ const mockInvoices = [
     dueDate: '2024-07-12',
     amount: 24000,
     status: 'טיוטה',
-    statusColor: 'bg-gray-500',
+    statusColor: 'bg-muted-foreground',
     hours: 40,
     rate: 600
   },
@@ -112,19 +113,19 @@ export default function BillingPage() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     if (!value.trim()) {
       setFilteredInvoices(mockInvoices);
       return;
     }
-    
+
     const filtered = mockInvoices.filter(
-      (invoice) => 
-        invoice.client.includes(value) || 
+      (invoice) =>
+        invoice.client.includes(value) ||
         invoice.case.includes(value) ||
         invoice.invoiceNumber.includes(value)
     );
-    
+
     setFilteredInvoices(filtered);
   };
 
@@ -164,74 +165,68 @@ export default function BillingPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900 font-display">חיובים וחשבוניות</h1>
-          <p className="text-blue-600 mt-2">
-            ניהול חשבוניות, מעקב תשלומים וחיובים ללקוחות
-          </p>
-        </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button className="gap-2 self-end bg-blue-600 hover:bg-blue-700" onClick={handleNewInvoice}>
-            <Plus className="h-4 w-4" /> חשבונית חדשה
-          </Button>
-        </motion.div>
-      </motion.div>
+      <PageHeader
+        title="חיובים וחשבוניות"
+        subtitle="ניהול חשבוניות, מעקב תשלומים וחיובים ללקוחות"
+        actions={
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button className="gap-2" onClick={handleNewInvoice}>
+              <Plus className="h-4 w-4" /> חשבונית חדשה
+            </Button>
+          </motion.div>
+        }
+      />
 
       {/* Stats Cards */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-4 gap-6"
       >
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <FileText className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{totalInvoices}</p>
-                <p className="text-blue-600 text-sm">סה"כ חשבוניות</p>
+                <p className="text-2xl font-bold text-foreground">{totalInvoices}</p>
+                <p className="text-muted-foreground text-sm">סה"כ חשבוניות</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">₪{totalRevenue.toLocaleString()}</p>
-                <p className="text-blue-600 text-sm">סה"כ הכנסות</p>
+                <p className="text-2xl font-bold text-foreground">₪{totalRevenue.toLocaleString()}</p>
+                <p className="text-muted-foreground text-sm">סה"כ הכנסות</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-emerald-600" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{paidInvoices}</p>
-                <p className="text-blue-600 text-sm">חשבוניות ששולמו</p>
+                <p className="text-2xl font-bold text-foreground">{paidInvoices}</p>
+                <p className="text-muted-foreground text-sm">חשבוניות ששולמו</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-red-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-red-200 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
@@ -247,23 +242,23 @@ export default function BillingPage() {
       </motion.div>
 
       {/* Quick Actions */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="bg-primary/5 border-border hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6 text-center">
             <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Plus className="h-6 w-6 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">יצירת חשבונית</h3>
-            <p className="text-blue-600 text-sm">יצור חשבונית חדשה מרישומי הזמן</p>
+            <h3 className="text-lg font-semibold text-foreground mb-2">יצירת חשבונית</h3>
+            <p className="text-muted-foreground text-sm">יצור חשבונית חדשה מרישומי הזמן</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="bg-green-50 border-green-200 hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6 text-center">
             <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Send className="h-6 w-6 text-white" />
@@ -273,7 +268,7 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200 hover:shadow-lg transition-shadow cursor-pointer">
+        <Card className="bg-purple-50 border-purple-200 hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6 text-center">
             <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Download className="h-6 w-6 text-white" />
@@ -290,22 +285,22 @@ export default function BillingPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display">חשבוניות ותשלומים</CardTitle>
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display">חשבוניות ותשלומים</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-blue-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש לפי לקוח, תיק או מספר חשבונית..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="w-full pl-9 pr-4 border-blue-200 focus:border-blue-400"
+                  className="w-full pl-9 pr-4 border-border"
                 />
               </div>
               <div className="flex gap-2">
                 <Select>
-                  <SelectTrigger className="w-[130px] border-blue-200">
+                  <SelectTrigger className="w-[130px] border-border">
                     <SelectValue placeholder="סטטוס" />
                   </SelectTrigger>
                   <SelectContent>
@@ -315,9 +310,9 @@ export default function BillingPage() {
                     <SelectItem value="overdue">באיחור</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Select>
-                  <SelectTrigger className="w-[130px] border-blue-200">
+                  <SelectTrigger className="w-[130px] border-border">
                     <SelectValue placeholder="תקופה" />
                   </SelectTrigger>
                   <SelectContent>
@@ -329,20 +324,20 @@ export default function BillingPage() {
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-0">
-            <div className="rounded-md border border-blue-200">
+            <div className="rounded-md border border-border">
               <Table>
-                <TableHeader className="bg-blue-50">
-                  <TableRow className="border-blue-200">
-                    <TableHead className="text-blue-900 font-semibold">מספר חשבונית</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">לקוח</TableHead>
-                    <TableHead className="hidden md:table-cell text-blue-900 font-semibold">תיק</TableHead>
-                    <TableHead className="hidden lg:table-cell text-blue-900 font-semibold">תאריך הנפקה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-blue-900 font-semibold">תאריך פירעון</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">סכום</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">סטטוס</TableHead>
-                    <TableHead className="text-right text-blue-900 font-semibold">פעולות</TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="border-border">
+                    <TableHead className="text-foreground font-semibold">מספר חשבונית</TableHead>
+                    <TableHead className="text-foreground font-semibold">לקוח</TableHead>
+                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תיק</TableHead>
+                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">תאריך הנפקה</TableHead>
+                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">תאריך פירעון</TableHead>
+                    <TableHead className="text-foreground font-semibold">סכום</TableHead>
+                    <TableHead className="text-foreground font-semibold">סטטוס</TableHead>
+                    <TableHead className="text-right text-foreground font-semibold">פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -352,41 +347,41 @@ export default function BillingPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="hover:bg-blue-50 border-blue-100 transition-colors group"
+                      className="hover:bg-muted/50 border-border transition-colors group"
                     >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900 font-medium">{invoice.invoiceNumber}</span>
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground font-medium">{invoice.invoiceNumber}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900 font-medium">{invoice.client}</span>
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground font-medium">{invoice.client}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-blue-700">{invoice.case}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{invoice.case}</TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-700">{invoice.issueDate}</span>
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{invoice.issueDate}</span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-700">{invoice.dueDate}</span>
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{invoice.dueDate}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900 font-bold">₪{invoice.amount.toLocaleString()}</span>
+                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground font-bold">₪{invoice.amount.toLocaleString()}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
+                        <Badge
                           className={`${invoice.statusColor} text-white`}
                         >
                           {invoice.status}
@@ -394,27 +389,27 @@ export default function BillingPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary hover:text-primary hover:bg-muted/50"
                             onClick={() => handleViewInvoice(invoice.id)}
                             title="צפייה בחשבונית"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-green-600 hover:text-green-800 hover:bg-green-50"
                             onClick={() => handleDownloadInvoice(invoice.id)}
                             title="הורדת חשבונית"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                             onClick={() => handleSendInvoice(invoice.id)}
                             title="שליחת חשבונית"

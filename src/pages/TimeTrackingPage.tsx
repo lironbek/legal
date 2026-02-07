@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { PageHeader } from '@/components/layout/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Select,
@@ -19,11 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Clock, 
-  Play, 
-  Pause, 
-  Square, 
+import {
+  Clock,
+  Play,
+  Pause,
+  Square,
   Plus,
   Calendar,
   FileText,
@@ -110,19 +111,19 @@ export default function TimeTrackingPage() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     if (!value) {
       setFilteredEntries(mockTimeEntries);
       return;
     }
-    
+
     const filtered = mockTimeEntries.filter(
-      (entry) => 
-        entry.client.includes(value) || 
+      (entry) =>
+        entry.client.includes(value) ||
         entry.case.includes(value) ||
         entry.task.includes(value)
     );
-    
+
     setFilteredEntries(filtered);
   };
 
@@ -149,23 +150,17 @@ export default function TimeTrackingPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900 font-display">מעקב זמנים</h1>
-          <p className="text-blue-600 mt-2">
-            רישום ומעקב שעות עבודה לתיקים ולקוחות
-          </p>
-        </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button className="gap-2 self-end bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4" /> רישום ידני
-          </Button>
-        </motion.div>
-      </motion.div>
+      <PageHeader
+        title="מעקב זמנים"
+        subtitle="רישום ומעקב שעות עבודה לתיקים ולקוחות"
+        actions={
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> רישום ידני
+            </Button>
+          </motion.div>
+        }
+      />
 
       {/* Time Tracker Card */}
       <motion.div
@@ -173,9 +168,9 @@ export default function TimeTrackingPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 shadow-lg">
+        <Card className="bg-primary/5 border-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900 font-display flex items-center gap-2">
+            <CardTitle className="text-foreground font-display flex items-center gap-2">
               <Timer className="h-5 w-5" />
               מד זמן פעיל
             </CardTitle>
@@ -183,17 +178,17 @@ export default function TimeTrackingPage() {
           <CardContent>
             <div className="flex flex-col md:flex-row gap-6 items-center">
               <div className="text-center">
-                <div className="text-4xl font-bold text-blue-900 font-mono mb-2">
+                <div className="text-4xl font-bold text-foreground font-mono mb-2">
                   {currentTime}
                 </div>
-                <p className="text-blue-600 text-sm">זמן נוכחי</p>
+                <p className="text-muted-foreground text-sm">זמן נוכחי</p>
               </div>
-              
+
               <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-blue-900 block mb-1">לקוח</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">לקוח</label>
                   <Select>
-                    <SelectTrigger className="border-blue-200">
+                    <SelectTrigger className="border-border">
                       <SelectValue placeholder="בחר לקוח" />
                     </SelectTrigger>
                     <SelectContent>
@@ -203,11 +198,11 @@ export default function TimeTrackingPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
-                  <label className="text-sm font-medium text-blue-900 block mb-1">תיק</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">תיק</label>
                   <Select>
-                    <SelectTrigger className="border-blue-200">
+                    <SelectTrigger className="border-border">
                       <SelectValue placeholder="בחר תיק" />
                     </SelectTrigger>
                     <SelectContent>
@@ -217,19 +212,19 @@ export default function TimeTrackingPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
-                  <label className="text-sm font-medium text-blue-900 block mb-1">משימה</label>
-                  <Input 
+                  <label className="text-sm font-medium text-foreground block mb-1">משימה</label>
+                  <Input
                     placeholder="תיאור המשימה"
-                    className="border-blue-200 focus:border-blue-400"
+                    className="border-border"
                   />
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button 
+                  <Button
                     onClick={() => setIsTracking(!isTracking)}
                     className={isTracking ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}
                   >
@@ -237,7 +232,7 @@ export default function TimeTrackingPage() {
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="outline" className="border-blue-300">
+                  <Button variant="outline" className="border-border">
                     <Square className="h-4 w-4" />
                   </Button>
                 </motion.div>
@@ -248,49 +243,49 @@ export default function TimeTrackingPage() {
       </motion.div>
 
       {/* Stats Cards */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Clock className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <Clock className="h-6 w-6 text-primary" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{totalHours.toFixed(1)}</p>
-                <p className="text-blue-600 text-sm">סה"כ שעות השבוע</p>
+                <p className="text-2xl font-bold text-foreground">{totalHours.toFixed(1)}</p>
+                <p className="text-muted-foreground text-sm">סה"כ שעות השבוע</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <BarChart3 className="h-6 w-6 text-green-600" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{billableHours.toFixed(1)}</p>
-                <p className="text-blue-600 text-sm">שעות חיוביות</p>
+                <p className="text-2xl font-bold text-foreground">{billableHours.toFixed(1)}</p>
+                <p className="text-muted-foreground text-sm">שעות חיוביות</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <span className="text-green-600 font-bold">₪</span>
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">₪{totalRevenue.toLocaleString()}</p>
-                <p className="text-blue-600 text-sm">הכנסות השבוע</p>
+                <p className="text-2xl font-bold text-foreground">₪{totalRevenue.toLocaleString()}</p>
+                <p className="text-muted-foreground text-sm">הכנסות השבוע</p>
               </div>
             </div>
           </CardContent>
@@ -303,22 +298,22 @@ export default function TimeTrackingPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display">רישומי זמן</CardTitle>
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display">רישומי זמן</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-blue-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש לפי לקוח, תיק או משימה..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="w-full pl-9 pr-4 border-blue-200 focus:border-blue-400"
+                  className="w-full pl-9 pr-4 border-border"
                 />
               </div>
               <div className="flex gap-2">
                 <Select>
-                  <SelectTrigger className="w-[130px] border-blue-200">
+                  <SelectTrigger className="w-[130px] border-border">
                     <SelectValue placeholder="תאריך" />
                   </SelectTrigger>
                   <SelectContent>
@@ -327,9 +322,9 @@ export default function TimeTrackingPage() {
                     <SelectItem value="month">החודש</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Select>
-                  <SelectTrigger className="w-[130px] border-blue-200">
+                  <SelectTrigger className="w-[130px] border-border">
                     <SelectValue placeholder="סטטוס" />
                   </SelectTrigger>
                   <SelectContent>
@@ -341,21 +336,21 @@ export default function TimeTrackingPage() {
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-0">
-            <div className="rounded-md border border-blue-200">
+            <div className="rounded-md border border-border">
               <Table>
-                <TableHeader className="bg-blue-50">
-                  <TableRow className="border-blue-200">
-                    <TableHead className="text-blue-900 font-semibold">תאריך</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">לקוח</TableHead>
-                    <TableHead className="hidden md:table-cell text-blue-900 font-semibold">תיק</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">משימה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-blue-900 font-semibold">זמן התחלה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-blue-900 font-semibold">זמן סיום</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">משך</TableHead>
-                    <TableHead className="hidden md:table-cell text-blue-900 font-semibold">תעריף</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">סטטוס</TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="border-border">
+                    <TableHead className="text-foreground font-semibold">תאריך</TableHead>
+                    <TableHead className="text-foreground font-semibold">לקוח</TableHead>
+                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תיק</TableHead>
+                    <TableHead className="text-foreground font-semibold">משימה</TableHead>
+                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">זמן התחלה</TableHead>
+                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">זמן סיום</TableHead>
+                    <TableHead className="text-foreground font-semibold">משך</TableHead>
+                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תעריף</TableHead>
+                    <TableHead className="text-foreground font-semibold">סטטוס</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -365,46 +360,46 @@ export default function TimeTrackingPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="hover:bg-blue-50 border-blue-100 transition-colors"
+                      className="hover:bg-muted/50 border-border transition-colors"
                     >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900">{entry.date}</span>
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground">{entry.date}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900 font-medium">{entry.client}</span>
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground font-medium">{entry.client}</span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-700">{entry.case}</span>
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{entry.case}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-blue-700">{entry.task}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-blue-700">{entry.startTime}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-blue-700">{entry.endTime}</TableCell>
+                      <TableCell className="text-muted-foreground">{entry.task}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">{entry.startTime}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">{entry.endTime}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900 font-medium">{entry.duration}</span>
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground font-medium">{entry.duration}</span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {entry.billable ? (
-                          <span className="text-blue-900 font-medium">₪{entry.rate}/שעה</span>
+                          <span className="text-foreground font-medium">₪{entry.rate}/שעה</span>
                         ) : (
-                          <span className="text-gray-500">לא חיובי</span>
+                          <span className="text-muted-foreground">לא חיובי</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge 
+                        <Badge
                           variant={entry.billable ? "default" : "secondary"}
-                          className={entry.billable ? "bg-green-500" : "bg-gray-500"}
+                          className={entry.billable ? "bg-green-500" : ""}
                         >
                           {entry.billable ? 'חיובי' : 'לא חיובי'}
                         </Badge>

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Trash2, Plus, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -65,7 +66,7 @@ export default function DisabilityCalculatorPage() {
     let remainingCapacity = 100;
 
     // מיון הערכים בסדר יורד
-    const sortedEntries = [...entries].sort((a, b) => 
+    const sortedEntries = [...entries].sort((a, b) =>
       (b.percentage - b.previousCondition) - (a.percentage - a.previousCondition)
     );
 
@@ -86,7 +87,7 @@ export default function DisabilityCalculatorPage() {
         '1/3': 0.33333,
         '1/2': 0.5
       }[regulation15Addition];
-      
+
       finalDisability = totalDisability + (totalDisability * additionMultiplier);
     }
 
@@ -116,26 +117,21 @@ export default function DisabilityCalculatorPage() {
   const result = calculateWeightedDisability();
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl bg-white">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-black mb-2 flex items-center gap-3">
-          <Calculator className="h-8 w-8 text-blue-600" />
-          מחשבון נכות משוקללת
-        </h1>
-        <p className="text-black">
-          מחשבון לחישוב נכות משוקללת בהתאם לתקנות הביטוח הלאומי ורשות המסים
-        </p>
-      </div>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <PageHeader
+        title="מחשבון נכות משוקללת"
+        subtitle="מחשבון לחישוב נכות משוקללת בהתאם לתקנות הביטוח הלאומי ורשות המסים"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* הגדרות ראשיות */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="text-black">בחירת סוג וועדה</CardTitle>
+        <Card className="border-border">
+          <CardHeader className="bg-muted/50 border-b border-border">
+            <CardTitle className="text-foreground">בחירת סוג וועדה</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 bg-white">
+          <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="committee-type" className="text-black">סוג הוועדה הרפואית</Label>
+              <Label htmlFor="committee-type" className="text-foreground">סוג הוועדה הרפואית</Label>
               <Select value={committeeType} onValueChange={(value: CommitteeType) => setCommitteeType(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="בחר סוג וועדה" />
@@ -152,23 +148,23 @@ export default function DisabilityCalculatorPage() {
 
             {committeeType === 'work-injury' && (
               <div>
-                <Label className="text-black">תוספת תקנה 15</Label>
+                <Label className="text-foreground">תוספת תקנה 15</Label>
                 <RadioGroup value={regulation15Addition} onValueChange={(value: string) => setRegulation15Addition(value as 'none' | '1/4' | '1/3' | '1/2')}>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="none" id="none" />
-                    <Label htmlFor="none" className="text-black">ללא</Label>
+                    <Label htmlFor="none" className="text-foreground">ללא</Label>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="1/4" id="quarter" />
-                    <Label htmlFor="quarter" className="text-black">1/4</Label>
+                    <Label htmlFor="quarter" className="text-foreground">1/4</Label>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="1/3" id="third" />
-                    <Label htmlFor="third" className="text-black">1/3</Label>
+                    <Label htmlFor="third" className="text-foreground">1/3</Label>
                   </div>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <RadioGroupItem value="1/2" id="half" />
-                    <Label htmlFor="half" className="text-black">1/2</Label>
+                    <Label htmlFor="half" className="text-foreground">1/2</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -177,14 +173,14 @@ export default function DisabilityCalculatorPage() {
         </Card>
 
         {/* הוספת נכויות */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="text-black">הוספת נכויות</CardTitle>
+        <Card className="border-border">
+          <CardHeader className="bg-muted/50 border-b border-border">
+            <CardTitle className="text-foreground">הוספת נכויות</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 bg-white">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="percentage" className="text-black">אחוז הנכות (%)</Label>
+                <Label htmlFor="percentage" className="text-foreground">אחוז הנכות (%)</Label>
                 <Input
                   id="percentage"
                   type="number"
@@ -196,7 +192,7 @@ export default function DisabilityCalculatorPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="previous" className="text-black">מצב קודם (%)</Label>
+                <Label htmlFor="previous" className="text-foreground">מצב קודם (%)</Label>
                 <Input
                   id="previous"
                   type="number"
@@ -208,7 +204,7 @@ export default function DisabilityCalculatorPage() {
                 />
               </div>
             </div>
-            <Button onClick={addEntry} disabled={!committeeType || !currentPercentage} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={addEntry} disabled={!committeeType || !currentPercentage} className="w-full">
               <Plus className="h-4 w-4 ml-2" />
               הוסף נכות
             </Button>
@@ -216,22 +212,22 @@ export default function DisabilityCalculatorPage() {
         </Card>
 
         {/* רשימת נכויות */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="text-black">רשימת נכויות שהוכנסו</CardTitle>
+        <Card className="border-border">
+          <CardHeader className="bg-muted/50 border-b border-border">
+            <CardTitle className="text-foreground">רשימת נכויות שהוכנסו</CardTitle>
           </CardHeader>
-          <CardContent className="bg-white">
+          <CardContent>
             {entries.length === 0 ? (
-              <p className="text-black text-center py-4">לא הוכנסו נכויות עדיין</p>
+              <p className="text-muted-foreground text-center py-4">לא הוכנסו נכויות עדיין</p>
             ) : (
               <div className="space-y-2">
                 {entries.map((entry, index) => (
-                  <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
                     <div className="flex gap-4">
-                      <span className="font-medium text-black">נכות {index + 1}:</span>
-                      <span className="text-black">{entry.percentage}%</span>
+                      <span className="font-medium text-foreground">נכות {index + 1}:</span>
+                      <span className="text-foreground">{entry.percentage}%</span>
                       {entry.previousCondition > 0 && (
-                        <span className="text-gray-600">(מצב קודם: {entry.previousCondition}%)</span>
+                        <span className="text-muted-foreground">(מצב קודם: {entry.previousCondition}%)</span>
                       )}
                     </div>
                     <Button
@@ -250,31 +246,31 @@ export default function DisabilityCalculatorPage() {
         </Card>
 
         {/* תוצאות */}
-        <Card className="bg-white border border-gray-200">
-          <CardHeader className="bg-gray-50 border-b border-gray-200">
-            <CardTitle className="text-black">תוצאות החישוב</CardTitle>
+        <Card className="border-border">
+          <CardHeader className="bg-muted/50 border-b border-border">
+            <CardTitle className="text-foreground">תוצאות החישוב</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 bg-white">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <Label className="text-sm font-medium text-black">תוצאת ביניים (אריתמטית)</Label>
-                <p className="text-2xl font-bold text-black">{result.intermediate}%</p>
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <Label className="text-sm font-medium text-foreground">תוצאת ביניים (אריתמטית)</Label>
+                <p className="text-2xl font-bold text-foreground">{result.intermediate}%</p>
               </div>
-              
+
               {committeeType === 'work-injury' && regulation15Addition !== 'none' && (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <Label className="text-sm font-medium text-blue-700">תוספת תקנה 15</Label>
-                  <p className="text-lg font-medium text-blue-700">{regulation15Addition}</p>
+                <div className="p-4 bg-primary/5 rounded-lg border border-border">
+                  <Label className="text-sm font-medium text-muted-foreground">תוספת תקנה 15</Label>
+                  <p className="text-lg font-medium text-muted-foreground">{regulation15Addition}</p>
                 </div>
               )}
-              
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <Label className="text-sm font-medium text-blue-700">נכות משוקללת סופית</Label>
-                <p className="text-3xl font-bold text-blue-600">{result.final}%</p>
+
+              <div className="p-4 bg-primary/5 rounded-lg border border-border">
+                <Label className="text-sm font-medium text-muted-foreground">נכות משוקללת סופית</Label>
+                <p className="text-3xl font-bold text-primary">{result.final}%</p>
               </div>
             </div>
-            
-            <Button onClick={resetCalculation} variant="outline" className="w-full bg-white text-black border-gray-300 hover:bg-gray-50">
+
+            <Button onClick={resetCalculation} variant="outline" className="w-full border-border hover:bg-muted/50">
               חישוב חדש
             </Button>
           </CardContent>
@@ -282,13 +278,13 @@ export default function DisabilityCalculatorPage() {
       </div>
 
       {/* הסברים והערות */}
-      <Card className="mt-6 bg-white border border-gray-200">
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
-          <CardTitle className="text-black">הערות חשובות</CardTitle>
+      <Card className="mt-6 border-border">
+        <CardHeader className="bg-muted/50 border-b border-border">
+          <CardTitle className="text-foreground">הערות חשובות</CardTitle>
         </CardHeader>
-        <CardContent className="bg-white">
+        <CardContent>
           <div className="prose prose-sm max-w-none">
-            <ul className="space-y-2 text-black">
+            <ul className="space-y-2 text-foreground">
               <li>• מחשבון הנכות המשוקללת מציג שתי תוצאות: תוצאת ביניים (אריתמטית) ונכות משוקללת ומעוגלת</li>
               <li>• נכות משוקללת עבור פגיעה בעבודה, פטור ממס הכנסה ונכות כללית נקבעת על פי ספר המבחנים</li>
               <li>• במחשבון נכות לנפגעי עבודה מוצגת נכות משוקללת מעוגלת לאחר הפחתת נכות בגין מצב קודם ותוספת נכות בגין תקנה 15</li>

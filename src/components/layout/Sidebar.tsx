@@ -5,9 +5,13 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from '@/components/ui/sidebar';
 import {
   Home,
@@ -22,83 +26,47 @@ import {
   Calendar,
   Calculator,
   Scale,
-  Gavel,
   BookOpen,
   Shield,
   UserCheck,
+  TrendingUp,
+  PieChart,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Separator } from '@/components/ui/separator';
 
-const menuItems = [
+const navGroups = [
   {
-    title: 'לוח הבקרה',
-    url: '/',
-    icon: Home,
-    color: 'text-blue-600'
+    label: 'ראשי',
+    items: [
+      { title: 'לוח הבקרה', url: '/', icon: Home },
+      { title: 'ניהול תיקים', url: '/cases', icon: Briefcase },
+      { title: 'לקוחות', url: '/clients', icon: UserCheck },
+      { title: 'יומן דיונים', url: '/calendar', icon: Calendar },
+    ],
   },
   {
-    title: 'ניהול תיקים משפטיים',
-    url: '/cases',
-    icon: Briefcase,
-    color: 'text-blue-600'
+    label: 'פיננסי',
+    items: [
+      { title: 'שעות עבודה', url: '/time-tracking', icon: Clock },
+      { title: 'חשבונות', url: '/billing', icon: Receipt },
+      { title: 'דוחות', url: '/reports', icon: BarChart3 },
+      { title: 'תזרים מזומנים', url: '/cash-flow', icon: TrendingUp },
+      { title: 'תקציב', url: '/budget', icon: PieChart },
+    ],
   },
   {
-    title: 'מאגר לקוחות',
-    url: '/clients',
-    icon: UserCheck,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'רישום שעות עבודה',
-    url: '/time-tracking',
-    icon: Clock,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'חשבונות ותשלומים',
-    url: '/billing',
-    icon: Receipt,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'יומן דיונים',
-    url: '/calendar',
-    icon: Calendar,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'ארכיון מסמכים',
-    url: '/documents',
-    icon: FileImage,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'דוחות מנהלים',
-    url: '/reports',
-    icon: BarChart3,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'חקיקה וספרות',
-    url: '/legal-library',
-    icon: BookOpen,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'מחשבון נכות',
-    url: '/disability-calculator',
-    icon: Calculator,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'הגדרות מערכת',
-    url: '/settings',
-    icon: Settings,
-    color: 'text-blue-600'
+    label: 'כלים',
+    items: [
+      { title: 'מסמכים', url: '/documents', icon: FileImage },
+      { title: 'ספרייה משפטית', url: '/legal-library', icon: BookOpen },
+      { title: 'מחשבון נכות', url: '/disability-calculator', icon: Calculator },
+    ],
   },
 ];
 
-// Logo component with localStorage support
+const settingsItem = { title: 'הגדרות', url: '/settings', icon: Settings };
+
 function LogoDisplay() {
   const [logo, setLogo] = useState<string | null>(null);
 
@@ -109,23 +77,21 @@ function LogoDisplay() {
     }
   }, []);
 
-  // Listen for logo changes
   useEffect(() => {
     const handleStorageChange = () => {
       const savedLogo = localStorage.getItem('app-logo');
       setLogo(savedLogo);
     };
-
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   if (logo) {
     return (
-      <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200">
-        <img 
-          src={logo} 
-          alt="לוגו המערכת" 
+      <div className="w-10 h-10 rounded-xl overflow-hidden border border-border bg-muted/50">
+        <img
+          src={logo}
+          alt="לוגו המערכת"
           className="w-full h-full object-contain"
         />
       </div>
@@ -133,101 +99,120 @@ function LogoDisplay() {
   }
 
   return (
-    <motion.div 
-      whileHover={{ scale: 1.05 }}
-      className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg"
-    >
-      <Scale className="h-6 w-6 text-white" />
-    </motion.div>
+    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+      <Scale className="h-5 w-5 text-white" />
+    </div>
   );
 }
 
 export function AppSidebar() {
   const location = useLocation();
 
+  const isActive = (url: string) => {
+    if (url === '/') return location.pathname === '/';
+    return location.pathname.startsWith(url);
+  };
+
   return (
-    <Sidebar 
-      side="left" 
-      collapsible="none" 
-      className="border-r border-gray-200 bg-white shadow-xl"
+    <Sidebar
+      side="right"
+      collapsible="icon"
+      className="border-l border-sidebar-border"
     >
-      <SidebarHeader className="border-b border-gray-100 p-6 bg-gradient-to-r from-blue-50 to-blue-100">
-        <motion.div 
+      {/* Logo Header */}
+      <SidebarHeader className="border-b border-border px-5 py-5">
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
+          className="flex items-center gap-3"
         >
           <LogoDisplay />
-          <div>
-            <h1 className="text-xl font-bold text-blue-900 font-display">
-              Legal Nexus Israel
+          <div className="group-data-[collapsible=icon]:hidden">
+            <h1 className="text-base font-bold text-foreground font-display leading-tight">
+              Legal Nexus
             </h1>
-            <p className="text-sm text-blue-600">
-              מערכת ניהול משרד עורכי דין
+            <p className="text-xs text-muted-foreground">
+              ניהול משרד עורכי דין
             </p>
           </div>
         </motion.div>
       </SidebarHeader>
-      <SidebarContent className="p-4">
-        <SidebarMenu className="space-y-2">
-          {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.url;
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`
-                      justify-start gap-3 py-3 px-4 rounded-xl transition-all duration-200 ease-in-out text-sm font-medium
-                      ${isActive 
-                        ? 'bg-blue-500 text-white shadow-lg' 
-                        : 'text-gray-700 hover:bg-blue-100 hover:text-blue-800'
-                      }
-                    `}
-                  >
-                    <Link to={item.url} className="flex items-center gap-3 w-full">
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
+
+      {/* Navigation */}
+      <SidebarContent className="px-3 py-4">
+        {navGroups.map((group, groupIndex) => (
+          <SidebarGroup key={group.label} className={groupIndex > 0 ? 'mt-2' : ''}>
+            <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground/70 px-3 mb-1 group-data-[collapsible=icon]:hidden">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = isActive(item.url);
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.title}
+                        className={`
+                          justify-start gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 text-sm font-medium
+                          ${active
+                            ? 'bg-primary/10 text-primary border-r-2 border-primary'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground border-r-2 border-transparent'
+                          }
+                        `}
                       >
-                        <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-blue-600'}`} />
-                      </motion.div>
-                      <span className="font-medium">{item.title}</span>
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeIndicator"
-                          className="ml-auto w-2 h-2 bg-white rounded-full"
-                        />
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </motion.div>
-            );
-          })}
-        </SidebarMenu>
-        
-        {/* Beautiful Security Footer */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <Shield className="h-5 w-5 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">מצב מאובטח</span>
-          </div>
-          <p className="text-xs text-blue-600 leading-relaxed">
-            כל הנתונים מוצפנים ומאובטחים בהתאם לתקנות הגנת הפרטיות
-          </p>
-        </motion.div>
+                        <Link to={item.url} className="flex items-center gap-3 w-full">
+                          <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                          <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                          {active && (
+                            <motion.div
+                              layoutId="activeIndicator"
+                              className="mr-auto w-1.5 h-1.5 bg-primary rounded-full group-data-[collapsible=icon]:hidden"
+                            />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
+
+      {/* Footer - Settings */}
+      <SidebarFooter className="border-t border-border px-3 py-3">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip={settingsItem.title}
+              className={`
+                justify-start gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 text-sm font-medium
+                ${isActive(settingsItem.url)
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }
+              `}
+            >
+              <Link to={settingsItem.url} className="flex items-center gap-3 w-full">
+                <settingsItem.icon className={`h-[18px] w-[18px] shrink-0 ${isActive(settingsItem.url) ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                <span className="group-data-[collapsible=icon]:hidden">{settingsItem.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        {/* Security Badge */}
+        <div className="mt-3 px-3 py-2 rounded-lg bg-muted/50 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-2">
+            <Shield className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+            <span className="text-[11px] text-muted-foreground">מאובטח ומוצפן</span>
+          </div>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

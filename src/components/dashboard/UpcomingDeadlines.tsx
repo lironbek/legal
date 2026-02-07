@@ -7,7 +7,7 @@ const upcomingDeadlines = [
   {
     id: 1,
     title: 'הגשת כתב הגנה - תיק אברהם',
-    date: '2024-06-15',
+    date: '15/06/2024',
     time: '17:00',
     priority: 'high',
     daysLeft: 2,
@@ -15,7 +15,7 @@ const upcomingDeadlines = [
   {
     id: 2,
     title: 'פגישה עם לקוח - משפחת לוי',
-    date: '2024-06-16',
+    date: '16/06/2024',
     time: '10:00',
     priority: 'medium',
     daysLeft: 3,
@@ -23,7 +23,7 @@ const upcomingDeadlines = [
   {
     id: 3,
     title: 'דיון בבית משפט - תיק כהן',
-    date: '2024-06-18',
+    date: '18/06/2024',
     time: '09:30',
     priority: 'high',
     daysLeft: 5,
@@ -31,80 +31,63 @@ const upcomingDeadlines = [
   {
     id: 4,
     title: 'סיום הכנת הסכם',
-    date: '2024-06-20',
+    date: '20/06/2024',
     time: '16:00',
     priority: 'low',
     daysLeft: 7,
   },
 ];
 
+const priorityConfig = {
+  high: { color: 'bg-rose-500', text: 'דחוף', badge: 'text-rose-700 bg-rose-50' },
+  medium: { color: 'bg-amber-500', text: 'בינוני', badge: 'text-amber-700 bg-amber-50' },
+  low: { color: 'bg-emerald-500', text: 'נמוך', badge: 'text-emerald-700 bg-emerald-50' },
+};
+
 export function UpcomingDeadlines() {
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-600';
-      case 'medium':
-        return 'bg-blue-600';
-      case 'low':
-        return 'bg-green-600';
-      default:
-        return 'bg-slate-600';
-    }
-  };
-
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'דחוף';
-      case 'medium':
-        return 'בינוני';
-      case 'low':
-        return 'נמוך';
-      default:
-        return 'רגיל';
-    }
-  };
-
   return (
-    <Card className="bg-white border-gray-200 shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-blue-900 flex items-center gap-2 font-display">
-          <AlertCircle className="h-5 w-5 text-blue-600" />
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-display font-semibold text-foreground flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-primary" />
           מועדים קרובים
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {upcomingDeadlines.map((deadline) => (
-            <div
-              key={deadline.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors bg-white shadow-sm"
-            >
-              <div className="flex-1">
-                <h4 className="font-semibold text-blue-900 mb-1 text-base">
-                  {deadline.title}
-                </h4>
-                <div className="flex items-center gap-3 text-sm text-blue-600">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span className="font-medium">{deadline.date}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span className="font-medium">{deadline.time}</span>
+          {upcomingDeadlines.map((deadline) => {
+            const config = priorityConfig[deadline.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+            return (
+              <div
+                key={deadline.id}
+                className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-foreground text-sm truncate">
+                    {deadline.title}
+                  </h4>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{deadline.date}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{deadline.time}</span>
+                    </div>
                   </div>
                 </div>
+                <div className="text-left shrink-0 mr-3">
+                  <Badge className={`${config.color} text-white text-xs`}>
+                    {config.text}
+                  </Badge>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    בעוד {deadline.daysLeft} ימים
+                  </p>
+                </div>
               </div>
-              <div className="text-left">
-                <Badge className={`${getPriorityColor(deadline.priority)} text-white mb-1 font-medium`}>
-                  {getPriorityText(deadline.priority)}
-                </Badge>
-                <p className="text-xs text-blue-500 font-medium">
-                  בעוד {deadline.daysLeft} ימים
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

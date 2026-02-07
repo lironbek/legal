@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, User } from 'lucide-react';
 import { getClients, updateClient } from '@/lib/dataManager';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function EditClientPage() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function EditClientPage() {
     if (clientId) {
       const clients = getClients();
       const client = clients.find(c => c.id === clientId);
-      
+
       if (client) {
         setFormData({
           name: client.name,
@@ -55,12 +56,12 @@ export default function EditClientPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!clientId) return;
-    
+
     // Update the client using dataManager
     const updatedClient = updateClient(clientId, formData);
-    
+
     if (updatedClient) {
       console.log('Client updated:', updatedClient);
       alert('הלקוח עודכן בהצלחה');
@@ -87,20 +88,20 @@ export default function EditClientPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">עריכת לקוח</h1>
-          <p className="text-blue-600 mt-2">עדכן פרטי הלקוח במערכת</p>
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="עריכת לקוח"
+        subtitle="עדכן פרטי הלקוח במערכת"
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <User className="h-5 w-5" />
             פרטי הלקוח
           </CardTitle>
@@ -109,7 +110,7 @@ export default function EditClientPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-blue-900">שם מלא</Label>
+                <Label htmlFor="name" className="text-foreground">שם מלא</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -118,9 +119,9 @@ export default function EditClientPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-blue-900">אימייל</Label>
+                <Label htmlFor="email" className="text-foreground">אימייל</Label>
                 <Input
                   id="email"
                   type="email"
@@ -134,7 +135,7 @@ export default function EditClientPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-blue-900">טלפון</Label>
+                <Label htmlFor="phone" className="text-foreground">טלפון</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -143,9 +144,9 @@ export default function EditClientPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="idNumber" className="text-blue-900">תעודת זהות</Label>
+                <Label htmlFor="idNumber" className="text-foreground">תעודת זהות</Label>
                 <Input
                   id="idNumber"
                   value={formData.idNumber}
@@ -157,7 +158,7 @@ export default function EditClientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-blue-900">כתובת</Label>
+              <Label htmlFor="address" className="text-foreground">כתובת</Label>
               <Input
                 id="address"
                 value={formData.address}
@@ -168,7 +169,7 @@ export default function EditClientPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city" className="text-blue-900">עיר</Label>
+                <Label htmlFor="city" className="text-foreground">עיר</Label>
                 <Input
                   id="city"
                   value={formData.city}
@@ -176,9 +177,9 @@ export default function EditClientPage() {
                   placeholder="תל אביב"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="postalCode" className="text-blue-900">מיקוד</Label>
+                <Label htmlFor="postalCode" className="text-foreground">מיקוד</Label>
                 <Input
                   id="postalCode"
                   value={formData.postalCode}
@@ -188,7 +189,7 @@ export default function EditClientPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="clientType" className="text-blue-900">סוג לקוח</Label>
+                <Label htmlFor="clientType" className="text-foreground">סוג לקוח</Label>
                 <Select value={formData.clientType} onValueChange={(value) => setFormData({...formData, clientType: value})}>
                   <SelectTrigger>
                     <SelectValue />
@@ -202,7 +203,7 @@ export default function EditClientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status" className="text-blue-900">סטטוס</Label>
+              <Label htmlFor="status" className="text-foreground">סטטוס</Label>
               <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -215,7 +216,7 @@ export default function EditClientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-blue-900">הערות</Label>
+              <Label htmlFor="notes" className="text-foreground">הערות</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
@@ -226,7 +227,7 @@ export default function EditClientPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 <Save className="h-4 w-4 ml-2" />
                 עדכן לקוח
               </Button>

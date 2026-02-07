@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, User } from 'lucide-react';
 import { addClient } from '@/lib/dataManager';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function NewClientPage() {
   const navigate = useNavigate();
@@ -25,15 +26,15 @@ export default function NewClientPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Save the client using dataManager
     const newClient = addClient({
       ...formData,
       status: 'פעיל'
     });
-    
+
     console.log('Client saved:', newClient);
-    
+
     // Navigate back to clients page
     navigate('/clients');
   };
@@ -44,20 +45,20 @@ export default function NewClientPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">לקוח חדש</h1>
-          <p className="text-blue-600 mt-2">הוסף לקוח חדש למערכת</p>
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="לקוח חדש"
+        subtitle="הוסף לקוח חדש למערכת"
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <User className="h-5 w-5" />
             פרטי הלקוח
           </CardTitle>
@@ -66,7 +67,7 @@ export default function NewClientPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-blue-900">שם מלא</Label>
+                <Label htmlFor="name" className="text-foreground">שם מלא</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -75,9 +76,9 @@ export default function NewClientPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-blue-900">אימייל</Label>
+                <Label htmlFor="email" className="text-foreground">אימייל</Label>
                 <Input
                   id="email"
                   type="email"
@@ -91,7 +92,7 @@ export default function NewClientPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-blue-900">טלפון</Label>
+                <Label htmlFor="phone" className="text-foreground">טלפון</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -100,9 +101,9 @@ export default function NewClientPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="idNumber" className="text-blue-900">מספר תעודת זהות</Label>
+                <Label htmlFor="idNumber" className="text-foreground">מספר תעודת זהות</Label>
                 <Input
                   id="idNumber"
                   value={formData.idNumber}
@@ -113,7 +114,7 @@ export default function NewClientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-blue-900">כתובת</Label>
+              <Label htmlFor="address" className="text-foreground">כתובת</Label>
               <Input
                 id="address"
                 value={formData.address}
@@ -124,7 +125,7 @@ export default function NewClientPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city" className="text-blue-900">עיר</Label>
+                <Label htmlFor="city" className="text-foreground">עיר</Label>
                 <Input
                   id="city"
                   value={formData.city}
@@ -132,9 +133,9 @@ export default function NewClientPage() {
                   placeholder="עיר"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="postalCode" className="text-blue-900">מיקוד</Label>
+                <Label htmlFor="postalCode" className="text-foreground">מיקוד</Label>
                 <Input
                   id="postalCode"
                   value={formData.postalCode}
@@ -145,7 +146,7 @@ export default function NewClientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="clientType" className="text-blue-900">סוג לקוח</Label>
+              <Label htmlFor="clientType" className="text-foreground">סוג לקוח</Label>
               <Select value={formData.clientType} onValueChange={(value) => setFormData({...formData, clientType: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="בחר סוג לקוח" />
@@ -160,7 +161,7 @@ export default function NewClientPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-blue-900">הערות</Label>
+              <Label htmlFor="notes" className="text-foreground">הערות</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
@@ -171,7 +172,7 @@ export default function NewClientPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 <Save className="h-4 w-4 ml-2" />
                 שמור לקוח
               </Button>

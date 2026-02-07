@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import { PageHeader } from '@/components/layout/PageHeader';
+import {
   Calendar,
   Plus,
   Clock,
@@ -123,7 +124,7 @@ export default function CalendarPage() {
     if (type === 'meeting') return 'bg-blue-500';
     if (type === 'deadline') return 'bg-blue-500';
     if (type === 'consultation') return 'bg-green-500';
-    return 'bg-gray-500';
+    return 'bg-muted-foreground';
   };
 
   const todayEvents = mockEvents.filter(event => event.date === selectedDate);
@@ -132,71 +133,65 @@ export default function CalendarPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900 font-display">לוח זמנים</h1>
-          <p className="text-blue-600 mt-2">
-            ניהול פגישות, דיונים ומועדים משפטיים
-          </p>
-        </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button className="gap-2 self-end bg-blue-600 hover:bg-blue-700" onClick={handleNewEvent}>
-            <Plus className="h-4 w-4" /> אירוע חדש
-          </Button>
-        </motion.div>
-      </motion.div>
+      <PageHeader
+        title="לוח זמנים"
+        subtitle="ניהול פגישות, דיונים ומועדים משפטיים"
+        actions={
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button className="gap-2" onClick={handleNewEvent}>
+              <Plus className="h-4 w-4" /> אירוע חדש
+            </Button>
+          </motion.div>
+        }
+      />
 
       {/* Calendar Navigation */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" className="border-blue-200">
+                <Button variant="outline" size="icon" className="border-border">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <h2 className="text-xl font-bold text-blue-900">יוני 2024</h2>
-                <Button variant="outline" size="icon" className="border-blue-200">
+                <h2 className="text-xl font-bold text-foreground">יוני 2024</h2>
+                <Button variant="outline" size="icon" className="border-border">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant={viewMode === 'day' ? 'default' : 'outline'} 
+                <Button
+                  variant={viewMode === 'day' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('day')}
-                  className="border-blue-200"
+                  className="border-border"
                 >
                   יום
                 </Button>
-                <Button 
-                  variant={viewMode === 'week' ? 'default' : 'outline'} 
+                <Button
+                  variant={viewMode === 'week' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('week')}
-                  className="border-blue-200"
+                  className="border-border"
                 >
                   שבוע
                 </Button>
-                <Button 
-                  variant={viewMode === 'month' ? 'default' : 'outline'} 
+                <Button
+                  variant={viewMode === 'month' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('month')}
-                  className="border-blue-200"
+                  className="border-border"
                 >
                   חודש
                 </Button>
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-6">
             {/* Week View */}
             <div className="grid grid-cols-7 gap-2">
@@ -206,9 +201,9 @@ export default function CalendarPage() {
                   whileHover={{ scale: 1.02 }}
                   className={`
                     p-4 rounded-lg text-center cursor-pointer transition-all
-                    ${day.isToday 
-                      ? 'bg-blue-500 text-white shadow-lg' 
-                      : 'bg-blue-50 text-blue-900 hover:bg-blue-100'
+                    ${day.isToday
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted/50 text-foreground hover:bg-muted'
                     }
                   `}
                   onClick={() => setSelectedDate(`2024-06-${day.date}`)}
@@ -220,7 +215,7 @@ export default function CalendarPage() {
                       .filter(event => event.date === `2024-06-${day.date}`)
                       .slice(0, 2)
                       .map((event, idx) => (
-                        <div 
+                        <div
                           key={idx}
                           className={`
                             w-full h-1 rounded-full
@@ -239,15 +234,15 @@ export default function CalendarPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Today's Events */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
           className="lg:col-span-2"
         >
-          <Card className="bg-white border-blue-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-              <CardTitle className="text-blue-900 font-display flex items-center gap-2">
+          <Card className="border-border shadow-sm">
+            <CardHeader className="bg-muted/50">
+              <CardTitle className="text-foreground font-display flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
                 אירועי היום - {selectedDate}
               </CardTitle>
@@ -261,7 +256,7 @@ export default function CalendarPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-start gap-4 p-4 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
+                      className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                     >
                       <div className={`p-2 rounded-lg ${getEventColor(event.type, event.priority)}`}>
                         {getEventIcon(event.type)}
@@ -270,21 +265,21 @@ export default function CalendarPage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-semibold text-blue-900">{event.title}</h3>
-                            <p className="text-blue-600 text-sm">{event.description}</p>
+                            <h3 className="font-semibold text-foreground">{event.title}</h3>
+                            <p className="text-muted-foreground text-sm">{event.description}</p>
                           </div>
-                          <Badge 
+                          <Badge
                             variant={event.priority === 'high' ? 'destructive' : 'secondary'}
                             className={
                               event.priority === 'high' ? 'bg-red-500' :
-                              event.priority === 'medium' ? 'bg-blue-500' : 'bg-gray-500'
+                              event.priority === 'medium' ? 'bg-blue-500' : ''
                             }
                           >
-                            {event.priority === 'high' ? 'דחוף' : 
+                            {event.priority === 'high' ? 'דחוף' :
                              event.priority === 'medium' ? 'בינוני' : 'נמוך'}
                           </Badge>
                         </div>
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-blue-600">
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span>{event.time} ({event.duration})</span>
@@ -303,8 +298,8 @@ export default function CalendarPage() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <Calendar className="h-16 w-16 text-blue-300 mx-auto mb-4" />
-                    <p className="text-blue-600">אין אירועים מתוכננים ליום זה</p>
+                    <Calendar className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-muted-foreground">אין אירועים מתוכננים ליום זה</p>
                   </div>
                 )}
               </div>
@@ -313,55 +308,55 @@ export default function CalendarPage() {
         </motion.div>
 
         {/* Sidebar */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
           className="space-y-6"
         >
           {/* Quick Stats */}
-          <Card className="bg-white border-blue-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-              <CardTitle className="text-blue-900 font-display">סטטיסטיקות השבוע</CardTitle>
+          <Card className="border-border shadow-sm">
+            <CardHeader className="bg-muted/50">
+              <CardTitle className="text-foreground font-display">סטטיסטיקות השבוע</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                    <span className="text-blue-700 text-sm">דיונים בבית משפט</span>
+                    <span className="text-muted-foreground text-sm">דיונים בבית משפט</span>
                   </div>
-                  <span className="font-bold text-blue-900">3</span>
+                  <span className="font-bold text-foreground">3</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-blue-700 text-sm">פגישות לקוחות</span>
+                    <span className="text-muted-foreground text-sm">פגישות לקוחות</span>
                   </div>
-                  <span className="font-bold text-blue-900">5</span>
+                  <span className="font-bold text-foreground">5</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-blue-700 text-sm">מועדים חשובים</span>
+                    <span className="text-muted-foreground text-sm">מועדים חשובים</span>
                   </div>
-                  <span className="font-bold text-blue-900">2</span>
+                  <span className="font-bold text-foreground">2</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-blue-700 text-sm">ייעוצים</span>
+                    <span className="text-muted-foreground text-sm">ייעוצים</span>
                   </div>
-                  <span className="font-bold text-blue-900">4</span>
+                  <span className="font-bold text-foreground">4</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Upcoming Events */}
-          <Card className="bg-white border-blue-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-              <CardTitle className="text-blue-900 font-display">אירועים קרובים</CardTitle>
+          <Card className="border-border shadow-sm">
+            <CardHeader className="bg-muted/50">
+              <CardTitle className="text-foreground font-display">אירועים קרובים</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-3">
@@ -371,14 +366,14 @@ export default function CalendarPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                   >
                     <div className={`p-1.5 rounded ${getEventColor(event.type, event.priority)}`}>
                       {getEventIcon(event.type)}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-blue-900">{event.title}</p>
-                      <p className="text-xs text-blue-600">{event.date} • {event.time}</p>
+                      <p className="text-sm font-medium text-foreground">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.date} • {event.time}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -387,19 +382,19 @@ export default function CalendarPage() {
           </Card>
 
           {/* Quick Actions */}
-          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-muted/50 border-border">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">פעולות מהירות</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">פעולות מהירות</h3>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start border-blue-200">
+                <Button variant="outline" className="w-full justify-start border-border">
                   <Plus className="h-4 w-4 ml-2" />
                   תזמן דיון חדש
                 </Button>
-                <Button variant="outline" className="w-full justify-start border-blue-200">
+                <Button variant="outline" className="w-full justify-start border-border">
                   <User className="h-4 w-4 ml-2" />
                   קבע פגישת לקוח
                 </Button>
-                <Button variant="outline" className="w-full justify-start border-blue-200">
+                <Button variant="outline" className="w-full justify-start border-border">
                   <AlertCircle className="h-4 w-4 ml-2" />
                   הוסף מועד חשוב
                 </Button>

@@ -90,6 +90,10 @@ export interface UserPermission {
   can_edit_legal_library: boolean
   can_view_disability_calculator: boolean
   can_edit_disability_calculator: boolean
+  can_view_cash_flow: boolean
+  can_edit_cash_flow: boolean
+  can_view_budget: boolean
+  can_edit_budget: boolean
   can_manage_users: boolean
   can_manage_permission_groups: boolean
   can_manage_system_settings: boolean

@@ -142,3 +142,6 @@ const performOCR = async (imagePath, language) => {
 3. הרשאות תיקיות נכונות
 4. נתיב תוכנת הסריקה נכון
 
+
+
+

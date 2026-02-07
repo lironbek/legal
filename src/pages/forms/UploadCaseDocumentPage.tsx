@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Upload, FileText, Image, File, Scan } from 'lucide-react';
 import { addDocument } from '@/lib/dataManager';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function UploadCaseDocumentPage() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function UploadCaseDocumentPage() {
         fileSize: formatFileSize(file.size),
         fileType: getFileType(file.name)
       });
-      
+
       // Auto-fill title if empty
       if (!formData.title) {
         setFormData(prev => ({
@@ -81,15 +82,15 @@ export default function UploadCaseDocumentPage() {
     switch (fileType) {
       case 'תמונה': return <Image className="h-8 w-8 text-green-600" />;
       case 'PDF': return <FileText className="h-8 w-8 text-red-600" />;
-      case 'Word': return <FileText className="h-8 w-8 text-blue-600" />;
-      default: return <File className="h-8 w-8 text-gray-600" />;
+      case 'Word': return <FileText className="h-8 w-8 text-primary" />;
+      default: return <File className="h-8 w-8 text-muted-foreground" />;
     }
   };
 
   const handleStartScan = async () => {
     setIsScanning(true);
     setScanMode('scan');
-    
+
     try {
       // Get scanner settings from localStorage
       const scannerConfig = localStorage.getItem('scannerConfig');
@@ -99,34 +100,34 @@ export default function UploadCaseDocumentPage() {
         colorMode: 'color',
         fileFormat: 'pdf'
       };
-      
+
       // In a real implementation, this would execute the scanner command
       // For example: exec(config.scannerPath + ' /scan')
       console.log('Starting scan with config:', config);
-      
+
       // Simulate scanning process with realistic timing
       const scanDuration = parseInt(config.resolution) > 300 ? 5000 : 3000;
       await new Promise(resolve => setTimeout(resolve, scanDuration));
-      
+
       // Create a mock scanned file based on settings
       const timestamp = Date.now();
-      const extension = config.fileFormat === 'jpg' ? 'jpg' : 
-                      config.fileFormat === 'png' ? 'png' : 
+      const extension = config.fileFormat === 'jpg' ? 'jpg' :
+                      config.fileFormat === 'png' ? 'png' :
                       config.fileFormat === 'tiff' ? 'tiff' : 'pdf';
-      
+
       const scannedFileName = `scanned_document_${timestamp}.${extension}`;
       const mockScannedFile = new File(
-        [new Blob(['mock scanned content'])], 
-        scannedFileName, 
+        [new Blob(['mock scanned content'])],
+        scannedFileName,
         { type: extension === 'pdf' ? 'application/pdf' : `image/${extension}` }
       );
-      
+
       // Calculate file size based on resolution and color mode
       const baseSize = parseInt(config.resolution) / 100; // Base size factor
-      const colorFactor = config.colorMode === 'color' ? 3 : 
+      const colorFactor = config.colorMode === 'color' ? 3 :
                          config.colorMode === 'grayscale' ? 1.5 : 1;
       const estimatedSize = (baseSize * colorFactor).toFixed(1);
-      
+
       setSelectedFile(mockScannedFile);
       setFormData({
         ...formData,
@@ -135,9 +136,9 @@ export default function UploadCaseDocumentPage() {
         fileType: extension === 'pdf' ? 'PDF' : 'תמונה',
         title: formData.title || `מסמך סרוק ${new Date().toLocaleDateString('he-IL')}`
       });
-      
+
       alert(`הסריקה הושלמה בהצלחה!\nרזולוציה: ${config.resolution} DPI\nמצב: ${config.colorMode}\nפורמט: ${extension.toUpperCase()}`);
-      
+
     } catch (error) {
       console.error('Scanning error:', error);
       alert('שגיאה בסריקה. אנא בדוק את הגדרות הסורק בדף ההגדרות.');
@@ -161,7 +162,7 @@ export default function UploadCaseDocumentPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedFile) {
       alert('אנא בחר קובץ להעלאה');
       return;
@@ -179,10 +180,10 @@ export default function UploadCaseDocumentPage() {
       client: caseTitle, // We'll use case title as client for now
       status: 'פעיל'
     });
-    
+
     console.log('Document saved:', newDocument);
     alert(`המסמך "${formData.title}" נוסף בהצלחה לתיק!`);
-    
+
     // Navigate back to cases page
     navigate('/cases');
   };
@@ -193,25 +194,23 @@ export default function UploadCaseDocumentPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">תיוק מסמך חדש</h1>
-          <p className="text-blue-600 mt-2">
-            {caseTitle ? `העלה מסמך לתיק: ${caseTitle}` : 'העלה מסמך לתיק'}
-          </p>
-          {caseId && (
-            <p className="text-sm text-gray-500 mt-1">מספר תיק: {caseId}</p>
-          )}
-        </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="h-4 w-4 ml-2" />
-          ביטול
-        </Button>
-      </div>
+      <PageHeader
+        title="תיוק מסמך חדש"
+        subtitle={caseTitle ? `העלה מסמך לתיק: ${caseTitle}` : 'העלה מסמך לתיק'}
+        actions={
+          <Button variant="outline" onClick={handleCancel}>
+            <X className="h-4 w-4 ml-2" />
+            ביטול
+          </Button>
+        }
+      />
+      {caseId && (
+        <p className="text-sm text-muted-foreground -mt-4">מספר תיק: {caseId}</p>
+      )}
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Upload className="h-5 w-5" />
             פרטי המסמך
           </CardTitle>
@@ -220,8 +219,8 @@ export default function UploadCaseDocumentPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* File Upload or Scan */}
             <div className="space-y-4">
-              <Label className="text-blue-900">בחר אופן הוספת המסמך *</Label>
-              
+              <Label className="text-foreground">בחר אופן הוספת המסמך *</Label>
+
               {/* Mode Selection Buttons */}
               <div className="flex gap-4">
                 <Button
@@ -251,7 +250,7 @@ export default function UploadCaseDocumentPage() {
 
               {/* Upload Mode */}
               {scanMode === 'upload' && (
-                <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:bg-muted/50 transition-colors">
                   <input
                     id="file"
                     type="file"
@@ -266,15 +265,15 @@ export default function UploadCaseDocumentPage() {
                         <div className="flex items-center justify-center">
                           {getFileIcon(formData.fileType)}
                         </div>
-                        <p className="text-blue-900 font-medium">{selectedFile.name}</p>
-                        <p className="text-sm text-gray-500">{formData.fileSize}</p>
-                        <p className="text-xs text-blue-600">לחץ לבחירת קובץ אחר</p>
+                        <p className="text-foreground font-medium">{selectedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">{formData.fileSize}</p>
+                        <p className="text-xs text-primary">לחץ לבחירת קובץ אחר</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Upload className="h-12 w-12 text-blue-400 mx-auto" />
-                        <p className="text-blue-900">לחץ לבחירת קובץ או גרור לכאן</p>
-                        <p className="text-sm text-gray-500">PDF, Word, Excel, תמונות ועוד</p>
+                        <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
+                        <p className="text-foreground">לחץ לבחירת קובץ או גרור לכאן</p>
+                        <p className="text-sm text-muted-foreground">PDF, Word, Excel, תמונות ועוד</p>
                       </div>
                     )}
                   </label>
@@ -290,7 +289,7 @@ export default function UploadCaseDocumentPage() {
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
                       </div>
                       <p className="text-green-900 font-medium">סורק מסמך...</p>
-                      <p className="text-sm text-gray-500">אנא המתן עד לסיום הסריקה</p>
+                      <p className="text-sm text-muted-foreground">אנא המתן עד לסיום הסריקה</p>
                       <Button
                         type="button"
                         variant="outline"
@@ -306,8 +305,8 @@ export default function UploadCaseDocumentPage() {
                         {getFileIcon(formData.fileType)}
                       </div>
                       <p className="text-green-900 font-medium">מסמך סרוק בהצלחה!</p>
-                      <p className="text-sm text-gray-500">{formData.fileName}</p>
-                      <p className="text-sm text-gray-500">{formData.fileSize}</p>
+                      <p className="text-sm text-muted-foreground">{formData.fileName}</p>
+                      <p className="text-sm text-muted-foreground">{formData.fileSize}</p>
                       <Button
                         type="button"
                         variant="outline"
@@ -322,7 +321,7 @@ export default function UploadCaseDocumentPage() {
                     <div className="space-y-4">
                       <Scan className="h-12 w-12 text-green-400 mx-auto" />
                       <p className="text-green-900">לחץ להתחלת סריקה</p>
-                      <p className="text-sm text-gray-500">וודא שהמסמך ממוקם בסורק</p>
+                      <p className="text-sm text-muted-foreground">וודא שהמסמך ממוקם בסורק</p>
                       <Button
                         type="button"
                         onClick={handleStartScan}
@@ -339,7 +338,7 @@ export default function UploadCaseDocumentPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-blue-900">כותרת המסמך *</Label>
+                <Label htmlFor="title" className="text-foreground">כותרת המסמך *</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -348,9 +347,9 @@ export default function UploadCaseDocumentPage() {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-blue-900">קטגוריה</Label>
+                <Label htmlFor="category" className="text-foreground">קטגוריה</Label>
                 <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר קטגוריה" />
@@ -371,7 +370,7 @@ export default function UploadCaseDocumentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-blue-900">תיאור המסמך</Label>
+              <Label htmlFor="description" className="text-foreground">תיאור המסמך</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -382,19 +381,19 @@ export default function UploadCaseDocumentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tags" className="text-blue-900">תגיות</Label>
+              <Label htmlFor="tags" className="text-foreground">תגיות</Label>
               <Input
                 id="tags"
                 value={formData.tags}
                 onChange={(e) => setFormData({...formData, tags: e.target.value})}
                 placeholder="תגיות מופרדות בפסיק (למשל: חוזה, דחוף, 2024)"
               />
-              <p className="text-xs text-gray-500">תגיות עוזרות למצוא את המסמך בחיפוש</p>
+              <p className="text-xs text-muted-foreground">תגיות עוזרות למצוא את המסמך בחיפוש</p>
             </div>
 
             {selectedFile && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">פרטי הקובץ:</h4>
+              <div className="bg-primary/5 p-4 rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">פרטי הקובץ:</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div><span className="font-medium">שם קובץ:</span> {formData.fileName}</div>
                   <div><span className="font-medium">סוג:</span> {formData.fileType}</div>
@@ -404,7 +403,7 @@ export default function UploadCaseDocumentPage() {
             )}
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit">
                 <Save className="h-4 w-4 ml-2" />
                 שמור מסמך
               </Button>

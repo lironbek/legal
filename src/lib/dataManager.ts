@@ -76,6 +76,36 @@ export interface Document {
   updatedAt: string;
 }
 
+export interface CashFlowEntry {
+  id: string;
+  type: 'income' | 'expense';
+  category: string;
+  description: string;
+  amount: number;
+  date: string;
+  isRecurring: boolean;
+  recurringFrequency?: 'monthly' | 'quarterly' | 'yearly';
+  client?: string;
+  caseRef?: string;
+  status: 'expected' | 'confirmed' | 'received' | 'paid';
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetItem {
+  id: string;
+  category: string;
+  description: string;
+  plannedAmount: number;
+  actualAmount: number;
+  period: string;
+  periodType: 'monthly' | 'quarterly' | 'yearly';
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Generate unique ID
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -294,6 +324,78 @@ export const deleteDocument = (id: string): boolean => {
   return true;
 };
 
+// Cash Flow Entries
+export const getCashFlowEntries = (): CashFlowEntry[] => {
+  const entries = localStorage.getItem('cashFlowEntries');
+  return entries ? JSON.parse(entries) : [];
+};
+
+export const addCashFlowEntry = (data: Omit<CashFlowEntry, 'id' | 'createdAt' | 'updatedAt'>): CashFlowEntry => {
+  const entries = getCashFlowEntries();
+  const newEntry: CashFlowEntry = {
+    ...data,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  entries.push(newEntry);
+  localStorage.setItem('cashFlowEntries', JSON.stringify(entries));
+  return newEntry;
+};
+
+export const updateCashFlowEntry = (id: string, updates: Partial<CashFlowEntry>): CashFlowEntry | null => {
+  const entries = getCashFlowEntries();
+  const index = entries.findIndex(e => e.id === id);
+  if (index === -1) return null;
+  entries[index] = { ...entries[index], ...updates, updatedAt: new Date().toISOString() };
+  localStorage.setItem('cashFlowEntries', JSON.stringify(entries));
+  return entries[index];
+};
+
+export const deleteCashFlowEntry = (id: string): boolean => {
+  const entries = getCashFlowEntries();
+  const filtered = entries.filter(e => e.id !== id);
+  if (filtered.length === entries.length) return false;
+  localStorage.setItem('cashFlowEntries', JSON.stringify(filtered));
+  return true;
+};
+
+// Budget Items
+export const getBudgetItems = (): BudgetItem[] => {
+  const items = localStorage.getItem('budgetItems');
+  return items ? JSON.parse(items) : [];
+};
+
+export const addBudgetItem = (data: Omit<BudgetItem, 'id' | 'createdAt' | 'updatedAt'>): BudgetItem => {
+  const items = getBudgetItems();
+  const newItem: BudgetItem = {
+    ...data,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  items.push(newItem);
+  localStorage.setItem('budgetItems', JSON.stringify(items));
+  return newItem;
+};
+
+export const updateBudgetItem = (id: string, updates: Partial<BudgetItem>): BudgetItem | null => {
+  const items = getBudgetItems();
+  const index = items.findIndex(i => i.id === id);
+  if (index === -1) return null;
+  items[index] = { ...items[index], ...updates, updatedAt: new Date().toISOString() };
+  localStorage.setItem('budgetItems', JSON.stringify(items));
+  return items[index];
+};
+
+export const deleteBudgetItem = (id: string): boolean => {
+  const items = getBudgetItems();
+  const filtered = items.filter(i => i.id !== id);
+  if (filtered.length === items.length) return false;
+  localStorage.setItem('budgetItems', JSON.stringify(filtered));
+  return true;
+};
+
 // Fix existing case numbers to start from 1000
 export const fixCaseNumbers = () => {
   const cases = getCases();
@@ -449,6 +551,110 @@ export const initializeSampleData = () => {
 
       sampleDocuments.forEach(docData => addDocument(docData));
     }
+  }
+
+  // Initialize sample cash flow entries
+  if (getCashFlowEntries().length === 0) {
+    const sampleCashFlow: Omit<CashFlowEntry, 'id' | 'createdAt' | 'updatedAt'>[] = [
+      {
+        type: 'income',
+        category: 'שכר טרחה',
+        description: 'שכר טרחה - תיק אברהם',
+        amount: 15000,
+        date: '2024-07-15',
+        isRecurring: false,
+        client: 'יוסף אברהם',
+        status: 'expected',
+        notes: 'תשלום צפוי לאחר סיום הליך',
+      },
+      {
+        type: 'income',
+        category: 'ריטיינר',
+        description: 'ריטיינר חודשי - משפחת לוי',
+        amount: 5000,
+        date: '2024-07-01',
+        isRecurring: true,
+        recurringFrequency: 'monthly',
+        client: 'משפחת לוי',
+        status: 'confirmed',
+        notes: 'הסכם ריטיינר שנתי',
+      },
+      {
+        type: 'expense',
+        category: 'שכירות',
+        description: 'שכירות משרד חודשית',
+        amount: 8000,
+        date: '2024-07-01',
+        isRecurring: true,
+        recurringFrequency: 'monthly',
+        status: 'paid',
+        notes: '',
+      },
+      {
+        type: 'expense',
+        category: 'טכנולוגיה',
+        description: 'רישיון תוכנה שנתי',
+        amount: 3600,
+        date: '2024-08-01',
+        isRecurring: true,
+        recurringFrequency: 'yearly',
+        status: 'expected',
+        notes: 'חידוש רישיון Legal Nexus',
+      },
+    ];
+    sampleCashFlow.forEach(entry => addCashFlowEntry(entry));
+  }
+
+  // Initialize sample budget items
+  if (getBudgetItems().length === 0) {
+    const sampleBudget: Omit<BudgetItem, 'id' | 'createdAt' | 'updatedAt'>[] = [
+      {
+        category: 'משכורות ושכר',
+        description: 'שכר עובדים ומזכירות',
+        plannedAmount: 45000,
+        actualAmount: 44200,
+        period: '2024-07',
+        periodType: 'monthly',
+        notes: '',
+      },
+      {
+        category: 'שכירות ואחזקה',
+        description: 'שכירות משרד + ועד בית',
+        plannedAmount: 9000,
+        actualAmount: 8500,
+        period: '2024-07',
+        periodType: 'monthly',
+        notes: '',
+      },
+      {
+        category: 'טכנולוגיה ותוכנה',
+        description: 'רישיונות תוכנה ואינטרנט',
+        plannedAmount: 2500,
+        actualAmount: 2800,
+        period: '2024-07',
+        periodType: 'monthly',
+        notes: 'חריגה בגלל רישיון חדש',
+      },
+      {
+        category: 'שיווק ופרסום',
+        description: 'קידום דיגיטלי ופרסום',
+        plannedAmount: 5000,
+        actualAmount: 3200,
+        period: '2024-07',
+        periodType: 'monthly',
+        notes: '',
+      },
+      {
+        category: 'ביטוחים',
+        description: 'ביטוח אחריות מקצועית',
+        plannedAmount: 1500,
+        actualAmount: 1500,
+        period: '2024-07',
+        periodType: 'monthly',
+        notes: '',
+      },
+    ];
+    sampleBudget.forEach(item => addBudgetItem(item));
   }
 };
 

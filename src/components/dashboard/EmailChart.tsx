@@ -1,107 +1,78 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+
+const data = [
+  { name: 'נזיקין', value: 47, color: '#3b82f6' },
+  { name: 'מקרקעין', value: 32, color: '#06b6d4' },
+  { name: 'משפחה', value: 29, color: '#10b981' },
+  { name: 'פלילי', value: 21, color: '#8b5cf6' },
+];
+
+const total = data.reduce((sum, item) => sum + item.value, 0);
 
 export function EmailChart() {
   return (
-    <div className="modern-card p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-blue-900 font-display">התפלגות תיקים</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">השבוע</span>
-          <button className="text-sm text-blue-600 hover:text-blue-700">↓</button>
-        </div>
-      </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-display font-semibold text-foreground">
+          התפלגות תיקים
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">חלוקה לפי תחום משפטי</p>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-8">
+          {/* Chart */}
+          <div className="w-44 h-44 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={75}
+                  paddingAngle={3}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number, name: string) => [`${value} תיקים`, name]}
+                  contentStyle={{
+                    backgroundColor: 'hsl(0, 0%, 100%)',
+                    border: '1px solid hsl(214.3, 31.8%, 91.4%)',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                    fontSize: '13px',
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
-      {/* Donut Chart */}
-      <div className="flex items-center justify-between">
-        <div className="relative w-32 h-32">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {/* Background circle */}
-            <circle
-              cx="50"
-              cy="50"
-              r="40"
-              fill="none"
-              stroke="#f3f4f6"
-              strokeWidth="8"
-            />
-            {/* Primary segment */}
-            <circle
-              cx="50"
-              cy="50"
-              r="40"
-              fill="none"
-              stroke="#3b82f6"
-              strokeWidth="8"
-              strokeDasharray="75 25"
-              strokeDashoffset="0"
-            />
-            {/* Secondary segment */}
-            <circle
-              cx="50"
-              cy="50"
-              r="40"
-              fill="none"
-              stroke="#06b6d4"
-              strokeWidth="8"
-              strokeDasharray="15 85"
-              strokeDashoffset="-75"
-            />
-            {/* Tertiary segment */}
-            <circle
-              cx="50"
-              cy="50"
-              r="40"
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="8"
-              strokeDasharray="10 90"
-              strokeDashoffset="-90"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-900">71%</div>
-            </div>
+          {/* Legend */}
+          <div className="flex-1 space-y-3">
+            {data.map((item) => (
+              <div key={item.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-sm text-muted-foreground">{item.name}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-foreground tabular-nums">{item.value}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums w-8 text-left">
+                    {Math.round((item.value / total) * 100)}%
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        <div className="flex-1 mr-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-blue-600">נזיקין (35%)</span>
-              </div>
-              <span className="text-sm font-semibold text-blue-900">47</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
-                <span className="text-sm text-blue-600">מקרקעין (25%)</span>
-              </div>
-              <span className="text-sm font-semibold text-blue-900">32</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-blue-600">משפחה (23%)</span>
-              </div>
-              <span className="text-sm font-semibold text-blue-900">29</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm text-blue-600">פלילי (17%)</span>
-              </div>
-              <span className="text-sm font-semibold text-blue-900">21</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

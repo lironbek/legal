@@ -1,5 +1,6 @@
 
 import { useEffect } from 'react';
+import { ThemeProvider } from 'next-themes';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,8 @@ import LegalLibraryPage from "./pages/LegalLibraryPage";
 import DisabilityCalculatorPage from "./pages/DisabilityCalculatorPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import CashFlowPage from "./pages/CashFlowPage";
+import BudgetPage from "./pages/BudgetPage";
 
 // New form pages
 import NewCasePage from "./pages/forms/NewCasePage";
@@ -41,12 +44,13 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
             <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
             <Route path="/cases" element={<MainLayout><CasesPage /></MainLayout>} />
             <Route path="/cases/new" element={<MainLayout><NewCasePage /></MainLayout>} />
@@ -63,15 +67,18 @@ const App = () => {
             <Route path="/documents" element={<MainLayout><DocumentsPage /></MainLayout>} />
             <Route path="/documents/upload" element={<MainLayout><UploadDocumentPage /></MainLayout>} />
             <Route path="/reports" element={<MainLayout><ReportsPage /></MainLayout>} />
+            <Route path="/cash-flow" element={<MainLayout><CashFlowPage /></MainLayout>} />
+            <Route path="/budget" element={<MainLayout><BudgetPage /></MainLayout>} />
             <Route path="/legal-library" element={<MainLayout><LegalLibraryPage /></MainLayout>} />
             <Route path="/disability-calculator" element={<MainLayout><DisabilityCalculatorPage /></MainLayout>} />
             <Route path="/settings" element={<MainLayout><SettingsPage /></MainLayout>} />
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

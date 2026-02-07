@@ -2,37 +2,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 
+type AccentColor = 'blue' | 'emerald' | 'cyan' | 'amber' | 'purple' | 'rose';
+
 interface StatsCardProps {
   title: string;
   value: string | number;
   change?: string;
   icon: LucideIcon;
   trend?: 'up' | 'down' | 'neutral';
+  accentColor?: AccentColor;
 }
 
-export function StatsCard({ title, value, change, icon: Icon, trend = 'neutral' }: StatsCardProps) {
-  const trendColors = {
-    up: 'text-emerald-600',
-    down: 'text-red-600',
-    neutral: 'text-slate-600',
-  };
+const gradients: Record<AccentColor, string> = {
+  blue: 'from-blue-500 to-blue-600',
+  emerald: 'from-emerald-500 to-emerald-600',
+  cyan: 'from-cyan-500 to-cyan-600',
+  amber: 'from-amber-500 to-amber-600',
+  purple: 'from-purple-500 to-purple-600',
+  rose: 'from-rose-500 to-rose-600',
+};
+
+const trendBadges = {
+  up: { bg: 'bg-emerald-50 text-emerald-700', symbol: '↑' },
+  down: { bg: 'bg-rose-50 text-rose-700', symbol: '↓' },
+  neutral: { bg: 'bg-slate-50 text-slate-600', symbol: '→' },
+};
+
+export function StatsCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  trend = 'neutral',
+  accentColor = 'blue',
+}: StatsCardProps) {
+  const badge = trendBadges[trend];
 
   return (
-    <Card className="hover:shadow-xl transition-all duration-300 hover:scale-[1.02] bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+    <Card className="hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className="p-3 bg-gradient-to-br from-violet-100 to-purple-200 rounded-xl">
-          <Icon className="h-5 w-5 text-violet-700" />
+        <div className={`p-2.5 bg-gradient-to-br ${gradients[accentColor]} rounded-xl shadow-sm`}>
+          <Icon className="h-4 w-4 text-white" />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold font-display text-slate-900 mb-2">{value}</div>
+        <div className="text-3xl font-bold font-display text-foreground tabular-nums mb-1">
+          {value}
+        </div>
         {change && (
-          <p className={`text-sm font-medium ${trendColors[trend]}`}>
-            {change}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-md ${badge.bg}`}>
+              {badge.symbol} {change}
+            </span>
+            <span className="text-xs text-muted-foreground">מהחודש הקודם</span>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -1,169 +1,107 @@
-/* Import modern beautiful fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+/* Import professional fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Dashboard Design System - Clean Blue-White */
-
 @layer base {
   :root {
-    /* Clean Light Theme - Professional Blue-White */
-    --background: 255 255 255; /* Pure white background */
-    --foreground: 0 0 0; /* Pure black text */
+    /* Premium Light Theme - Deep Navy & Clean White */
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
 
-    /* Card styles - Clean white with subtle shadows */
-    --card: 255 255 255;
-    --card-foreground: 0 0 0;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    /* Popover styles */
-    --popover: 255 255 255;
-    --popover-foreground: 0 0 0;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    /* Beautiful Blue-White Color Palette */
-    --primary: 59 130 246; /* Beautiful bright blue */
-    --primary-foreground: 255 255 255;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 248 250 252; /* Clean light blue-gray */
-    --secondary-foreground: 0 0 0;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    /* UI Elements */
-    --muted: 248 250 252;
-    --muted-foreground: 0 0 0;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 248 250 252;
-    --accent-foreground: 0 0 0;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 229 231 235;
-    --input: 229 231 235;
-    --ring: 59 130 246;
-
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217.2 91.2% 59.8%;
     --radius: 0.75rem;
 
-    /* Beautiful Blue-White Sidebar */
-    --sidebar-background: 255 255 255; /* Pure white */
-    --sidebar-foreground: 0 0 0; /* Pure black text */
-    --sidebar-primary: 59 130 246; /* Beautiful blue */
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 239 246 255; /* Very light blue for hover */
-    --sidebar-accent-foreground: 59 130 246;
-    --sidebar-border: 226 232 240;
-    --sidebar-ring: 59 130 246;
+    /* Light Premium Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Beautiful Blue Accent Colors */
-    --light-blue: 147 197 253; /* Light blue */
-    --blue-accent: 59 130 246; /* Main blue */
-    --success-accent: 34 197 94; /* Success green */
-    --purple-accent: 139 92 246; /* Beautiful purple */
-    --cyan-accent: 6 182 212; /* Fresh cyan */
+    /* Semantic Colors */
+    --success: 142.1 76.2% 36.3%;
+    --warning: 37.7 92.1% 50.2%;
+    --info: 199.4 95.5% 53.8%;
   }
 
   .dark {
-    --background: 17 24 39;
-    --foreground: 255 255 255; /* Pure white in dark mode */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 31 41 55;
-    --card-foreground: 255 255 255;
+    --card: 222.2 84% 8%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 31 41 55;
-    --popover-foreground: 255 255 255;
+    --popover: 222.2 84% 8%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 99 102 241;
-    --primary-foreground: 255 255 255;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
 
-    --secondary: 55 65 81;
-    --secondary-foreground: 255 255 255;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 55 65 81;
-    --muted-foreground: 255 255 255;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 55 65 81;
-    --accent-foreground: 255 255 255;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 75 85 99;
-    --input: 75 85 99;
-    --ring: 99 102 241;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
+    --sidebar-background: 222.2 84% 8%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222.2 84% 12%;
+    --sidebar-accent-foreground: 210 40% 90%;
+    --sidebar-border: 217.2 32.6% 15%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --success: 142.1 70.6% 45.3%;
+    --warning: 37.7 92.1% 50.2%;
+    --info: 199.4 95.5% 53.8%;
   }
 
-  /* Apply modern fonts */
   html {
     font-family: 'Inter', sans-serif;
   }
 
   .font-display {
     font-family: 'Poppins', sans-serif;
-  }
-
-  /* Global text color override */
-  * {
-    color: #000000 !important;
-  }
-
-  /* Ensure all text is black by default */
-  body {
-    color: #000000 !important;
-    background-color: #ffffff !important;
-  }
-
-  /* Override any yellow backgrounds */
-  [class*="bg-yellow"],
-  [class*="bg-amber"],
-  [class*="bg-orange"] {
-    background-color: #f8fafc !important; /* Light gray instead of yellow */
-  }
-
-  /* Override any yellow text */
-  [class*="text-yellow"],
-  [class*="text-amber"],
-  [class*="text-orange"] {
-    color: #000000 !important;
-  }
-
-  /* Override any yellow borders */
-  [class*="border-yellow"],
-  [class*="border-amber"],
-  [class*="border-orange"] {
-    border-color: #e2e8f0 !important; /* Light gray instead of yellow */
-  }
-
-  /* Override focus states that might be yellow */
-  [class*="focus:bg-yellow"],
-  [class*="focus:bg-amber"],
-  [class*="focus:bg-orange"] {
-    background-color: #f1f5f9 !important; /* Light gray instead of yellow */
-  }
-
-  /* Override hover states that might be yellow */
-  [class*="hover:bg-yellow"],
-  [class*="hover:bg-amber"],
-  [class*="hover:bg-orange"] {
-    background-color: #f1f5f9 !important; /* Light gray instead of yellow */
-  }
-
-  /* Override data states that might be yellow */
-  [data-state="open"],
-  [data-state="selected"],
-  [data-state="checked"] {
-    background-color: #f1f5f9 !important; /* Light gray instead of yellow */
-    color: #000000 !important;
-  }
-
-  /* Override any accent colors that might be yellow */
-  .bg-accent,
-  .bg-accent\/50,
-  .bg-accent\/80 {
-    background-color: #f1f5f9 !important; /* Light gray instead of yellow */
-  }
-
-  .text-accent-foreground {
-    color: #000000 !important;
   }
 }
 
@@ -174,264 +112,17 @@
 
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f0f9ff 100%);
     font-family: 'Inter', sans-serif;
   }
 }
 
-/* Modern utilities and effects */
 @layer utilities {
-  .modern-card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200;
+  .premium-card {
+    @apply bg-card rounded-2xl shadow-sm border border-border
+           hover:shadow-lg transition-all duration-300 ease-out;
   }
 
-  .stats-card {
-    @apply bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300;
+  .premium-card-hover {
+    @apply hover:-translate-y-0.5 hover:shadow-lg;
   }
-
-  .modern-button {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
-  }
-
-  .sidebar-modern {
-    @apply bg-white border-r border-gray-200 shadow-sm;
-  }
-
-  .gradient-blue {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  }
-
-  .gradient-blue-light {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  }
-
-  .gradient-green {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  }
-
-  .gradient-purple {
-    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-  }
-
-  .chart-container {
-    @apply bg-white rounded-xl p-6 shadow-sm border border-gray-100;
-  }
-
-  .metric-badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
-  }
-
-  .metric-badge-green {
-    @apply bg-green-100 text-green-800;
-  }
-
-  .metric-badge-blue {
-    @apply bg-blue-100 text-blue-800;
-  }
-
-  .metric-badge-orange {
-    @apply bg-blue-100 text-blue-800;
-  }
-
-  .metric-badge-purple {
-    @apply bg-purple-100 text-purple-800;
-  }
-
-  /* מחיקה מוחלטת של כל צהוב בפרויקט */
-  
-  /* כל צבעי צהוב בסגנונות inline */
-  *[style*="yellow"], 
-  *[style*="#ffff"], *[style*="#fff0"], *[style*="#ff0"], 
-  *[style*="rgb(255, 255, 0)"], *[style*="rgb(255,255,0)"],
-  *[style*="rgba(255, 255, 0"], *[style*="rgba(255,255,0"],
-  *[style*="#f0f000"], *[style*="#ffff00"], *[style*="#ffe066"],
-  *[style*="#ffd700"], *[style*="#ffeb3b"], *[style*="#fff176"],
-  *[style*="#ffc107"], *[style*="#ff9800"], *[style*="#ffeb3b"] {
-    background-color: #3b82f6 !important;
-    border-color: #3b82f6 !important;
-    color: white !important;
-  }
-
-  /* כל מחלקות Tailwind של צהוב */
-  .bg-yellow, .bg-yellow-50, .bg-yellow-100, .bg-yellow-200, .bg-yellow-300, 
-  .bg-yellow-400, .bg-yellow-500, .bg-yellow-600, .bg-yellow-700, .bg-yellow-800, .bg-yellow-900,
-  .bg-amber, .bg-amber-50, .bg-amber-100, .bg-amber-200, .bg-amber-300,
-  .bg-amber-400, .bg-amber-500, .bg-amber-600, .bg-amber-700, .bg-amber-800, .bg-amber-900,
-  .bg-lime, .bg-lime-50, .bg-lime-100, .bg-lime-200, .bg-lime-300,
-  .bg-lime-400, .bg-lime-500, .bg-lime-600, .bg-lime-700, .bg-lime-800, .bg-lime-900 {
-    background-color: #3b82f6 !important;
-    color: white !important;
-  }
-
-  .text-yellow, .text-yellow-50, .text-yellow-100, .text-yellow-200, .text-yellow-300,
-  .text-yellow-400, .text-yellow-500, .text-yellow-600, .text-yellow-700, .text-yellow-800, .text-yellow-900,
-  .text-amber, .text-amber-50, .text-amber-100, .text-amber-200, .text-amber-300,
-  .text-amber-400, .text-amber-500, .text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900,
-  .text-lime, .text-lime-50, .text-lime-100, .text-lime-200, .text-lime-300,
-  .text-lime-400, .text-lime-500, .text-lime-600, .text-lime-700, .text-lime-800, .text-lime-900 {
-    color: #3b82f6 !important;
-  }
-
-  .border-yellow, .border-yellow-50, .border-yellow-100, .border-yellow-200, .border-yellow-300,
-  .border-yellow-400, .border-yellow-500, .border-yellow-600, .border-yellow-700, .border-yellow-800, .border-yellow-900,
-  .border-amber, .border-amber-50, .border-amber-100, .border-amber-200, .border-amber-300,
-  .border-amber-400, .border-amber-500, .border-amber-600, .border-amber-700, .border-amber-800, .border-amber-900,
-  .border-lime, .border-lime-50, .border-lime-100, .border-lime-200, .border-lime-300,
-  .border-lime-400, .border-lime-500, .border-lime-600, .border-lime-700, .border-lime-800, .border-lime-900 {
-    border-color: #3b82f6 !important;
-  }
-
-  /* מחיקת צהוב מספריות חיצוניות ו-HSL */
-  [data-stagewise] *[style*="yellow"], 
-  [data-stagewise] *[style*="#ff0"],
-  [data-stagewise] *[style*="#ffff00"],
-  [data-stagewise] *[style*="#FFFF00"],
-  [data-stagewise] *[style*="rgb(255, 255, 0)"],
-  [data-stagewise] *, 
-  [data-stagewise] div, 
-  [data-stagewise] span,
-  [data-stagewise] button,
-  [data-stagewise] .card,
-  [data-stagewise] .bg-yellow-500,
-  [class*="yellow"], [class*="amber"], [class*="lime"],
-  [style*="hsl(60"], [style*="hsl(45"], [style*="hsl(50"],
-  [style*="hsl(55"], [style*="hsl(65"], [style*="hsl(70"],
-  div[style*="background-color: yellow"],
-  div[style*="backgroundColor: yellow"],
-  span[style*="color: yellow"],
-  *[style*="background: yellow"],
-  *[class*="bg-yellow"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-    border-color: #3b82f6 !important;
-  }
-
-  /* תיקון ספציפי לקומפוננטים של Stagewise שיכולים להיות צהובים */
-  [data-stagewise] {
-    --yellow-500: #3b82f6 !important;
-    --bg-yellow-500: #3b82f6 !important;
-  }
-
-  /* תיקון ספציפי רק לאלמנטים צהובים של Stagewise */
-  [data-stagewise] *[style*="background-color: rgb(255, 255, 0)"],
-  [data-stagewise] *[style*="backgroundColor: rgb(255, 255, 0)"],
-  [data-stagewise] *[style*="background: rgb(255, 255, 0)"],
-  [data-stagewise] *[style*="background-color: #ffff00"],
-  [data-stagewise] *[style*="backgroundColor: #ffff00"],
-  [data-stagewise] *[style*="background: #ffff00"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-  }
-
-  /* תיקון ספציפי לכרטיסים שמוגדרים כ-bg-blue-50 אך מופיעים כצהובים */
-  body .bg-blue-50:not([style*="background"]) {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-  }
-
-  /* כלל אולטימטיבי - כל דיב עם padding וborder rounded */
-  div.p-3.bg-blue-50.rounded-lg,
-  div.p-4.bg-blue-50.rounded-lg {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-    border: 1px solid rgb(191, 219, 254) !important;
-  }
-
-  /* כלל כוח ברוטה לכל element עם bg-blue-50 באתר */
-  html * .bg-blue-50 {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-  }
-
-  /* כלל נוסף לווידוא תיקון */
-  body div.bg-blue-50 {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-  }
-
-  /* תיקון ספציפי לכרטיסיות שיכולות להיות צהובות */
-  .card, .stats-card, .modern-card {
-    background-color: white !important;
-  }
-
-  .card .bg-yellow-500, .card [style*="yellow"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-  }
-
-  /* גלובלי לכל אלמנט שיכול להיות צהוב */
-  * {
-    --yellow-50: rgb(59, 130, 246) !important;
-    --yellow-100: rgb(59, 130, 246) !important;
-    --yellow-200: rgb(59, 130, 246) !important;
-    --yellow-300: rgb(59, 130, 246) !important;
-    --yellow-400: rgb(59, 130, 246) !important;
-    --yellow-500: rgb(59, 130, 246) !important;
-    --yellow-600: rgb(37, 99, 235) !important;
-    --yellow-700: rgb(29, 78, 216) !important;
-    --yellow-800: rgb(30, 64, 175) !important;
-    --yellow-900: rgb(30, 58, 138) !important;
-  }
-
-  /* כלל סופי וחזק לכל כרטיס עם bg-blue-50 שמופיע כצהוב */
-  .bg-blue-50,
-  *[class*="bg-blue-50"],
-  div.bg-blue-50,
-  section.bg-blue-50 {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-    border: 1px solid rgb(191, 219, 254) !important;
-  }
-
-  /* ספציפי לעמוד מחשבון הנכות */
-  .bg-blue-50.rounded-lg {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-  }
-
-  /* תיקון ספציפי לכרטיסים שמופיעים בצהוב במקום כחול */
-  .card {
-    background-color: white !important;
-  }
-
-  /* למקרה שמשהו מעניק צהוב באמצעות JavaScript */
-  *[style*="rgb(255, 255, 0)"] {
-    background-color: rgb(239, 246, 255) !important;
-    color: rgb(51, 65, 85) !important;
-  }
-
-  /* מחיקה ספציפית לכרטיסיות שעלולות להיות צהובות */
-  .card[style*="yellow"], .card[style*="#ff"], 
-  div[style*="background-color: rgb(255, 255, 0)"],
-  div[style*="backgroundColor: rgb(255, 255, 0)"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-  }
-
-  /* כמובן - מחיקה של כל גוון צהוב שיכול להיווצר */
-  [style*="#FFFF"], [style*="#ffff"], [style*="#FFF0"], [style*="#fff0"],
-  [style*="#FFEB"], [style*="#ffeb"], [style*="#FFD7"], [style*="#ffd7"],
-  [style*="#FFC1"], [style*="#ffc1"], [style*="#FFB3"], [style*="#ffb3"],
-  [style*="#FFA5"], [style*="#ffa5"], [style*="#FF97"], [style*="#ff97"],
-  [style*="#GOLD"], [style*="#gold"], [style*="gold"], [style*="GOLD"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-    border-color: #3b82f6 !important;
-  }
-
-  /* מחיקה של צהוב מדיוויי ויזואליים שעלולים להופיע */
-  .bg-gradient-to-r[class*="yellow"],
-  .bg-gradient-to-l[class*="yellow"],
-  .bg-gradient-to-t[class*="yellow"],
-  .bg-gradient-to-b[class*="yellow"],
-  .bg-gradient-to-br[class*="yellow"],
-  .bg-gradient-to-bl[class*="yellow"],
-  .bg-gradient-to-tr[class*="yellow"],
-  .bg-gradient-to-tl[class*="yellow"],
-  *[class*="from-yellow"],
-  *[class*="via-yellow"],
-  *[class*="to-yellow"] {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  }
-
 }

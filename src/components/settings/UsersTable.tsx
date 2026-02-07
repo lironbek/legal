@@ -571,6 +571,40 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
 
                 <div>
+                  <h4 className="font-medium mb-3">תזרים ותקציב</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={editingPermissions.can_view_cash_flow}
+                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_cash_flow: checked })}
+                      />
+                      <Label>צפייה בתזרים מזומנים</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={editingPermissions.can_edit_cash_flow}
+                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_cash_flow: checked })}
+                      />
+                      <Label>עריכת תזרים מזומנים</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={editingPermissions.can_view_budget}
+                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_budget: checked })}
+                      />
+                      <Label>צפייה בתקציב</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={editingPermissions.can_edit_budget}
+                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_budget: checked })}
+                      />
+                      <Label>עריכת תקציב</Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <h4 className="font-medium mb-3">דוחות וכלים</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center space-x-2">

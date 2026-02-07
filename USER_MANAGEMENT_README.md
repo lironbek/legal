@@ -207,3 +207,6 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 **הערה**: מערכת זו דורשת חיבור ל-Supabase כדי לעבוד. עקוב אחר הוראות ההגדרה בקובץ `SUPABASE_SETUP.md`.
 
 
+
+
+

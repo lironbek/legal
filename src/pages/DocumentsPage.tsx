@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { PageHeader } from '@/components/layout/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Select,
@@ -20,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  FileText, 
+import {
+  FileText,
   Plus,
   Calendar,
   User,
@@ -120,20 +121,20 @@ export default function DocumentsPage() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     if (!value.trim()) {
       setFilteredDocuments(mockDocuments);
       return;
     }
-    
+
     const filtered = mockDocuments.filter(
-      (doc) => 
-        doc.name.includes(value) || 
+      (doc) =>
+        doc.name.includes(value) ||
         doc.client.includes(value) ||
         doc.case.includes(value) ||
         doc.category.includes(value)
     );
-    
+
     setFilteredDocuments(filtered);
   };
 
@@ -155,7 +156,7 @@ export default function DocumentsPage() {
       case 'png':
         return <FileImage className="h-4 w-4 text-purple-500" />;
       default:
-        return <File className="h-4 w-4 text-gray-500" />;
+        return <File className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -168,68 +169,62 @@ export default function DocumentsPage() {
   return (
     <div className="space-y-8 p-6">
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900 font-display">ניהול מסמכים</h1>
-          <p className="text-blue-600 mt-2">
-            ארגון, אחסון וניהול מסמכים משפטיים
-          </p>
-        </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button className="gap-2 self-end bg-blue-600 hover:bg-blue-700" onClick={handleUploadDocument}>
-            <Upload className="h-4 w-4" /> העלה מסמך
-          </Button>
-        </motion.div>
-      </motion.div>
+      <PageHeader
+        title="ניהול מסמכים"
+        subtitle="ארגון, אחסון וניהול מסמכים משפטיים"
+        actions={
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button className="gap-2" onClick={handleUploadDocument}>
+              <Upload className="h-4 w-4" /> העלה מסמך
+            </Button>
+          </motion.div>
+        }
+      />
 
       {/* Stats Cards */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <FileText className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{totalDocuments}</p>
-                <p className="text-blue-600 text-sm">סה"כ מסמכים</p>
+                <p className="text-2xl font-bold text-foreground">{totalDocuments}</p>
+                <p className="text-muted-foreground text-sm">סה"כ מסמכים</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <FolderOpen className="h-6 w-6 text-purple-600" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{documentCategories.length}</p>
-                <p className="text-blue-600 text-sm">קטגוריות</p>
+                <p className="text-2xl font-bold text-foreground">{documentCategories.length}</p>
+                <p className="text-muted-foreground text-sm">קטגוריות</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <Download className="h-6 w-6 text-green-600" />
               </div>
               <div className="mr-4">
-                <p className="text-2xl font-bold text-blue-900">{totalSize.toFixed(1)} MB</p>
-                <p className="text-blue-600 text-sm">נפח כולל</p>
+                <p className="text-2xl font-bold text-foreground">{totalSize.toFixed(1)} MB</p>
+                <p className="text-muted-foreground text-sm">נפח כולל</p>
               </div>
             </div>
           </CardContent>
@@ -237,14 +232,14 @@ export default function DocumentsPage() {
       </motion.div>
 
       {/* Document Categories */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display">קטגוריות מסמכים</CardTitle>
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display">קטגוריות מסמכים</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -254,14 +249,14 @@ export default function DocumentsPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-3 p-4 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <category.icon className="h-5 w-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <category.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-blue-900">{category.name}</h3>
-                    <p className="text-sm text-blue-600">{category.count} מסמכים</p>
+                    <h3 className="font-semibold text-foreground">{category.name}</h3>
+                    <p className="text-sm text-muted-foreground">{category.count} מסמכים</p>
                   </div>
                 </motion.div>
               ))}
@@ -276,22 +271,22 @@ export default function DocumentsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="bg-white border-blue-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-            <CardTitle className="text-blue-900 font-display">מסמכים אחרונים</CardTitle>
+        <Card className="border-border shadow-sm">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="text-foreground font-display">מסמכים אחרונים</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-blue-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש לפי שם מסמך, לקוח או תיק..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="w-full pl-9 pr-4 border-blue-200 focus:border-blue-400"
+                  className="w-full pl-9 pr-4 border-border"
                 />
               </div>
               <div className="flex gap-2">
                 <Select>
-                  <SelectTrigger className="w-[140px] border-blue-200">
+                  <SelectTrigger className="w-[140px] border-border">
                     <SelectValue placeholder="קטגוריה" />
                   </SelectTrigger>
                   <SelectContent>
@@ -301,9 +296,9 @@ export default function DocumentsPage() {
                     <SelectItem value="evidence">עדויות</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Select>
-                  <SelectTrigger className="w-[130px] border-blue-200">
+                  <SelectTrigger className="w-[130px] border-border">
                     <SelectValue placeholder="סטטוס" />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,20 +311,20 @@ export default function DocumentsPage() {
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-0">
-            <div className="rounded-md border border-blue-200">
+            <div className="rounded-md border border-border">
               <Table>
-                <TableHeader className="bg-blue-50">
-                  <TableRow className="border-blue-200">
-                    <TableHead className="text-blue-900 font-semibold">מסמך</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">לקוח</TableHead>
-                    <TableHead className="hidden md:table-cell text-blue-900 font-semibold">תיק</TableHead>
-                    <TableHead className="hidden lg:table-cell text-blue-900 font-semibold">קטגוריה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-blue-900 font-semibold">תאריך העלאה</TableHead>
-                    <TableHead className="hidden xl:table-cell text-blue-900 font-semibold">גודל</TableHead>
-                    <TableHead className="text-blue-900 font-semibold">סטטוס</TableHead>
-                    <TableHead className="text-right text-blue-900 font-semibold">פעולות</TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="border-border">
+                    <TableHead className="text-foreground font-semibold">מסמך</TableHead>
+                    <TableHead className="text-foreground font-semibold">לקוח</TableHead>
+                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תיק</TableHead>
+                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">קטגוריה</TableHead>
+                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">תאריך העלאה</TableHead>
+                    <TableHead className="hidden xl:table-cell text-foreground font-semibold">גודל</TableHead>
+                    <TableHead className="text-foreground font-semibold">סטטוס</TableHead>
+                    <TableHead className="text-right text-foreground font-semibold">פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -339,38 +334,38 @@ export default function DocumentsPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="hover:bg-blue-50 border-blue-100 transition-colors group"
+                      className="hover:bg-muted/50 border-border transition-colors group"
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           {getFileIcon(document.type)}
                           <div>
-                            <span className="text-blue-900 font-medium">{document.name}</span>
-                            <p className="text-xs text-blue-600">{document.lastModified}</p>
+                            <span className="text-foreground font-medium">{document.name}</span>
+                            <p className="text-xs text-muted-foreground">{document.lastModified}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-900 font-medium">{document.client}</span>
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground font-medium">{document.client}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-blue-700">{document.case}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{document.case}</TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        <Badge variant="outline" className="border-blue-200 text-blue-700">
+                        <Badge variant="outline" className="border-border text-muted-foreground">
                           {document.category}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-blue-500" />
-                          <span className="text-blue-700">{document.uploadDate}</span>
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{document.uploadDate}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden xl:table-cell text-blue-700">{document.fileSize}</TableCell>
+                      <TableCell className="hidden xl:table-cell text-muted-foreground">{document.fileSize}</TableCell>
                       <TableCell>
-                        <Badge 
+                        <Badge
                           className={`${document.statusColor} text-white`}
                         >
                           {document.status}
@@ -378,11 +373,11 @@ export default function DocumentsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100">
-                            <Eye className="h-4 w-4 text-blue-600" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                            <Eye className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100">
-                            <Download className="h-4 w-4 text-blue-600" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                            <Download className="h-4 w-4 text-primary" />
                           </Button>
                         </div>
                       </TableCell>

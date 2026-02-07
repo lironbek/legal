@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  PlusCircle, 
-  UserPlus, 
-  Search, 
-  Filter, 
-  Eye, 
-  Edit, 
+import { PageHeader } from "@/components/layout/PageHeader";
+import {
+  PlusCircle,
+  UserPlus,
+  Search,
+  Filter,
+  Eye,
+  Edit,
   Trash2,
   Calendar,
   Clock,
@@ -50,19 +51,19 @@ export default function CasesPage() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
+
     if (!value.trim()) {
       setFilteredCases(allCases);
       return;
     }
-    
+
     const filtered = allCases.filter(
-      (case_) => 
-        case_.title.includes(value) || 
+      (case_) =>
+        case_.title.includes(value) ||
         case_.client.includes(value) ||
         case_.id.includes(value)
     );
-    
+
     setFilteredCases(filtered);
   };
 
@@ -105,14 +106,14 @@ export default function CasesPage() {
   };
 
   const handleUploadDocuments = (caseId: string, caseTitle: string) => {
-    navigate(`/cases/${caseId}/documents/upload`, { 
-      state: { caseTitle } 
+    navigate(`/cases/${caseId}/documents/upload`, {
+      state: { caseTitle }
     });
   };
 
   const handleViewDocuments = (caseId: string, caseTitle: string) => {
-    navigate(`/cases/${caseId}/documents`, { 
-      state: { caseTitle } 
+    navigate(`/cases/${caseId}/documents`, {
+      state: { caseTitle }
     });
   };
 
@@ -151,27 +152,25 @@ export default function CasesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-blue-900">ניהול תיקים</h1>
-          <p className="text-muted-foreground mt-2">
-            צפייה, עריכה וניהול של תיקי המשרד
-          </p>
-        </div>
-        <div className="flex gap-2 self-end">
-          <Button className="gap-2" onClick={handleNewCase}>
-            <PlusCircle className="h-4 w-4" /> תיק חדש
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={handleNewClient}>
-            <UserPlus className="h-4 w-4" /> הוסף לקוח
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={handleFixCaseNumbers}>
-            <DollarSign className="h-4 w-4" /> תקן מספרי תיקים
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="ניהול תיקים"
+        subtitle="צפייה, עריכה וניהול של תיקי המשרד"
+        actions={
+          <>
+            <Button className="gap-2" onClick={handleNewCase}>
+              <PlusCircle className="h-4 w-4" /> תיק חדש
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={handleNewClient}>
+              <UserPlus className="h-4 w-4" /> הוסף לקוח
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={handleFixCaseNumbers}>
+              <DollarSign className="h-4 w-4" /> תקן מספרי תיקים
+            </Button>
+          </>
+        }
+      />
 
-      <Card className="bg-slate-50 border-slate-400 shadow-lg">
+      <Card className="bg-card border-border shadow-lg">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
             <div className="relative w-full sm:max-w-sm">
@@ -197,7 +196,7 @@ export default function CasesPage() {
                   <SelectItem value="labor">דיני עבודה</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Select>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="סטטוס" />
@@ -210,95 +209,95 @@ export default function CasesPage() {
                   <SelectItem value="pending">בהמתנה</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
-          <div className="rounded-md border border-slate-400 bg-white shadow-md">
+          <div className="rounded-md border border-border bg-card shadow-md">
             <Table>
-              <TableHeader className="bg-slate-100">
-                <TableRow className="border-slate-300">
-                  <TableHead className="w-[100px] text-slate-800 font-semibold">מספר תיק</TableHead>
-                  <TableHead className="text-slate-800 font-semibold">שם תיק</TableHead>
-                  <TableHead className="hidden lg:table-cell text-slate-800 font-semibold">לקוח</TableHead>
-                  <TableHead className="hidden lg:table-cell text-slate-800 font-semibold">עו"ד מטפל</TableHead>
-                  <TableHead className="hidden md:table-cell text-slate-800 font-semibold">סוג</TableHead>
-                  <TableHead className="hidden md:table-cell text-slate-800 font-semibold">עדיפות</TableHead>
-                  <TableHead className="hidden lg:table-cell text-slate-800 font-semibold">סטטוס</TableHead>
-                  <TableHead className="hidden lg:table-cell text-slate-800 font-semibold">תקציב</TableHead>
-                  <TableHead className="text-slate-800 font-semibold">פעולות</TableHead>
+              <TableHeader className="bg-muted/50">
+                <TableRow className="border-border">
+                  <TableHead className="w-[100px] text-foreground font-semibold">מספר תיק</TableHead>
+                  <TableHead className="text-foreground font-semibold">שם תיק</TableHead>
+                  <TableHead className="hidden lg:table-cell text-foreground font-semibold">לקוח</TableHead>
+                  <TableHead className="hidden lg:table-cell text-foreground font-semibold">עו"ד מטפל</TableHead>
+                  <TableHead className="hidden md:table-cell text-foreground font-semibold">סוג</TableHead>
+                  <TableHead className="hidden md:table-cell text-foreground font-semibold">עדיפות</TableHead>
+                  <TableHead className="hidden lg:table-cell text-foreground font-semibold">סטטוס</TableHead>
+                  <TableHead className="hidden lg:table-cell text-foreground font-semibold">תקציב</TableHead>
+                  <TableHead className="text-foreground font-semibold">פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCases.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       אין תיקים להצגה. לחץ על "תיק חדש" כדי להתחיל.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredCases.map((case_) => (
-                    <TableRow key={case_.id} className="border-slate-300">
-                      <TableCell className="font-medium text-slate-900">{case_.id}</TableCell>
-                      <TableCell className="text-slate-900">{case_.title}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-700">{case_.client}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-700">עו"ד מטפל</TableCell>
-                      <TableCell className="hidden md:table-cell text-slate-700">{getCaseTypeText(case_.caseType)}</TableCell>
-                      <TableCell className="hidden md:table-cell text-slate-700">{getPriorityText(case_.priority)}</TableCell>
+                    <TableRow key={case_.id} className="border-border">
+                      <TableCell className="font-medium text-foreground">{case_.id}</TableCell>
+                      <TableCell className="text-foreground">{case_.title}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">{case_.client}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">עו"ד מטפל</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{getCaseTypeText(case_.caseType)}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{getPriorityText(case_.priority)}</TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <Badge className={getStatusClass(case_.status)}>
                           {case_.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-slate-700">
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
                         {case_.budget ? `₪${case_.budget}` : '-'}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8"
                             onClick={() => handleViewCase(case_.id)}
                             title="צפייה בתיק"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8"
                             onClick={() => handleEditCase(case_.id)}
                             title="עריכת תיק"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8 text-purple-600 hover:text-purple-700"
                             onClick={() => handleViewDocuments(case_.id, case_.title)}
                             title="צפייה במסמכים"
                           >
                             <FileText className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8 text-green-600 hover:text-green-700"
                             onClick={() => handleUploadDocuments(case_.id, case_.title)}
                             title="תיוק מסמכים"
                           >
                             <Upload className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700"
                             onClick={() => handleDeleteCase(case_.id, case_.title)}
                             title="מחיקת תיק"
