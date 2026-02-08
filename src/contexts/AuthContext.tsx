@@ -169,12 +169,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = signInResult as any;
       if (error) {
-        // If Supabase auth fails, fall back to mock mode
+        // Network / fetch errors → mock fallback
         if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('Failed')) {
-          console.warn('Supabase auth failed, trying mock mode:', error.message);
+          console.warn('Supabase auth failed (network), trying mock mode:', error.message);
           return tryMockSignIn(email, companyId);
         }
-        return { error: error.message === 'Invalid login credentials' ? 'אימייל או סיסמה שגויים' : error.message };
+        // Invalid credentials → try mock mode as fallback (user may be a local-only user)
+        if (error.message === 'Invalid login credentials') {
+          const mockResult = tryMockSignIn(email, companyId);
+          if (!mockResult.error) return mockResult;
+          return { error: 'אימייל או סיסמה שגויים' };
+        }
+        return { error: error.message };
       }
       if (data.user) {
         const authUser = { id: data.user.id, email: data.user.email || '' };

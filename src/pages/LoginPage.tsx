@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCompanyBySlug, Company } from '@/lib/dataManager';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -145,8 +146,8 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Show default credentials hint in mock mode */}
-              {!company && (
+              {/* Show default credentials hint only in mock mode (no real Supabase) */}
+              {!company && !supabase && (
                 <Alert className="border-blue-200 bg-blue-50">
                   <Info className="h-4 w-4" />
                   <AlertDescription className="text-blue-800 text-sm">
