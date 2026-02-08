@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Scale, Loader2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Scale, Loader2, Eye, EyeOff, AlertTriangle, Info } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -142,6 +143,18 @@ export default function LoginPage() {
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
                   {error}
                 </div>
+              )}
+
+              {/* Show default credentials hint in mock mode */}
+              {!company && (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-blue-800 text-sm">
+                    <strong>פרטי התחברות ברירת מחדל:</strong><br />
+                    אימייל: <code className="bg-blue-100 px-1 rounded text-xs">admin@legalnexus.co.il</code><br />
+                    סיסמה: כל ערך (מצב פיתוח)
+                  </AlertDescription>
+                </Alert>
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>

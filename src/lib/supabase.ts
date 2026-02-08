@@ -5,12 +5,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.su
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
 const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key'
 
-// Only create client if we have valid credentials
+// Only create main client if we have valid credentials
 let supabase: any = null
-let supabaseAdmin: any = null
 
-if (supabaseUrl && supabaseAnonKey && 
-    supabaseUrl !== 'https://placeholder.supabase.co' && 
+if (supabaseUrl && supabaseAnonKey &&
+    supabaseUrl !== 'https://placeholder.supabase.co' &&
     supabaseAnonKey !== 'placeholder-key') {
   try {
     supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -19,22 +18,47 @@ if (supabaseUrl && supabaseAnonKey &&
   }
 }
 
-// Create admin client with service role key for admin operations
-if (supabaseUrl && supabaseServiceRoleKey &&
-    supabaseUrl !== 'https://placeholder.supabase.co' &&
-    supabaseServiceRoleKey !== 'placeholder-service-key') {
-  try {
-    supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
-        storageKey: 'supabase-admin-auth'
-      }
-    })
-  } catch (error) {
-    console.warn('Failed to create Supabase admin client:', error)
+// Admin client is lazy-initialized to avoid "Multiple GoTrueClient" warning
+let _supabaseAdmin: any = null
+let _adminInitialized = false
+
+function getSupabaseAdmin() {
+  if (_adminInitialized) return _supabaseAdmin
+  _adminInitialized = true
+
+  if (supabaseUrl && supabaseServiceRoleKey &&
+      supabaseUrl !== 'https://placeholder.supabase.co' &&
+      supabaseServiceRoleKey !== 'placeholder-service-key') {
+    try {
+      _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+          storageKey: 'supabase-admin-auth'
+        }
+      })
+    } catch (error) {
+      console.warn('Failed to create Supabase admin client:', error)
+    }
   }
+  return _supabaseAdmin
+}
+
+// supabaseAdmin is a getter that lazy-initializes on first access
+const supabaseAdmin = new Proxy({} as any, {
+  get(_target, prop) {
+    const admin = getSupabaseAdmin()
+    if (!admin) return undefined
+    return admin[prop]
+  }
+})
+
+// Check if admin client would be available (without initializing)
+export function hasAdminCredentials(): boolean {
+  return !!(supabaseUrl && supabaseServiceRoleKey &&
+    supabaseUrl !== 'https://placeholder.supabase.co' &&
+    supabaseServiceRoleKey !== 'placeholder-service-key')
 }
 
 export { supabase, supabaseAdmin }

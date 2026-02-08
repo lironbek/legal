@@ -939,4 +939,57 @@ export const initializeSampleData = () => {
     ];
     sampleBudget.forEach(item => addBudgetItem(item));
   }
+
+  // Initialize default admin user if no mock users exist
+  initializeDefaultAdmin();
+};
+
+export const initializeDefaultAdmin = () => {
+  const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+  if (existingUsers.length > 0) return; // Users already exist
+
+  const adminId = generateId();
+  const now = new Date().toISOString();
+
+  const defaultAdmin = {
+    id: adminId,
+    email: 'admin@legalnexus.co.il',
+    full_name: 'מנהל המערכת',
+    role: 'admin',
+    phone: '',
+    department: 'הנהלה',
+    is_active: true,
+    created_at: now,
+    updated_at: now
+  };
+
+  localStorage.setItem('mock-users', JSON.stringify([defaultAdmin]));
+
+  // Create admin permissions
+  const adminPermissions = {
+    id: generateId(),
+    user_id: adminId,
+    can_view_dashboard: true,
+    can_view_cases: true, can_edit_cases: true, can_delete_cases: true,
+    can_view_clients: true, can_edit_clients: true,
+    can_view_reports: true, can_edit_reports: true,
+    can_view_documents: true, can_edit_documents: true,
+    can_view_calendar: true, can_edit_calendar: true,
+    can_view_billing: true, can_edit_billing: true,
+    can_view_time_tracking: true, can_edit_time_tracking: true,
+    can_view_legal_library: true, can_edit_legal_library: true,
+    can_view_disability_calculator: true, can_edit_disability_calculator: true,
+    can_view_cash_flow: true, can_edit_cash_flow: true,
+    can_view_budget: true, can_edit_budget: true,
+    can_manage_users: true, can_manage_permission_groups: true,
+    can_manage_system_settings: true, can_view_audit_logs: true,
+    created_at: now, updated_at: now
+  };
+  localStorage.setItem('mock-permissions', JSON.stringify([adminPermissions]));
+
+  // Assign admin to default company
+  const companies = getCompanies();
+  if (companies.length > 0) {
+    addUserCompanyAssignment(adminId, companies[0].id, 'admin', true);
+  }
 };
