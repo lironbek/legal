@@ -41,7 +41,13 @@
       "Bash(curl:*)",
       "WebFetch(domain:green-api.com)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:127.0.0.1)"
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(gh api:*)",
+      "Bash(SUPABASE_URL=\"https://lbaqrfbobfomkcfmfahq.supabase.co\":*)",
+      "Bash(ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NjE5MzQsImV4cCI6MjA2NTIzNzkzNH0.1MaoZ8omIIOfv0tdGEZj7y6DLiWtCKxNoXlo7ipnxTc\":*)",
+      "Bash(__NEW_LINE_b05178e9e718bd8d__ echo \"=== profiles ===\")",
+      "Bash(__NEW_LINE_b05178e9e718bd8d__ echo -e \"\\\\n\\\\n=== user_permissions ===\")",
+      "Bash(__NEW_LINE_b05178e9e718bd8d__ echo -e \"\\\\n\\\\n=== permission_groups ===\")"
     ],
     "deny": []
   }
