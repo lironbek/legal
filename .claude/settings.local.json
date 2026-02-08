@@ -40,7 +40,8 @@
       "Bash(git -C /Users/liron/Desktop/projects/legal-nexus-israel log --oneline --all)",
       "Bash(curl:*)",
       "WebFetch(domain:green-api.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:127.0.0.1)"
     ],
     "deny": []
   }

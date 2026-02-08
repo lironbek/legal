@@ -28,6 +28,7 @@ if (supabaseUrl && supabaseServiceRoleKey &&
       auth: {
         autoRefreshToken: false,
         persistSession: false,
+        detectSessionInUrl: false,
         storageKey: 'supabase-admin-auth'
       }
     })

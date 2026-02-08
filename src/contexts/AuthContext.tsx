@@ -58,14 +58,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Get initial session
+    // Get initial session with timeout fallback
+    const sessionTimeout = setTimeout(() => {
+      console.warn('Supabase session check timed out - falling back to mock mode');
+      setLoading(false);
+    }, 5000);
+
     supabase.auth.getSession().then(async ({ data: { session } }: any) => {
+      clearTimeout(sessionTimeout);
       if (session?.user) {
         const authUser = { id: session.user.id, email: session.user.email || '' };
         setUser(authUser);
         const prof = await fetchProfile(session.user.id);
         setProfile(prof);
       }
+      setLoading(false);
+    }).catch((err: any) => {
+      clearTimeout(sessionTimeout);
+      console.warn('Failed to get Supabase session:', err);
       setLoading(false);
     });
 
@@ -85,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      clearTimeout(sessionTimeout);
       subscription?.unsubscribe();
     };
   }, [fetchProfile]);
