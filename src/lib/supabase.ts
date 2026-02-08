@@ -20,14 +20,15 @@ if (supabaseUrl && supabaseAnonKey &&
 }
 
 // Create admin client with service role key for admin operations
-if (supabaseUrl && supabaseServiceRoleKey && 
-    supabaseUrl !== 'https://placeholder.supabase.co' && 
+if (supabaseUrl && supabaseServiceRoleKey &&
+    supabaseUrl !== 'https://placeholder.supabase.co' &&
     supabaseServiceRoleKey !== 'placeholder-service-key') {
   try {
     supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        storageKey: 'supabase-admin-auth'
       }
     })
   } catch (error) {

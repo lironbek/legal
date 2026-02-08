@@ -31,6 +31,7 @@ import {
   UserCheck,
   TrendingUp,
   PieChart,
+  Scan,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
@@ -59,6 +60,7 @@ const navGroups = [
     label: 'כלים',
     items: [
       { title: 'מסמכים', url: '/documents', icon: FileImage },
+      { title: 'סריקת מסמכים', url: '/scanned-documents', icon: Scan },
       { title: 'ספרייה משפטית', url: '/legal-library', icon: BookOpen },
       { title: 'מחשבון נכות', url: '/disability-calculator', icon: Calculator },
     ],

@@ -32,6 +32,7 @@ import NewEventPage from "./pages/forms/NewEventPage";
 import UploadDocumentPage from "./pages/forms/UploadDocumentPage";
 import UploadCaseDocumentPage from "./pages/forms/UploadCaseDocumentPage";
 import CaseDocumentsPage from "./pages/forms/CaseDocumentsPage";
+import ScannedDocumentsPage from "./pages/ScannedDocumentsPage";
 
 // Data manager
 import { initializeSampleData } from "./lib/dataManager";
@@ -115,6 +116,7 @@ const AppRoutes = () => {
       <Route path="/calendar/new" element={<ProtectedRoute><MainLayout><NewEventPage /></MainLayout></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><MainLayout><DocumentsPage /></MainLayout></ProtectedRoute>} />
       <Route path="/documents/upload" element={<ProtectedRoute><MainLayout><UploadDocumentPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/scanned-documents" element={<ProtectedRoute><MainLayout><ScannedDocumentsPage /></MainLayout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><MainLayout><ReportsPage /></MainLayout></ProtectedRoute>} />
       <Route path="/cash-flow" element={<ProtectedRoute><MainLayout><CashFlowPage /></MainLayout></ProtectedRoute>} />
       <Route path="/budget" element={<ProtectedRoute><MainLayout><BudgetPage /></MainLayout></ProtectedRoute>} />

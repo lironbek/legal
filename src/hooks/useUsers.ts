@@ -71,6 +71,11 @@ export function useUsers() {
 
   // Fetch user permissions
   const fetchPermissions = async () => {
+    if (!supabase) {
+      const mockPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+      setPermissions(mockPermissions)
+      return
+    }
     try {
       const { data, error } = await supabase
         .from('user_permissions')
@@ -80,11 +85,18 @@ export function useUsers() {
       setPermissions(data || [])
     } catch (err) {
       console.error('Error fetching permissions:', err)
+      const mockPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+      setPermissions(mockPermissions)
     }
   }
 
   // Fetch permission groups
   const fetchPermissionGroups = async () => {
+    if (!supabase) {
+      const mockGroups = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
+      setPermissionGroups(mockGroups)
+      return
+    }
     try {
       const { data, error } = await supabase
         .from('permission_groups')
@@ -101,7 +113,51 @@ export function useUsers() {
   // Create new user
   const createUser = async (userData: Omit<UserProfile, 'id' | 'created_at'>, password: string) => {
     try {
-      // First create auth user using admin client
+      // Check if we have a real Supabase connection
+      if (!supabaseAdmin || !supabase) {
+        // Mock mode - create user in localStorage
+        const mockId = crypto.randomUUID()
+        const newUser: UserProfile = {
+          ...userData,
+          id: mockId,
+          created_at: new Date().toISOString()
+        }
+
+        const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
+        existingUsers.push(newUser)
+        localStorage.setItem('mock-users', JSON.stringify(existingUsers))
+
+        // Create default permissions
+        const defaultPermissions = getDefaultPermissionsForRole(userData.role)
+        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+        existingPermissions.push({
+          id: crypto.randomUUID(),
+          user_id: mockId,
+          ...defaultPermissions,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions))
+
+        // Auto-assign to current company
+        const currentCompanyId = getCurrentCompany()
+        if (currentCompanyId) {
+          const roleMapping: Record<string, 'owner' | 'admin' | 'lawyer' | 'assistant' | 'viewer'> = {
+            admin: 'admin',
+            lawyer: 'lawyer',
+            assistant: 'assistant',
+            client: 'viewer',
+          }
+          addUserCompanyAssignment(mockId, currentCompanyId, roleMapping[userData.role] || 'viewer', true)
+        }
+
+        toast.success('משתמש נוצר בהצלחה (מצב Mock)')
+        fetchUsers()
+        fetchPermissions()
+        return true
+      }
+
+      // Real Supabase mode - create auth user using admin client
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: userData.email,
         password: password,
@@ -283,9 +339,57 @@ export function useUsers() {
     }
   }
 
+  // Ensure user has a permissions record, create default if missing
+  const ensureUserPermissions = async (userId: string, role: UserProfile['role']): Promise<UserPermission | null> => {
+    const existing = permissions.find(p => p.user_id === userId)
+    if (existing) return existing
+
+    const defaultPerms = getDefaultPermissionsForRole(role)
+    const newPermission: UserPermission = {
+      id: crypto.randomUUID(),
+      user_id: userId,
+      ...defaultPerms,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as UserPermission
+
+    try {
+      if (!supabase) {
+        // Mock mode
+        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+        existingPermissions.push(newPermission)
+        localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions))
+      } else {
+        const { error } = await supabase
+          .from('user_permissions')
+          .insert([{ user_id: userId, ...defaultPerms }])
+        if (error) throw error
+      }
+      await fetchPermissions()
+      // Return freshly fetched record
+      return permissions.find(p => p.user_id === userId) || newPermission
+    } catch (err) {
+      console.error('Error creating permissions for user:', err)
+      return null
+    }
+  }
+
   // Update user
   const updateUser = async (id: string, updates: Partial<UserProfile>) => {
     try {
+      if (!supabase) {
+        // Mock mode
+        const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
+        const idx = existingUsers.findIndex((u: UserProfile) => u.id === id)
+        if (idx !== -1) {
+          existingUsers[idx] = { ...existingUsers[idx], ...updates, updated_at: new Date().toISOString() }
+          localStorage.setItem('mock-users', JSON.stringify(existingUsers))
+        }
+        toast.success('משתמש עודכן בהצלחה')
+        fetchUsers()
+        return true
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -304,13 +408,34 @@ export function useUsers() {
     }
   }
 
-  // Update user permissions
+  // Update user permissions (upsert - insert if not found)
   const updatePermissions = async (userId: string, permissionUpdates: Partial<UserPermission>) => {
     try {
+      if (!supabase) {
+        // Mock mode
+        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+        const idx = existingPermissions.findIndex((p: any) => p.user_id === userId)
+        if (idx !== -1) {
+          existingPermissions[idx] = { ...existingPermissions[idx], ...permissionUpdates, updated_at: new Date().toISOString() }
+        } else {
+          // Insert new record if not found
+          existingPermissions.push({
+            id: crypto.randomUUID(),
+            user_id: userId,
+            ...permissionUpdates,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        }
+        localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions))
+        toast.success('הרשאות עודכנו בהצלחה')
+        fetchPermissions()
+        return true
+      }
+
       const { error } = await supabase
         .from('user_permissions')
-        .update(permissionUpdates)
-        .eq('user_id', userId)
+        .upsert({ user_id: userId, ...permissionUpdates, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
 
       if (error) throw error
 
@@ -328,19 +453,41 @@ export function useUsers() {
   // Apply permission group to user
   const applyPermissionGroup = async (userId: string, groupId: string) => {
     try {
-      const group = permissionGroups.find(g => g.id === groupId)
+      const group = permissionGroups.find(g => g.id === groupId) as any
       if (!group) throw new Error('קבוצת הרשאות לא נמצאה')
 
-      // Get group permissions (you'll need to implement this based on your schema)
-      const groupPermissions = await getGroupPermissions(groupId)
-      
+      // Extract permission fields from the group
+      const groupPermissions = getGroupPermissionValues(group)
+
+      const permissionUpdates = {
+        permission_group_id: groupId,
+        ...groupPermissions
+      }
+
+      if (!supabase) {
+        // Mock mode
+        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+        const idx = existingPermissions.findIndex((p: any) => p.user_id === userId)
+        if (idx !== -1) {
+          existingPermissions[idx] = { ...existingPermissions[idx], ...permissionUpdates, updated_at: new Date().toISOString() }
+        } else {
+          existingPermissions.push({
+            id: crypto.randomUUID(),
+            user_id: userId,
+            ...permissionUpdates,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        }
+        localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions))
+        toast.success('קבוצת הרשאות הוחלה בהצלחה')
+        fetchPermissions()
+        return true
+      }
+
       const { error } = await supabase
         .from('user_permissions')
-        .update({
-          permission_group_id: groupId,
-          ...groupPermissions
-        })
-        .eq('user_id', userId)
+        .upsert({ user_id: userId, ...permissionUpdates, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
 
       if (error) throw error
 
@@ -355,16 +502,109 @@ export function useUsers() {
     }
   }
 
-  // Get group permissions (placeholder - implement based on your schema)
-  const getGroupPermissions = async (groupId: string) => {
-    // This would typically query a group_permissions table
-    // For now, return empty permissions
-    return {}
+  // Extract permission boolean values from a group object
+  const getGroupPermissionValues = (group: any) => {
+    const permKeys = [
+      'can_view_dashboard', 'can_view_cases', 'can_edit_cases', 'can_delete_cases',
+      'can_view_clients', 'can_edit_clients', 'can_view_reports', 'can_edit_reports',
+      'can_view_documents', 'can_edit_documents', 'can_view_calendar', 'can_edit_calendar',
+      'can_view_billing', 'can_edit_billing', 'can_view_time_tracking', 'can_edit_time_tracking',
+      'can_view_legal_library', 'can_edit_legal_library', 'can_view_disability_calculator', 'can_edit_disability_calculator',
+      'can_view_cash_flow', 'can_edit_cash_flow', 'can_view_budget', 'can_edit_budget',
+      'can_manage_users', 'can_manage_permission_groups', 'can_manage_system_settings', 'can_view_audit_logs'
+    ]
+    const result: Record<string, boolean> = {}
+    for (const key of permKeys) {
+      if (key in group) result[key] = group[key]
+    }
+    return result
+  }
+
+  // Permission group CRUD
+  const createPermissionGroup = async (name: string, description: string, perms: Record<string, boolean>) => {
+    try {
+      const newGroup = {
+        id: crypto.randomUUID(),
+        name,
+        description,
+        ...perms,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      if (!supabase) {
+        const existing = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
+        existing.push(newGroup)
+        localStorage.setItem('mock-permission-groups', JSON.stringify(existing))
+      } else {
+        const { error } = await supabase.from('permission_groups').insert([newGroup])
+        if (error) throw error
+      }
+
+      toast.success('קבוצת הרשאות נוצרה בהצלחה')
+      fetchPermissionGroups()
+      return true
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'שגיאה ביצירת קבוצת הרשאות'
+      toast.error(message)
+      return false
+    }
+  }
+
+  const updatePermissionGroup = async (id: string, updates: { name?: string; description?: string } & Record<string, any>) => {
+    try {
+      if (!supabase) {
+        const existing = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
+        const idx = existing.findIndex((g: any) => g.id === id)
+        if (idx !== -1) {
+          existing[idx] = { ...existing[idx], ...updates, updated_at: new Date().toISOString() }
+          localStorage.setItem('mock-permission-groups', JSON.stringify(existing))
+        }
+      } else {
+        const { error } = await supabase.from('permission_groups').update(updates).eq('id', id)
+        if (error) throw error
+      }
+
+      toast.success('קבוצת הרשאות עודכנה בהצלחה')
+      fetchPermissionGroups()
+      return true
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'שגיאה בעדכון קבוצת הרשאות'
+      toast.error(message)
+      return false
+    }
+  }
+
+  const deletePermissionGroup = async (id: string) => {
+    try {
+      if (!supabase) {
+        const existing = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
+        const filtered = existing.filter((g: any) => g.id !== id)
+        localStorage.setItem('mock-permission-groups', JSON.stringify(filtered))
+      } else {
+        const { error } = await supabase.from('permission_groups').delete().eq('id', id)
+        if (error) throw error
+      }
+
+      toast.success('קבוצת הרשאות נמחקה בהצלחה')
+      fetchPermissionGroups()
+      return true
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'שגיאה במחיקת קבוצת הרשאות'
+      toast.error(message)
+      return false
+    }
   }
 
   // Change user password
   const changeUserPassword = async (userId: string, newPassword: string) => {
     try {
+      if (!supabaseAdmin) {
+        // Mock mode - just acknowledge the change
+        toast.success('סיסמה שונתה בהצלחה (מצב Mock)')
+        return true
+      }
+
       // Update password in Supabase Auth using admin client
       const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: newPassword
@@ -549,6 +789,11 @@ export function useUsers() {
     updateUser,
     updatePermissions,
     applyPermissionGroup,
+    ensureUserPermissions,
+    getDefaultPermissionsForRole,
+    createPermissionGroup,
+    updatePermissionGroup,
+    deletePermissionGroup,
     changeUserPassword,
     deleteUser,
     toggleUserStatus,

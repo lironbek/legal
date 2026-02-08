@@ -34,7 +34,13 @@
       "Bash(npm uninstall:*)",
       "Bash(git check-ignore:*)",
       "Bash(git rm:*)",
-      "Bash(git submodule:*)"
+      "Bash(git submodule:*)",
+      "Bash(ssh:*)",
+      "Bash(echo:*)",
+      "Bash(git -C /Users/liron/Desktop/projects/legal-nexus-israel log --oneline --all)",
+      "Bash(curl:*)",
+      "WebFetch(domain:green-api.com)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -11,30 +11,24 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Edit,
   Trash2,
-  User,
   Users,
   Shield,
-  Mail,
-  Phone,
-  Building,
   Building2,
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  MapPin,
-  CreditCard,
   AlertTriangle,
   Eye,
   EyeOff,
   Key,
   Plus,
-  X
+  X,
+  CheckCheck,
+  XCircle,
+  RotateCcw
 } from 'lucide-react'
-import { UserProfile, UserPermission, PermissionGroup } from '@/lib/supabase'
+import { UserProfile, UserPermission } from '@/lib/supabase'
 import { useUsers } from '@/hooks/useUsers'
 import { toast } from 'sonner'
 import {
@@ -52,21 +46,24 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ className }: UsersTableProps) {
-  const { 
-    users, 
-    permissions, 
+  const {
+    users,
+    permissions,
     permissionGroups,
-    loading, 
-    updateUser, 
-    updatePermissions, 
+    loading,
+    updateUser,
+    updatePermissions,
     applyPermissionGroup,
+    ensureUserPermissions,
+    getDefaultPermissionsForRole,
     changeUserPassword,
-    deleteUser, 
-    toggleUserStatus 
+    deleteUser,
+    toggleUserStatus
   } = useUsers()
-  
+
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null)
   const [editingPermissions, setEditingPermissions] = useState<UserPermission | null>(null)
+  const [permissionsUserName, setPermissionsUserName] = useState('')
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -82,6 +79,12 @@ export function UsersTable({ className }: UsersTableProps) {
   const [allCompanies, setAllCompanies] = useState<Company[]>([])
   const [assignCompanyId, setAssignCompanyId] = useState('')
   const [assignRole, setAssignRole] = useState<UserCompanyAssignment['role']>('viewer')
+  const [editDialogTab, setEditDialogTab] = useState('basic')
+
+  // Load companies list for table display
+  useEffect(() => {
+    setAllCompanies(getCompanies())
+  }, [users])
 
   const handleEditUser = (user: UserProfile) => {
     setEditingUser({ ...user })
@@ -89,6 +92,17 @@ export function UsersTable({ className }: UsersTableProps) {
     setUserAssignments(getUserCompanyAssignments(user.id))
     setAssignCompanyId('')
     setAssignRole('viewer')
+    setEditDialogTab('basic')
+    setIsEditDialogOpen(true)
+  }
+
+  const handleAssignCompany = (user: UserProfile) => {
+    setEditingUser({ ...user })
+    setAllCompanies(getCompanies())
+    setUserAssignments(getUserCompanyAssignments(user.id))
+    setAssignCompanyId('')
+    setAssignRole('viewer')
+    setEditDialogTab('companies')
     setIsEditDialogOpen(true)
   }
 
@@ -113,13 +127,20 @@ export function UsersTable({ className }: UsersTableProps) {
     setUserAssignments(getUserCompanyAssignments(editingUser.id))
   }
 
-  const handleEditPermissions = (user: UserProfile) => {
-    const userPerms = permissions.find(p => p.user_id === user.id)
-    if (userPerms) {
-      setEditingPermissions({ ...userPerms })
-      setSelectedPermissionGroup(userPerms.permission_group_id || '')
-      setIsPermissionsDialogOpen(true)
+  const handleEditPermissions = async (user: UserProfile) => {
+    let userPerms = permissions.find(p => p.user_id === user.id)
+    if (!userPerms) {
+      // Auto-create default permissions for this user
+      userPerms = await ensureUserPermissions(user.id, user.role)
+      if (!userPerms) {
+        toast.error('שגיאה ביצירת הרשאות למשתמש')
+        return
+      }
     }
+    setEditingPermissions({ ...userPerms })
+    setPermissionsUserName(user.full_name)
+    setSelectedPermissionGroup(userPerms.permission_group_id || '')
+    setIsPermissionsDialogOpen(true)
   }
 
   const handleDeleteUser = (user: UserProfile) => {
@@ -150,11 +171,11 @@ export function UsersTable({ className }: UsersTableProps) {
         toast.error('הסיסמאות אינן תואמות')
         return
       }
-      if (newPassword.length < 6) {
-        toast.error('הסיסמה חייבת להיות באורך של לפחות 6 תווים')
+      if (newPassword.length < 8) {
+        toast.error('הסיסמה חייבת להיות באורך של לפחות 8 תווים')
         return
       }
-      
+
       const success = await changeUserPassword(userToChangePassword.id, newPassword)
       if (success) {
         setIsPasswordDialogOpen(false)
@@ -195,6 +216,64 @@ export function UsersTable({ className }: UsersTableProps) {
     }
   }
 
+  // Permission toggle with dependency logic
+  const setPermission = (key: string, value: boolean) => {
+    if (!editingPermissions) return
+    const updated = { ...editingPermissions, [key]: value }
+
+    // Auto-enable view when enabling edit
+    if (value && key.startsWith('can_edit_')) {
+      const viewKey = key.replace('can_edit_', 'can_view_')
+      if (viewKey in updated) {
+        ;(updated as any)[viewKey] = true
+      }
+    }
+    // Auto-disable edit when disabling view
+    if (!value && key.startsWith('can_view_')) {
+      const editKey = key.replace('can_view_', 'can_edit_')
+      if (editKey in updated) {
+        ;(updated as any)[editKey] = false
+      }
+      // Also handle can_delete_ for cases
+      const deleteKey = key.replace('can_view_', 'can_delete_')
+      if (deleteKey in updated) {
+        ;(updated as any)[deleteKey] = false
+      }
+    }
+
+    setEditingPermissions(updated)
+  }
+
+  // Select all / deselect all / reset to defaults
+  const handleSelectAll = () => {
+    if (!editingPermissions) return
+    const updated = { ...editingPermissions }
+    const permKeys = Object.keys(updated).filter(k => k.startsWith('can_'))
+    for (const key of permKeys) {
+      ;(updated as any)[key] = true
+    }
+    setEditingPermissions(updated)
+  }
+
+  const handleDeselectAll = () => {
+    if (!editingPermissions) return
+    const updated = { ...editingPermissions }
+    const permKeys = Object.keys(updated).filter(k => k.startsWith('can_'))
+    for (const key of permKeys) {
+      ;(updated as any)[key] = false
+    }
+    setEditingPermissions(updated)
+  }
+
+  const handleResetToDefaults = () => {
+    if (!editingPermissions) return
+    const user = users.find(u => u.id === editingPermissions.user_id)
+    if (!user) return
+    const defaults = getDefaultPermissionsForRole(user.role)
+    setEditingPermissions({ ...editingPermissions, ...defaults })
+    toast.success('הרשאות אופסו לברירת המחדל של התפקיד')
+  }
+
   const formatAddress = (user: UserProfile) => {
     const parts = [user.address, user.city, user.postal_code].filter(Boolean)
     return parts.length > 0 ? parts.join(', ') : 'לא צוין'
@@ -207,6 +286,14 @@ export function UsersTable({ className }: UsersTableProps) {
     } catch {
       return 'לא צוין'
     }
+  }
+
+  const getUserCompanies = (userId: string) => {
+    const assignments = getUserCompanyAssignments(userId)
+    return assignments.map(a => {
+      const company = allCompanies.find(c => c.id === a.company_id)
+      return company ? company.name : null
+    }).filter(Boolean) as string[]
   }
 
   if (loading) {
@@ -236,14 +323,15 @@ export function UsersTable({ className }: UsersTableProps) {
                 <TableHead className="text-right">שם מלא</TableHead>
                 <TableHead className="text-right">אימייל</TableHead>
                 <TableHead className="text-right">תפקיד</TableHead>
-                <TableHead className="text-right">כתובת</TableHead>
-                <TableHead className="text-right">תאריך לידה</TableHead>
+                <TableHead className="text-right">משרד</TableHead>
                 <TableHead className="text-right">סטטוס</TableHead>
                 <TableHead className="text-right">פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {users.map((user) => {
+                const companies = getUserCompanies(user.id)
+                return (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium text-right">{user.full_name}</TableCell>
                   <TableCell className="text-right">{user.email}</TableCell>
@@ -255,8 +343,22 @@ export function UsersTable({ className }: UsersTableProps) {
                       {user.role === 'client' && 'לקוח'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{formatAddress(user)}</TableCell>
-                  <TableCell className="text-right">{formatDate(user.birth_date || '')}</TableCell>
+                  <TableCell className="text-right">
+                    {user.role === 'admin' ? (
+                      <Badge variant="outline" className="text-xs">כל המשרדים</Badge>
+                    ) : companies.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {companies.map((name, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            <Building2 className="h-3 w-3 ml-1" />
+                            {name}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">לא משויך</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center gap-2 justify-end">
                       <Switch
@@ -269,39 +371,51 @@ export function UsersTable({ className }: UsersTableProps) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditPermissions(user)}
-                      >
-                        <Shield className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleChangePassword(user)}
-                      >
-                        <Key className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center gap-1 justify-end">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>עריכת משתמש</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => handleEditPermissions(user)}>
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>עריכת הרשאות</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => handleAssignCompany(user)}>
+                            <Building2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>שיוך למשרד</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => handleChangePassword(user)}>
+                            <Key className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>שינוי סיסמה</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>מחיקת משתמש</TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         </CardContent>
@@ -312,9 +426,10 @@ export function UsersTable({ className }: UsersTableProps) {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>עריכת משתמש</DialogTitle>
+            <DialogDescription>ערוך את פרטי המשתמש, כתובת, פרטים אישיים ושיוך למשרדים</DialogDescription>
           </DialogHeader>
           {editingUser && (
-            <Tabs defaultValue="basic" className="w-full">
+            <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic">מידע בסיסי</TabsTrigger>
                 <TabsTrigger value="address">כתובת</TabsTrigger>
@@ -325,7 +440,7 @@ export function UsersTable({ className }: UsersTableProps) {
                   משרדים
                 </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="basic" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -571,21 +686,34 @@ export function UsersTable({ className }: UsersTableProps) {
       <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>עריכת הרשאות משתמש</DialogTitle>
+            <DialogTitle>עריכת הרשאות - {permissionsUserName}</DialogTitle>
+            <DialogDescription>הגדר הרשאות גישה לכל מודול במערכת</DialogDescription>
           </DialogHeader>
           {editingPermissions && (
             <div className="space-y-6">
-              {/* Permission Group Selection */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="permission_group">קבוצת הרשאות</Label>
-                  <div className="flex gap-2">
+              {/* Quick actions */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                  <CheckCheck className="h-4 w-4 ml-1" />
+                  בחר הכל
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDeselectAll}>
+                  <XCircle className="h-4 w-4 ml-1" />
+                  בטל הכל
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleResetToDefaults}>
+                  <RotateCcw className="h-4 w-4 ml-1" />
+                  איפוס לברירת מחדל
+                </Button>
+                {permissionGroups.length > 0 && (
+                  <>
+                    <Separator orientation="vertical" className="h-6" />
                     <Select
                       value={selectedPermissionGroup}
                       onValueChange={setSelectedPermissionGroup}
                     >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="בחר קבוצת הרשאות" />
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="החל קבוצת הרשאות" />
                       </SelectTrigger>
                       <SelectContent>
                         {permissionGroups.map((group) => (
@@ -595,11 +723,11 @@ export function UsersTable({ className }: UsersTableProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button onClick={handleApplyPermissionGroup}>
+                    <Button size="sm" onClick={handleApplyPermissionGroup} disabled={!selectedPermissionGroup}>
                       החל קבוצה
                     </Button>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               <Separator />
@@ -609,31 +737,31 @@ export function UsersTable({ className }: UsersTableProps) {
                 <div>
                   <h4 className="font-medium mb-3">דשבורד ותיקים</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_dashboard}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_dashboard: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_dashboard', checked)}
                       />
                       <Label>צפייה בדשבורד</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_cases}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_cases: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_cases', checked)}
                       />
                       <Label>צפייה בתיקים</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_cases}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_cases: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_cases', checked)}
                       />
                       <Label>עריכת תיקים</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_delete_cases}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_delete_cases: checked })}
+                        onCheckedChange={(checked) => setPermission('can_delete_cases', checked)}
                       />
                       <Label>מחיקת תיקים</Label>
                     </div>
@@ -643,31 +771,31 @@ export function UsersTable({ className }: UsersTableProps) {
                 <div>
                   <h4 className="font-medium mb-3">לקוחות ומסמכים</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_clients}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_clients: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_clients', checked)}
                       />
                       <Label>צפייה בלקוחות</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_clients}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_clients: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_clients', checked)}
                       />
                       <Label>עריכת לקוחות</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_documents}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_documents: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_documents', checked)}
                       />
                       <Label>צפייה במסמכים</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_documents}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_documents: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_documents', checked)}
                       />
                       <Label>עריכת מסמכים</Label>
                     </div>
@@ -677,31 +805,31 @@ export function UsersTable({ className }: UsersTableProps) {
                 <div>
                   <h4 className="font-medium mb-3">יומן וחיוב</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_calendar}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_calendar: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_calendar', checked)}
                       />
                       <Label>צפייה ביומן</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_calendar}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_calendar: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_calendar', checked)}
                       />
                       <Label>עריכת יומן</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_billing}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_billing: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_billing', checked)}
                       />
                       <Label>צפייה בחיוב</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_billing}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_billing: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_billing', checked)}
                       />
                       <Label>עריכת חיוב</Label>
                     </div>
@@ -711,31 +839,31 @@ export function UsersTable({ className }: UsersTableProps) {
                 <div>
                   <h4 className="font-medium mb-3">תזרים ותקציב</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_cash_flow}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_cash_flow: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_cash_flow', checked)}
                       />
                       <Label>צפייה בתזרים מזומנים</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_cash_flow}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_cash_flow: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_cash_flow', checked)}
                       />
                       <Label>עריכת תזרים מזומנים</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_budget}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_budget: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_budget', checked)}
                       />
                       <Label>צפייה בתקציב</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_budget}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_budget: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_budget', checked)}
                       />
                       <Label>עריכת תקציב</Label>
                     </div>
@@ -743,33 +871,33 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
 
                 <div>
-                  <h4 className="font-medium mb-3">דוחות וכלים</h4>
+                  <h4 className="font-medium mb-3">דוחות ומעקב זמן</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_reports}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_reports: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_reports', checked)}
                       />
                       <Label>צפייה בדוחות</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_reports}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_reports: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_reports', checked)}
                       />
                       <Label>עריכת דוחות</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_time_tracking}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_time_tracking: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_time_tracking', checked)}
                       />
                       <Label>צפייה במעקב זמן</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_edit_time_tracking}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_edit_time_tracking: checked })}
+                        onCheckedChange={(checked) => setPermission('can_edit_time_tracking', checked)}
                       />
                       <Label>עריכת מעקב זמן</Label>
                     </div>
@@ -777,33 +905,67 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
 
                 <div>
+                  <h4 className="font-medium mb-3">ספריה משפטית ומחשבון נכות</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={editingPermissions.can_view_legal_library}
+                        onCheckedChange={(checked) => setPermission('can_view_legal_library', checked)}
+                      />
+                      <Label>צפייה בספריה משפטית</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={editingPermissions.can_edit_legal_library}
+                        onCheckedChange={(checked) => setPermission('can_edit_legal_library', checked)}
+                      />
+                      <Label>עריכת ספריה משפטית</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={editingPermissions.can_view_disability_calculator}
+                        onCheckedChange={(checked) => setPermission('can_view_disability_calculator', checked)}
+                      />
+                      <Label>צפייה במחשבון נכות</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={editingPermissions.can_edit_disability_calculator}
+                        onCheckedChange={(checked) => setPermission('can_edit_disability_calculator', checked)}
+                      />
+                      <Label>עריכת מחשבון נכות</Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <h4 className="font-medium mb-3">הרשאות מערכת</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_manage_users}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_manage_users: checked })}
+                        onCheckedChange={(checked) => setPermission('can_manage_users', checked)}
                       />
                       <Label>ניהול משתמשים</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_manage_permission_groups}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_manage_permission_groups: checked })}
+                        onCheckedChange={(checked) => setPermission('can_manage_permission_groups', checked)}
                       />
                       <Label>ניהול קבוצות הרשאות</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_manage_system_settings}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_manage_system_settings: checked })}
+                        onCheckedChange={(checked) => setPermission('can_manage_system_settings', checked)}
                       />
                       <Label>ניהול הגדרות מערכת</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         checked={editingPermissions.can_view_audit_logs}
-                        onCheckedChange={(checked) => setEditingPermissions({ ...editingPermissions, can_view_audit_logs: checked })}
+                        onCheckedChange={(checked) => setPermission('can_view_audit_logs', checked)}
                       />
                       <Label>צפייה ביומן פעילות</Label>
                     </div>
@@ -828,6 +990,7 @@ export function UsersTable({ className }: UsersTableProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>שינוי סיסמה</DialogTitle>
+            <DialogDescription>הזן סיסמה חדשה למשתמש</DialogDescription>
           </DialogHeader>
           {userToChangePassword && (
             <div className="space-y-4">
@@ -842,7 +1005,7 @@ export function UsersTable({ className }: UsersTableProps) {
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="הכנס סיסמה חדשה"
+                    placeholder="הכנס סיסמה חדשה (לפחות 8 תווים)"
                   />
                   <Button
                     type="button"
@@ -894,6 +1057,7 @@ export function UsersTable({ className }: UsersTableProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>מחיקת משתמש</DialogTitle>
+            <DialogDescription>פעולה זו אינה ניתנת לביטול</DialogDescription>
           </DialogHeader>
           {userToDelete && (
             <div className="space-y-4">

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Palette, Upload, Users, Scan, Building2 } from 'lucide-react';
+import { Settings, Palette, Upload, Users, Scan, Building2, MessageSquare } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DesignSettings } from '@/components/settings/DesignSettings';
 import { UserManagement } from '@/components/settings/UserManagement';
 import { ScannerSettings } from '@/components/settings/ScannerSettings';
 import { CompanyManagement } from '@/components/settings/CompanyManagement';
+import { WhatsAppSettings } from '@/components/settings/WhatsAppSettings';
 
 export default function SettingsPage() {
   return (
@@ -17,7 +18,7 @@ export default function SettingsPage() {
       />
 
       <Tabs defaultValue="design" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-card border border-border">
+        <TabsList className="grid w-full grid-cols-5 bg-card border border-border">
           <TabsTrigger value="design" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
             <Palette className="h-4 w-4" />
             עיצוב המערכת
@@ -25,6 +26,10 @@ export default function SettingsPage() {
           <TabsTrigger value="scanner" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
             <Scan className="h-4 w-4" />
             הגדרות סורק
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
+            <MessageSquare className="h-4 w-4" />
+            WhatsApp
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
             <Users className="h-4 w-4" />
@@ -42,6 +47,10 @@ export default function SettingsPage() {
 
         <TabsContent value="scanner" className="mt-6">
           <ScannerSettings />
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="mt-6">
+          <WhatsAppSettings />
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
