@@ -1,7 +1,30 @@
 import { useState, useEffect } from 'react'
-import { supabase, supabaseAdmin, UserProfile, UserPermission, PermissionGroup } from '@/lib/supabase'
+import { supabase, supabaseAdmin, isSupabaseReachable, UserProfile, UserPermission, PermissionGroup } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { getCurrentCompany, addUserCompanyAssignment } from '@/lib/dataManager'
+
+// After connectivity test completes, these are used synchronously
+let _mockMode = true // default to mock until tested
+
+async function ensureConnectivityTested(): Promise<void> {
+  const reachable = await isSupabaseReachable()
+  _mockMode = !reachable
+  if (_mockMode && supabase) {
+    console.warn('Supabase unreachable — using mock mode (localStorage)')
+  }
+}
+
+/** True when we should use localStorage instead of Supabase */
+function isMockMode(): boolean {
+  return !supabase || _mockMode
+}
+
+/** True when admin operations should use mock mode */
+function isAdminMockMode(): boolean {
+  return isMockMode() || !supabaseAdmin
+}
+
+// ============================================================
 
 export function useUsers() {
   const [users, setUsers] = useState<UserProfile[]>([])
@@ -14,49 +37,24 @@ export function useUsers() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      
-      // Check if we have a real Supabase connection
-      if (!supabase) {
-        // Mock mode - load from localStorage
+      await ensureConnectivityTested()
+
+      if (isMockMode()) {
         const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
         setUsers(mockUsers)
-        setLoading(false)
         return
       }
 
-      // Test connection first
-      try {
-        const { data: testData, error: testError } = await supabase.from('profiles').select('id').limit(1)
-        if (testError) {
-          console.warn('Supabase connection test failed, falling back to mock mode:', testError)
-          // Fall back to mock mode
-          const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
-          setUsers(mockUsers)
-          setLoading(false)
-          return
-        }
-      } catch (testErr) {
-        console.warn('Supabase connection test failed, falling back to mock mode:', testErr)
-        // Fall back to mock mode
-        const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
-        setUsers(mockUsers)
-        setLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
-
       setUsers(data || [])
     } catch (err) {
       console.error('Error fetching users:', err)
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת משתמשים')
-      toast.error('שגיאה בטעינת משתמשים')
-      
       // Fall back to mock mode on error
       try {
         const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
@@ -71,13 +69,15 @@ export function useUsers() {
 
   // Fetch user permissions
   const fetchPermissions = async () => {
-    if (!supabase) {
+    await ensureConnectivityTested()
+
+    if (isMockMode()) {
       const mockPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
       setPermissions(mockPermissions)
       return
     }
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('user_permissions')
         .select('*')
 
@@ -92,13 +92,15 @@ export function useUsers() {
 
   // Fetch permission groups
   const fetchPermissionGroups = async () => {
-    if (!supabase) {
+    await ensureConnectivityTested()
+
+    if (isMockMode()) {
       const mockGroups = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
       setPermissionGroups(mockGroups)
       return
     }
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('permission_groups')
         .select('*')
         .order('name')
@@ -107,14 +109,16 @@ export function useUsers() {
       setPermissionGroups(data || [])
     } catch (err) {
       console.error('Error fetching permission groups:', err)
+      // Fall back to mock mode
+      const mockGroups = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
+      setPermissionGroups(mockGroups)
     }
   }
 
   // Create new user
   const createUser = async (userData: Omit<UserProfile, 'id' | 'created_at'>, password: string) => {
     try {
-      // Check if we have a real Supabase connection
-      if (!supabaseAdmin || !supabase) {
+      if (isAdminMockMode()) {
         // Mock mode - create user in localStorage
         const mockId = crypto.randomUUID()
         const newUser: UserProfile = {
@@ -151,14 +155,14 @@ export function useUsers() {
           addUserCompanyAssignment(mockId, currentCompanyId, roleMapping[userData.role] || 'viewer', true)
         }
 
-        toast.success('משתמש נוצר בהצלחה (מצב Mock)')
+        toast.success('משתמש נוצר בהצלחה')
         fetchUsers()
         fetchPermissions()
         return true
       }
 
       // Real Supabase mode - create auth user using admin client
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabaseAdmin!.auth.admin.createUser({
         email: userData.email,
         password: password,
         email_confirm: true
@@ -167,7 +171,7 @@ export function useUsers() {
       if (authError) throw authError
 
       // Then create profile
-      const { error: profileError } = await supabase
+      const { error: profileError } = await supabase!
         .from('profiles')
         .insert([{ ...userData, id: authData.user.id }])
 
@@ -175,7 +179,7 @@ export function useUsers() {
 
       // Create default permissions based on role
       const defaultPermissions = getDefaultPermissionsForRole(userData.role)
-      const { error: permError } = await supabase
+      const { error: permError } = await supabase!
         .from('user_permissions')
         .insert([{
           user_id: authData.user.id,
@@ -354,13 +358,13 @@ export function useUsers() {
     } as UserPermission
 
     try {
-      if (!supabase) {
+      if (isMockMode()) {
         // Mock mode
         const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
         existingPermissions.push(newPermission)
         localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions))
       } else {
-        const { error } = await supabase
+        const { error } = await supabase!
           .from('user_permissions')
           .insert([{ user_id: userId, ...defaultPerms }])
         if (error) throw error
@@ -377,7 +381,7 @@ export function useUsers() {
   // Update user
   const updateUser = async (id: string, updates: Partial<UserProfile>) => {
     try {
-      if (!supabase) {
+      if (isMockMode()) {
         // Mock mode
         const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
         const idx = existingUsers.findIndex((u: UserProfile) => u.id === id)
@@ -390,7 +394,7 @@ export function useUsers() {
         return true
       }
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('profiles')
         .update(updates)
         .eq('id', id)
@@ -411,7 +415,7 @@ export function useUsers() {
   // Update user permissions (upsert - insert if not found)
   const updatePermissions = async (userId: string, permissionUpdates: Partial<UserPermission>) => {
     try {
-      if (!supabase) {
+      if (isMockMode()) {
         // Mock mode
         const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
         const idx = existingPermissions.findIndex((p: any) => p.user_id === userId)
@@ -433,7 +437,7 @@ export function useUsers() {
         return true
       }
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('user_permissions')
         .upsert({ user_id: userId, ...permissionUpdates, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
 
@@ -464,7 +468,7 @@ export function useUsers() {
         ...groupPermissions
       }
 
-      if (!supabase) {
+      if (isMockMode()) {
         // Mock mode
         const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
         const idx = existingPermissions.findIndex((p: any) => p.user_id === userId)
@@ -485,7 +489,7 @@ export function useUsers() {
         return true
       }
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('user_permissions')
         .upsert({ user_id: userId, ...permissionUpdates, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
 
@@ -532,12 +536,12 @@ export function useUsers() {
         updated_at: new Date().toISOString()
       }
 
-      if (!supabase) {
+      if (isMockMode()) {
         const existing = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
         existing.push(newGroup)
         localStorage.setItem('mock-permission-groups', JSON.stringify(existing))
       } else {
-        const { error } = await supabase.from('permission_groups').insert([newGroup])
+        const { error } = await supabase!.from('permission_groups').insert([newGroup])
         if (error) throw error
       }
 
@@ -553,7 +557,7 @@ export function useUsers() {
 
   const updatePermissionGroup = async (id: string, updates: { name?: string; description?: string } & Record<string, any>) => {
     try {
-      if (!supabase) {
+      if (isMockMode()) {
         const existing = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
         const idx = existing.findIndex((g: any) => g.id === id)
         if (idx !== -1) {
@@ -561,7 +565,7 @@ export function useUsers() {
           localStorage.setItem('mock-permission-groups', JSON.stringify(existing))
         }
       } else {
-        const { error } = await supabase.from('permission_groups').update(updates).eq('id', id)
+        const { error } = await supabase!.from('permission_groups').update(updates).eq('id', id)
         if (error) throw error
       }
 
@@ -577,12 +581,12 @@ export function useUsers() {
 
   const deletePermissionGroup = async (id: string) => {
     try {
-      if (!supabase) {
+      if (isMockMode()) {
         const existing = JSON.parse(localStorage.getItem('mock-permission-groups') || '[]')
         const filtered = existing.filter((g: any) => g.id !== id)
         localStorage.setItem('mock-permission-groups', JSON.stringify(filtered))
       } else {
-        const { error } = await supabase.from('permission_groups').delete().eq('id', id)
+        const { error } = await supabase!.from('permission_groups').delete().eq('id', id)
         if (error) throw error
       }
 
@@ -599,14 +603,14 @@ export function useUsers() {
   // Change user password
   const changeUserPassword = async (userId: string, newPassword: string) => {
     try {
-      if (!supabaseAdmin) {
+      if (isAdminMockMode()) {
         // Mock mode - just acknowledge the change
-        toast.success('סיסמה שונתה בהצלחה (מצב Mock)')
+        toast.success('סיסמה שונתה בהצלחה')
         return true
       }
 
       // Update password in Supabase Auth using admin client
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      const { error } = await supabaseAdmin!.auth.admin.updateUserById(userId, {
         password: newPassword
       })
 
@@ -625,111 +629,55 @@ export function useUsers() {
   // Delete user
   const deleteUser = async (id: string) => {
     try {
-      // Check if we have a real Supabase connection
-      if (!supabaseAdmin || !supabase) {
-        console.log('Using mock mode - no Supabase connection available')
+      if (isAdminMockMode()) {
         // Mock mode - delete from localStorage
         const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
         const filteredUsers = existingUsers.filter((u: UserProfile) => u.id !== id)
         localStorage.setItem('mock-users', JSON.stringify(filteredUsers))
-        
-        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
-        const filteredPermissions = existingPermissions.filter((p: any) => p.user_id !== id)
-        localStorage.setItem('mock-permissions', JSON.stringify(filteredPermissions))
-        
-        toast.success('משתמש נמחק בהצלחה (מצב Mock)')
-        fetchUsers()
-        fetchPermissions()
-        return true
-      }
 
-      // Test connection first
-      try {
-        const { data: testData, error: testError } = await supabase.from('profiles').select('id').limit(1)
-        if (testError) {
-          console.warn('Supabase connection test failed, falling back to mock mode:', testError)
-          // Fall back to mock mode
-          const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
-          const filteredUsers = existingUsers.filter((u: UserProfile) => u.id !== id)
-          localStorage.setItem('mock-users', JSON.stringify(filteredUsers))
-          
-          const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
-          const filteredPermissions = existingPermissions.filter((p: any) => p.user_id !== id)
-          localStorage.setItem('mock-permissions', JSON.stringify(filteredPermissions))
-          
-          toast.success('משתמש נמחק בהצלחה (מצב Mock - חיבור Supabase נכשל)')
-          fetchUsers()
-          fetchPermissions()
-          return true
-        }
-      } catch (testErr) {
-        console.warn('Supabase connection test failed, falling back to mock mode:', testErr)
-        // Fall back to mock mode
-        const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
-        const filteredUsers = existingUsers.filter((u: UserProfile) => u.id !== id)
-        localStorage.setItem('mock-users', JSON.stringify(filteredUsers))
-        
         const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
         const filteredPermissions = existingPermissions.filter((p: any) => p.user_id !== id)
         localStorage.setItem('mock-permissions', JSON.stringify(filteredPermissions))
-        
-        toast.success('משתמש נמחק בהצלחה (מצב Mock - חיבור Supabase נכשל)')
+
+        toast.success('משתמש נמחק בהצלחה')
         fetchUsers()
         fetchPermissions()
         return true
       }
 
       // Real Supabase mode - delete related records first, then delete auth user
-      try {
-        // Delete profile and permissions first (profiles FK doesn't have CASCADE)
-        await supabase.from('user_permissions').delete().eq('user_id', id)
-        await supabase.from('profiles').delete().eq('id', id)
+      await supabase!.from('user_permissions').delete().eq('user_id', id)
+      await supabase!.from('profiles').delete().eq('id', id)
 
-        const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
-        
-        if (error) {
-          console.warn('Supabase delete failed, falling back to mock mode:', error)
-          // Fall back to mock mode
-          const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
-          const filteredUsers = existingUsers.filter((u: UserProfile) => u.id !== id)
-          localStorage.setItem('mock-users', JSON.stringify(filteredUsers))
-          
-          const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
-          const filteredPermissions = existingPermissions.filter((p: any) => p.user_id !== id)
-          localStorage.setItem('mock-permissions', JSON.stringify(filteredPermissions))
-          
-          toast.success('משתמש נמחק בהצלחה (מצב Mock - Supabase נכשל)')
-          fetchUsers()
-          fetchPermissions()
-          return true
-        }
+      const { error } = await supabaseAdmin!.auth.admin.deleteUser(id)
+      if (error) throw error
+
+      toast.success('משתמש נמחק בהצלחה')
+      fetchUsers()
+      fetchPermissions()
+      return true
+    } catch (err) {
+      console.error('Error deleting user:', err)
+      // Fall back to mock mode on error
+      try {
+        const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
+        const filteredUsers = existingUsers.filter((u: UserProfile) => u.id !== id)
+        localStorage.setItem('mock-users', JSON.stringify(filteredUsers))
+
+        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
+        const filteredPermissions = existingPermissions.filter((p: any) => p.user_id !== id)
+        localStorage.setItem('mock-permissions', JSON.stringify(filteredPermissions))
 
         toast.success('משתמש נמחק בהצלחה')
         fetchUsers()
         fetchPermissions()
         return true
-      } catch (supabaseErr) {
-        console.warn('Supabase delete operation failed, falling back to mock mode:', supabaseErr)
-        // Fall back to mock mode
-        const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
-        const filteredUsers = existingUsers.filter((u: UserProfile) => u.id !== id)
-        localStorage.setItem('mock-users', JSON.stringify(filteredUsers))
-        
-        const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
-        const filteredPermissions = existingPermissions.filter((p: any) => p.user_id !== id)
-        localStorage.setItem('mock-permissions', JSON.stringify(filteredPermissions))
-        
-        toast.success('משתמש נמחק בהצלחה (מצב Mock - Supabase נכשל)')
-        fetchUsers()
-        fetchPermissions()
-        return true
+      } catch (fallbackErr) {
+        const message = err instanceof Error ? err.message : 'שגיאה במחיקת משתמש'
+        setError(message)
+        toast.error(message)
+        return false
       }
-    } catch (err) {
-      console.error('Error deleting user:', err)
-      const message = err instanceof Error ? err.message : 'שגיאה במחיקת משתמש'
-      setError(message)
-      toast.error(message)
-      return false
     }
   }
 

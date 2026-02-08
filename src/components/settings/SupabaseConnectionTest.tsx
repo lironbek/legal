@@ -47,11 +47,13 @@ export function SupabaseConnectionTest() {
         return
       }
 
-      // Test actual connection
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('count', { count: 'exact', head: true })
+      // Test actual connection (with 5s timeout)
+      const queryResult = await Promise.race([
+        supabase.from('profiles').select('count', { count: 'exact', head: true }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('החיבור ל-Supabase עבר זמן מותר (timeout)')), 5000))
+      ]) as any
 
+      const { data, error } = queryResult
       if (error && error.code !== 'PGRST116') { // PGRST116 is "table not found" which is expected
         throw error
       }

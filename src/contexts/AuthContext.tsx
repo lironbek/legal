@@ -58,24 +58,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Helper: restore mock auth from localStorage
+    const restoreMockAuth = () => {
+      const mockAuth = localStorage.getItem('mock-auth-user');
+      if (mockAuth) {
+        try {
+          const parsed = JSON.parse(mockAuth);
+          setUser(parsed.user);
+          setProfile(parsed.profile);
+        } catch {
+          // invalid mock auth
+        }
+      }
+    };
+
     // Get initial session with timeout fallback
     const sessionTimeout = setTimeout(() => {
       console.warn('Supabase session check timed out - falling back to mock mode');
+      restoreMockAuth();
       setLoading(false);
     }, 5000);
 
     supabase.auth.getSession().then(async ({ data: { session } }: any) => {
       clearTimeout(sessionTimeout);
       if (session?.user) {
-        const authUser = { id: session.user.id, email: session.user.email || '' };
-        setUser(authUser);
         const prof = await fetchProfile(session.user.id);
-        setProfile(prof);
+        if (prof) {
+          setUser({ id: session.user.id, email: session.user.email || '' });
+          setProfile(prof);
+        } else {
+          // Session exists but no profile - invalid user, sign out
+          console.warn('Supabase session exists but no profile found - signing out');
+          await supabase.auth.signOut();
+          restoreMockAuth();
+        }
+      } else {
+        restoreMockAuth();
       }
       setLoading(false);
     }).catch((err: any) => {
       clearTimeout(sessionTimeout);
       console.warn('Failed to get Supabase session:', err);
+      restoreMockAuth();
       setLoading(false);
     });
 
@@ -83,10 +107,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: string, session: any) => {
         if (session?.user) {
-          const authUser = { id: session.user.id, email: session.user.email || '' };
-          setUser(authUser);
           const prof = await fetchProfile(session.user.id);
-          setProfile(prof);
+          if (prof) {
+            setUser({ id: session.user.id, email: session.user.email || '' });
+            setProfile(prof);
+          } else {
+            // No profile - don't auto-login
+            setUser(null);
+            setProfile(null);
+          }
         } else {
           setUser(null);
           setProfile(null);
@@ -100,60 +129,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchProfile]);
 
-  const signIn = useCallback(async (email: string, password: string, companyId?: string): Promise<{ error: string | null }> => {
-    if (!supabase) {
-      // Mock mode - check mock users
-      const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-      const mockUser = mockUsers.find((u: any) => u.email === email);
-      if (mockUser) {
-        // If companyId is provided, validate user is assigned to this company
-        if (companyId) {
-          const isAdmin = mockUser.role === 'admin';
-          if (!isAdmin) {
-            const assignments = getUserCompanyAssignments(mockUser.id);
-            const hasAccess = assignments.some(a => a.company_id === companyId);
-            if (!hasAccess) {
-              return { error: 'אין לך הרשאה לארגון זה' };
-            }
-          }
-          setCurrentCompany(companyId);
-        }
-        const authUser = { id: mockUser.id, email: mockUser.email };
-        setUser(authUser);
-        setProfile(mockUser);
-        localStorage.setItem('mock-auth-user', JSON.stringify({ user: authUser, profile: mockUser }));
-        return { error: null };
-      }
-      return { error: 'אימייל או סיסמה שגויים' };
-    }
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      return { error: error.message === 'Invalid login credentials' ? 'אימייל או סיסמה שגויים' : error.message };
-    }
-    if (data.user) {
-      const authUser = { id: data.user.id, email: data.user.email || '' };
-      const prof = await fetchProfile(data.user.id);
-
-      // If companyId is provided, validate user is assigned to this company
+  // Helper: try mock login against localStorage users
+  const tryMockSignIn = useCallback((email: string, companyId?: string): { error: string | null } => {
+    const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+    const mockUser = mockUsers.find((u: any) => u.email === email);
+    if (mockUser) {
       if (companyId) {
-        const isAdmin = prof?.role === 'admin';
+        const isAdmin = mockUser.role === 'admin';
         if (!isAdmin) {
-          const assignments = getUserCompanyAssignments(data.user.id);
+          const assignments = getUserCompanyAssignments(mockUser.id);
           const hasAccess = assignments.some(a => a.company_id === companyId);
           if (!hasAccess) {
-            await supabase.auth.signOut();
             return { error: 'אין לך הרשאה לארגון זה' };
           }
         }
         setCurrentCompany(companyId);
       }
-
+      const authUser = { id: mockUser.id, email: mockUser.email };
       setUser(authUser);
-      setProfile(prof);
+      setProfile(mockUser);
+      localStorage.setItem('mock-auth-user', JSON.stringify({ user: authUser, profile: mockUser }));
+      return { error: null };
     }
-    return { error: null };
-  }, [fetchProfile]);
+    return { error: 'אימייל או סיסמה שגויים' };
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string, companyId?: string): Promise<{ error: string | null }> => {
+    // If no Supabase client, go straight to mock mode
+    if (!supabase) {
+      return tryMockSignIn(email, companyId);
+    }
+
+    // Try real Supabase auth with timeout
+    try {
+      const signInResult = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
+      ]);
+
+      const { data, error } = signInResult as any;
+      if (error) {
+        // If Supabase auth fails, fall back to mock mode
+        if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('Failed')) {
+          console.warn('Supabase auth failed, trying mock mode:', error.message);
+          return tryMockSignIn(email, companyId);
+        }
+        return { error: error.message === 'Invalid login credentials' ? 'אימייל או סיסמה שגויים' : error.message };
+      }
+      if (data.user) {
+        const authUser = { id: data.user.id, email: data.user.email || '' };
+        const prof = await fetchProfile(data.user.id);
+
+        // If companyId is provided, validate user is assigned to this company
+        if (companyId) {
+          const isAdmin = prof?.role === 'admin';
+          if (!isAdmin) {
+            const assignments = getUserCompanyAssignments(data.user.id);
+            const hasAccess = assignments.some(a => a.company_id === companyId);
+            if (!hasAccess) {
+              await supabase.auth.signOut();
+              return { error: 'אין לך הרשאה לארגון זה' };
+            }
+          }
+          setCurrentCompany(companyId);
+        }
+
+        setUser(authUser);
+        setProfile(prof);
+      }
+      return { error: null };
+    } catch (err) {
+      // Timeout or network error → fall back to mock mode
+      console.warn('Supabase signIn failed, trying mock mode:', err);
+      return tryMockSignIn(email, companyId);
+    }
+  }, [fetchProfile, tryMockSignIn]);
 
   const signOut = useCallback(async () => {
     if (supabase) {

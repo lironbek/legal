@@ -39,6 +39,25 @@ if (supabaseUrl && supabaseServiceRoleKey &&
 
 export { supabase, supabaseAdmin }
 
+// ============================================================
+// Shared Supabase connectivity check (cached, with 3s timeout)
+// Use: const reachable = await isSupabaseReachable()
+// ============================================================
+let _connectivityPromise: Promise<boolean> | null = null
+
+export function isSupabaseReachable(): Promise<boolean> {
+  if (_connectivityPromise !== null) return _connectivityPromise
+  if (!supabase) {
+    _connectivityPromise = Promise.resolve(false)
+    return _connectivityPromise
+  }
+  _connectivityPromise = Promise.race([
+    supabase.from('profiles').select('id').limit(1).then((res: any) => !res.error),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3000))
+  ]).catch(() => false)
+  return _connectivityPromise
+}
+
 // Types for user management
 export interface UserProfile {
   id: string

@@ -329,6 +329,15 @@ export function UsersTable({ className }: UsersTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {users.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+                    <p className="text-muted-foreground font-medium">אין משתמשים במערכת</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">הוסף משתמש חדש באמצעות הטופס למעלה</p>
+                  </TableCell>
+                </TableRow>
+              )}
               {users.map((user) => {
                 const companies = getUserCompanies(user.id)
                 return (

@@ -36,8 +36,6 @@ import {
   getDocumentTypeLabel,
 } from '@/lib/documentScanService';
 import { getCases, getClients } from '@/lib/dataManager';
-import { supabase } from '@/lib/supabase';
-
 export default function ScannedDocumentsPage() {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<ScannedDocument[]>([]);
@@ -56,13 +54,13 @@ export default function ScannedDocumentsPage() {
 
   const loadDocuments = async () => {
     setLoading(true);
-    let docs: ScannedDocument[];
-    if (supabase) {
-      docs = await getScannedDocumentsAsync();
-    } else {
-      docs = getScannedDocuments();
+    try {
+      const docs = await getScannedDocumentsAsync();
+      setDocuments(docs);
+    } catch {
+      // Fallback to sync local version
+      setDocuments(getScannedDocuments());
     }
-    setDocuments(docs);
     setLoading(false);
   };
 

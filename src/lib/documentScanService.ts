@@ -1,5 +1,15 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseReachable } from './supabase';
 import { getCurrentCompany } from './dataManager';
+
+// Local mock mode flag, set after first connectivity check
+let _scanServiceMockMode: boolean | null = null;
+async function isMockMode(): Promise<boolean> {
+  if (_scanServiceMockMode !== null) return _scanServiceMockMode;
+  if (!supabase) { _scanServiceMockMode = true; return true; }
+  const reachable = await isSupabaseReachable();
+  _scanServiceMockMode = !reachable;
+  return _scanServiceMockMode;
+}
 
 export interface ScannedDocumentData {
   document_type: string;
@@ -140,8 +150,8 @@ export const scanDocument = async (
 ): Promise<ScanResult> => {
   const effectiveCompanyId = companyId || getCurrentCompany() || '';
 
-  // If no Supabase, use mock mode
-  if (!supabase) {
+  // If no Supabase or unreachable, use mock mode
+  if (await isMockMode()) {
     console.log('Mock mode: simulating document scan');
     const result = await mockScanDocument(file);
 
@@ -285,45 +295,39 @@ export const scanDocument = async (
   }
 };
 
-// Get all scanned documents
+// Get all scanned documents (sync, always from localStorage)
 export const getScannedDocuments = (): ScannedDocument[] => {
-  if (!supabase) {
-    // Mock mode - read from localStorage
-    const docs = JSON.parse(localStorage.getItem('scannedDocuments') || '[]');
-    const companyId = getCurrentCompany();
-    return companyId ? docs.filter((d: ScannedDocument) => d.company_id === companyId) : docs;
-  }
-
-  // For Supabase mode, this would be called via async function
-  // but we keep the same pattern as dataManager for consistency
-  return [];
+  const docs = JSON.parse(localStorage.getItem('scannedDocuments') || '[]');
+  const companyId = getCurrentCompany();
+  return companyId ? docs.filter((d: ScannedDocument) => d.company_id === companyId) : docs;
 };
 
 export const getScannedDocumentsAsync = async (): Promise<ScannedDocument[]> => {
-  if (!supabase) {
+  if (await isMockMode()) {
     return getScannedDocuments();
   }
 
-  const companyId = getCurrentCompany();
-  const { data, error } = await supabase
-    .from('scanned_documents')
-    .select('*')
-    .eq('company_id', companyId)
-    .order('created_at', { ascending: false });
+  try {
+    const companyId = getCurrentCompany();
+    const { data, error } = await supabase!
+      .from('scanned_documents')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching scanned documents:', error);
-    return [];
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('Error fetching scanned documents, falling back to local:', err);
+    return getScannedDocuments();
   }
-
-  return data || [];
 };
 
 export const updateScannedDocument = async (
   id: string,
   updates: Partial<ScannedDocument>
 ): Promise<boolean> => {
-  if (!supabase) {
+  if (await isMockMode()) {
     const docs = JSON.parse(localStorage.getItem('scannedDocuments') || '[]');
     const index = docs.findIndex((d: ScannedDocument) => d.id === id);
     if (index === -1) return false;
@@ -332,16 +336,25 @@ export const updateScannedDocument = async (
     return true;
   }
 
-  const { error } = await supabase
-    .from('scanned_documents')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id);
-
-  return !error;
+  try {
+    const { error } = await supabase!
+      .from('scanned_documents')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return !error;
+  } catch {
+    // Fallback to localStorage
+    const docs = JSON.parse(localStorage.getItem('scannedDocuments') || '[]');
+    const index = docs.findIndex((d: ScannedDocument) => d.id === id);
+    if (index === -1) return false;
+    docs[index] = { ...docs[index], ...updates, updated_at: new Date().toISOString() };
+    localStorage.setItem('scannedDocuments', JSON.stringify(docs));
+    return true;
+  }
 };
 
 export const deleteScannedDocument = async (id: string): Promise<boolean> => {
-  if (!supabase) {
+  if (await isMockMode()) {
     const docs = JSON.parse(localStorage.getItem('scannedDocuments') || '[]');
     const filtered = docs.filter((d: ScannedDocument) => d.id !== id);
     if (filtered.length === docs.length) return false;
@@ -349,12 +362,20 @@ export const deleteScannedDocument = async (id: string): Promise<boolean> => {
     return true;
   }
 
-  const { error } = await supabase
-    .from('scanned_documents')
-    .delete()
-    .eq('id', id);
-
-  return !error;
+  try {
+    const { error } = await supabase!
+      .from('scanned_documents')
+      .delete()
+      .eq('id', id);
+    return !error;
+  } catch {
+    // Fallback to localStorage
+    const docs = JSON.parse(localStorage.getItem('scannedDocuments') || '[]');
+    const filtered = docs.filter((d: ScannedDocument) => d.id !== id);
+    if (filtered.length === docs.length) return false;
+    localStorage.setItem('scannedDocuments', JSON.stringify(filtered));
+    return true;
+  }
 };
 
 // Send document via WhatsApp
@@ -364,7 +385,7 @@ export const sendWhatsAppDocument = async (
   fileUrl?: string,
   fileName?: string
 ): Promise<{ success: boolean; error?: string }> => {
-  if (!supabase) {
+  if (await isMockMode()) {
     // Mock mode
     console.log('Mock: sending WhatsApp to', phone, message);
     await new Promise(resolve => setTimeout(resolve, 1000));
