@@ -50,7 +50,7 @@ export function SupabaseConnectionTest() {
       // Test actual connection (with 5s timeout)
       const queryResult = await Promise.race([
         supabase.from('profiles').select('count', { count: 'exact', head: true }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('החיבור ל-Supabase עבר זמן מותר (timeout)')), 5000))
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('החיבור ל-Supabase עבר זמן מותר (timeout)')), 15000))
       ]) as any
 
       const { data, error } = queryResult

@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('Supabase session check timed out - falling back to mock mode');
       restoreMockAuth();
       setLoading(false);
-    }, 5000);
+    }, 15000);
 
     supabase.auth.getSession().then(async ({ data: { session } }: any) => {
       clearTimeout(sessionTimeout);
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const signInResult = await Promise.race([
         supabase.auth.signInWithPassword({ email, password }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 15000))
       ]);
 
       const { data, error } = signInResult as any;
