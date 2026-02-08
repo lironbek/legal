@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import { Dashboard } from "./pages/Dashboard";
 import CasesPage from "./pages/CasesPage";
@@ -21,6 +21,7 @@ import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import CashFlowPage from "./pages/CashFlowPage";
 import BudgetPage from "./pages/BudgetPage";
+import LoginPage from "./pages/LoginPage";
 
 // New form pages
 import NewCasePage from "./pages/forms/NewCasePage";
@@ -34,49 +35,113 @@ import CaseDocumentsPage from "./pages/forms/CaseDocumentsPage";
 
 // Data manager
 import { initializeSampleData } from "./lib/dataManager";
+import { CompanyProvider } from "./contexts/CompanyContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { Scale, Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+// Protected Route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+            <Scale className="h-8 w-8 text-primary" />
+          </div>
+          <div className="flex items-center gap-2 justify-center text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>טוען...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+const AppRoutes = () => {
+  const { user, loading } = useAuth();
+
   useEffect(() => {
     // Initialize sample data when app loads
     initializeSampleData();
   }, []);
 
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+            <Scale className="h-8 w-8 text-primary" />
+          </div>
+          <div className="flex items-center gap-2 justify-center text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>טוען...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login/:companySlug" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+
+      {/* Protected routes */}
+      <Route path="/" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
+      <Route path="/cases" element={<ProtectedRoute><MainLayout><CasesPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/cases/new" element={<ProtectedRoute><MainLayout><NewCasePage /></MainLayout></ProtectedRoute>} />
+      <Route path="/cases/:caseId/documents" element={<ProtectedRoute><MainLayout><CaseDocumentsPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/cases/:caseId/documents/upload" element={<ProtectedRoute><MainLayout><UploadCaseDocumentPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/clients" element={<ProtectedRoute><MainLayout><ClientsPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/clients/new" element={<ProtectedRoute><MainLayout><NewClientPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/clients/:clientId/edit" element={<ProtectedRoute><MainLayout><EditClientPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/time-tracking" element={<ProtectedRoute><MainLayout><TimeTrackingPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/billing" element={<ProtectedRoute><MainLayout><BillingPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/billing/new" element={<ProtectedRoute><MainLayout><NewInvoicePage /></MainLayout></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><MainLayout><CalendarPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/calendar/new" element={<ProtectedRoute><MainLayout><NewEventPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/documents" element={<ProtectedRoute><MainLayout><DocumentsPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/documents/upload" element={<ProtectedRoute><MainLayout><UploadDocumentPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><MainLayout><ReportsPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/cash-flow" element={<ProtectedRoute><MainLayout><CashFlowPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/budget" element={<ProtectedRoute><MainLayout><BudgetPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/legal-library" element={<ProtectedRoute><MainLayout><LegalLibraryPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/disability-calculator" element={<ProtectedRoute><MainLayout><DisabilityCalculatorPage /></MainLayout></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><MainLayout><SettingsPage /></MainLayout></ProtectedRoute>} />
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-            <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
-            <Route path="/cases" element={<MainLayout><CasesPage /></MainLayout>} />
-            <Route path="/cases/new" element={<MainLayout><NewCasePage /></MainLayout>} />
-            <Route path="/cases/:caseId/documents" element={<MainLayout><CaseDocumentsPage /></MainLayout>} />
-            <Route path="/cases/:caseId/documents/upload" element={<MainLayout><UploadCaseDocumentPage /></MainLayout>} />
-            <Route path="/clients" element={<MainLayout><ClientsPage /></MainLayout>} />
-            <Route path="/clients/new" element={<MainLayout><NewClientPage /></MainLayout>} />
-            <Route path="/clients/:clientId/edit" element={<MainLayout><EditClientPage /></MainLayout>} />
-            <Route path="/time-tracking" element={<MainLayout><TimeTrackingPage /></MainLayout>} />
-            <Route path="/billing" element={<MainLayout><BillingPage /></MainLayout>} />
-            <Route path="/billing/new" element={<MainLayout><NewInvoicePage /></MainLayout>} />
-            <Route path="/calendar" element={<MainLayout><CalendarPage /></MainLayout>} />
-            <Route path="/calendar/new" element={<MainLayout><NewEventPage /></MainLayout>} />
-            <Route path="/documents" element={<MainLayout><DocumentsPage /></MainLayout>} />
-            <Route path="/documents/upload" element={<MainLayout><UploadDocumentPage /></MainLayout>} />
-            <Route path="/reports" element={<MainLayout><ReportsPage /></MainLayout>} />
-            <Route path="/cash-flow" element={<MainLayout><CashFlowPage /></MainLayout>} />
-            <Route path="/budget" element={<MainLayout><BudgetPage /></MainLayout>} />
-            <Route path="/legal-library" element={<MainLayout><LegalLibraryPage /></MainLayout>} />
-            <Route path="/disability-calculator" element={<MainLayout><DisabilityCalculatorPage /></MainLayout>} />
-            <Route path="/settings" element={<MainLayout><SettingsPage /></MainLayout>} />
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <CompanyProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <AppRoutes />
+              </TooltipProvider>
+            </CompanyProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </ThemeProvider>
   );

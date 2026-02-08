@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, supabaseAdmin, UserProfile, UserPermission, PermissionGroup } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { getCurrentCompany, addUserCompanyAssignment } from '@/lib/dataManager'
 
 export function useUsers() {
   const [users, setUsers] = useState<UserProfile[]>([])
@@ -126,6 +127,18 @@ export function useUsers() {
         }])
 
       if (permError) throw permError
+
+      // Auto-assign to current company
+      const currentCompanyId = getCurrentCompany()
+      if (currentCompanyId) {
+        const roleMapping: Record<string, 'owner' | 'admin' | 'lawyer' | 'assistant' | 'viewer'> = {
+          admin: 'admin',
+          lawyer: 'lawyer',
+          assistant: 'assistant',
+          client: 'viewer',
+        }
+        addUserCompanyAssignment(authData.user.id, currentCompanyId, roleMapping[userData.role] || 'viewer', true)
+      }
 
       toast.success('משתמש נוצר בהצלחה')
       fetchUsers()
@@ -426,8 +439,12 @@ export function useUsers() {
         return true
       }
 
-      // Real Supabase mode - try to delete, but fall back to mock if it fails
+      // Real Supabase mode - delete related records first, then delete auth user
       try {
+        // Delete profile and permissions first (profiles FK doesn't have CASCADE)
+        await supabase.from('user_permissions').delete().eq('user_id', id)
+        await supabase.from('profiles').delete().eq('id', id)
+
         const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
         
         if (error) {

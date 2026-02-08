@@ -1,11 +1,12 @@
 
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Bell, Search, LogOut, User, Settings, Moon, Sun, ChevronLeft } from 'lucide-react';
+import { CompanySwitcher } from './CompanySwitcher';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,10 +47,29 @@ function getPageInfo(pathname: string) {
   return { title: '', breadcrumbs: [] };
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return parts[0].charAt(0) + '.' + parts[1].charAt(0);
+  }
+  return name.charAt(0);
+}
+
 export function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { user, profile, signOut } = useAuth();
   const pageInfo = getPageInfo(location.pathname);
+
+  const displayName = profile?.full_name || user?.email || '';
+  const displayEmail = user?.email || '';
+  const initials = getInitials(displayName);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border">
@@ -83,6 +103,11 @@ export function Header() {
 
         {/* Right side - Actions */}
         <div className="flex items-center gap-2">
+          {/* Company Switcher */}
+          <CompanySwitcher />
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
           {/* Dark Mode Toggle */}
           <Button
             variant="ghost"
@@ -113,30 +138,29 @@ export function Header() {
               <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 hover:bg-muted rounded-lg">
                 <Avatar className="h-7 w-7">
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                    א.כ
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-foreground hidden lg:inline">עו"ד כהן</span>
+                <span className="text-sm font-medium text-foreground hidden lg:inline">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56" dir="rtl">
               <DropdownMenuLabel>
                 <div>
-                  <p className="text-sm font-semibold">עו"ד אבי כהן</p>
-                  <p className="text-xs text-muted-foreground">avi@cohen-law.co.il</p>
+                  <p className="text-sm font-semibold">{displayName}</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">{displayEmail}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="h-4 w-4 ml-2" />
-                פרופיל
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="h-4 w-4 ml-2" />
                 הגדרות
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={handleSignOut}
+              >
                 <LogOut className="h-4 w-4 ml-2" />
                 התנתק
               </DropdownMenuItem>

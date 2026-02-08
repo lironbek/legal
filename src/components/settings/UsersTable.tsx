@@ -11,15 +11,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Edit, 
-  Trash2, 
-  User, 
+import {
+  Edit,
+  Trash2,
+  User,
   Users,
-  Shield, 
-  Mail, 
-  Phone, 
+  Shield,
+  Mail,
+  Phone,
   Building,
+  Building2,
   Calendar,
   Clock,
   CheckCircle,
@@ -29,11 +30,22 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
-  Key
+  Key,
+  Plus,
+  X
 } from 'lucide-react'
 import { UserProfile, UserPermission, PermissionGroup } from '@/lib/supabase'
 import { useUsers } from '@/hooks/useUsers'
 import { toast } from 'sonner'
+import {
+  Company,
+  UserCompanyAssignment,
+  getCompanies,
+  getUserCompanyAssignments,
+  addUserCompanyAssignment,
+  removeUserCompanyAssignment,
+  updateUserCompanyRole,
+} from '@/lib/dataManager'
 
 interface UsersTableProps {
   className?: string
@@ -66,10 +78,39 @@ export function UsersTable({ className }: UsersTableProps) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [userAssignments, setUserAssignments] = useState<UserCompanyAssignment[]>([])
+  const [allCompanies, setAllCompanies] = useState<Company[]>([])
+  const [assignCompanyId, setAssignCompanyId] = useState('')
+  const [assignRole, setAssignRole] = useState<UserCompanyAssignment['role']>('viewer')
 
   const handleEditUser = (user: UserProfile) => {
     setEditingUser({ ...user })
+    setAllCompanies(getCompanies())
+    setUserAssignments(getUserCompanyAssignments(user.id))
+    setAssignCompanyId('')
+    setAssignRole('viewer')
     setIsEditDialogOpen(true)
+  }
+
+  const handleAddCompanyAssignment = () => {
+    if (!assignCompanyId || !editingUser) return
+    addUserCompanyAssignment(editingUser.id, assignCompanyId, assignRole)
+    setUserAssignments(getUserCompanyAssignments(editingUser.id))
+    setAssignCompanyId('')
+    toast.success('המשתמש שויך למשרד')
+  }
+
+  const handleRemoveCompanyAssignment = (companyId: string) => {
+    if (!editingUser) return
+    removeUserCompanyAssignment(editingUser.id, companyId)
+    setUserAssignments(getUserCompanyAssignments(editingUser.id))
+    toast.success('השיוך בוטל')
+  }
+
+  const handleUpdateCompanyRole = (companyId: string, role: UserCompanyAssignment['role']) => {
+    if (!editingUser) return
+    updateUserCompanyRole(editingUser.id, companyId, role)
+    setUserAssignments(getUserCompanyAssignments(editingUser.id))
   }
 
   const handleEditPermissions = (user: UserProfile) => {
@@ -274,11 +315,15 @@ export function UsersTable({ className }: UsersTableProps) {
           </DialogHeader>
           {editingUser && (
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic">מידע בסיסי</TabsTrigger>
                 <TabsTrigger value="address">כתובת</TabsTrigger>
                 <TabsTrigger value="personal">אישי</TabsTrigger>
                 <TabsTrigger value="emergency">חירום</TabsTrigger>
+                <TabsTrigger value="companies" className="flex items-center gap-1">
+                  <Building2 className="h-3.5 w-3.5" />
+                  משרדים
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="basic" className="space-y-4">
@@ -413,6 +458,99 @@ export function UsersTable({ className }: UsersTableProps) {
                       onChange={(e) => setEditingUser({ ...editingUser, notes: e.target.value })}
                       rows={3}
                     />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="companies" className="space-y-4">
+                {editingUser.role === 'admin' && (
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm">
+                    <Badge variant="destructive" className="mb-1">מנהל על</Badge>
+                    <p className="text-muted-foreground">למשתמש זה גישה לכל המשרדים במערכת.</p>
+                  </div>
+                )}
+
+                {/* Current assignments */}
+                {userAssignments.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>משרדים משויכים:</Label>
+                    {userAssignments.map((assignment) => {
+                      const company = allCompanies.find(c => c.id === assignment.company_id)
+                      return (
+                        <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{company?.name || 'משרד לא ידוע'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={assignment.role}
+                              onValueChange={(value) => handleUpdateCompanyRole(assignment.company_id, value as UserCompanyAssignment['role'])}
+                            >
+                              <SelectTrigger className="w-28 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="owner">בעלים</SelectItem>
+                                <SelectItem value="admin">מנהל</SelectItem>
+                                <SelectItem value="lawyer">עורך דין</SelectItem>
+                                <SelectItem value="assistant">עוזר</SelectItem>
+                                <SelectItem value="viewer">צופה</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveCompanyAssignment(assignment.company_id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {userAssignments.length === 0 && editingUser.role !== 'admin' && (
+                  <p className="text-sm text-muted-foreground">משתמש זה לא משויך לאף משרד.</p>
+                )}
+
+                {/* Add new assignment */}
+                <Separator />
+                <div className="space-y-2">
+                  <Label>שייך למשרד נוסף:</Label>
+                  <div className="flex gap-2">
+                    <Select value={assignCompanyId} onValueChange={setAssignCompanyId}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="בחר משרד" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allCompanies
+                          .filter(c => c.is_active && !userAssignments.find(a => a.company_id === c.id))
+                          .map(company => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={assignRole} onValueChange={(v) => setAssignRole(v as UserCompanyAssignment['role'])}>
+                      <SelectTrigger className="w-28">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="owner">בעלים</SelectItem>
+                        <SelectItem value="admin">מנהל</SelectItem>
+                        <SelectItem value="lawyer">עורך דין</SelectItem>
+                        <SelectItem value="assistant">עוזר</SelectItem>
+                        <SelectItem value="viewer">צופה</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={handleAddCompanyAssignment} disabled={!assignCompanyId} size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </TabsContent>

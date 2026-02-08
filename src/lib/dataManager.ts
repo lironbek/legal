@@ -1,8 +1,39 @@
 // Data Manager - ניהול נתונים עם Local Storage
 // בעתיד זה יוחלף ב-Supabase
 
+// ============ Company Types ============
+
+export interface Company {
+  id: string;
+  slug: string;
+  name: string;
+  legal_name?: string;
+  tax_id?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  phone?: string;
+  email?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserCompanyAssignment {
+  id: string;
+  user_id: string;
+  company_id: string;
+  role: 'owner' | 'admin' | 'lawyer' | 'assistant' | 'viewer';
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============ Business Entity Types ============
+
 export interface Case {
   id: string;
+  company_id: string;
   title: string;
   client: string;
   caseType: string;
@@ -17,6 +48,7 @@ export interface Case {
 
 export interface Client {
   id: string;
+  company_id: string;
   name: string;
   email: string;
   phone: string;
@@ -34,6 +66,7 @@ export interface Client {
 
 export interface Invoice {
   id: string;
+  company_id: string;
   client: string;
   invoiceNumber: string;
   issueDate: string;
@@ -47,6 +80,7 @@ export interface Invoice {
 
 export interface Event {
   id: string;
+  company_id: string;
   title: string;
   type: string;
   date: string;
@@ -62,6 +96,7 @@ export interface Event {
 
 export interface Document {
   id: string;
+  company_id: string;
   title: string;
   category: string;
   client: string;
@@ -78,6 +113,7 @@ export interface Document {
 
 export interface CashFlowEntry {
   id: string;
+  company_id: string;
   type: 'income' | 'expense';
   category: string;
   description: string;
@@ -95,6 +131,7 @@ export interface CashFlowEntry {
 
 export interface BudgetItem {
   id: string;
+  company_id: string;
   category: string;
   description: string;
   plannedAmount: number;
@@ -106,10 +143,191 @@ export interface BudgetItem {
   updatedAt: string;
 }
 
-// Generate unique ID
+// ============ Current Company State ============
+
+let currentCompanyId: string | null = null;
+
+export const setCurrentCompany = (companyId: string) => {
+  currentCompanyId = companyId;
+  localStorage.setItem('current-company-id', companyId);
+};
+
+export const getCurrentCompany = (): string | null => {
+  if (!currentCompanyId) {
+    currentCompanyId = localStorage.getItem('current-company-id');
+  }
+  return currentCompanyId;
+};
+
+// ============ Helpers ============
+
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
+
+// Read raw data from localStorage (no filtering)
+const readAll = <T>(key: string): T[] => {
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : [];
+};
+
+// Filter by current company
+const filterByCompany = <T extends { company_id: string }>(items: T[]): T[] => {
+  const companyId = getCurrentCompany();
+  if (!companyId) return items;
+  return items.filter(item => item.company_id === companyId);
+};
+
+// ============ Slug Helpers ============
+
+const generateSlug = (name: string): string => {
+  // Replace Hebrew and non-alphanumeric characters, create URL-friendly slug
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[\s]+/g, '-')       // spaces to hyphens
+    .replace(/[^a-z0-9\u0590-\u05FF-]/g, '') // keep only alphanumeric, Hebrew, hyphens
+    .replace(/--+/g, '-')         // collapse multiple hyphens
+    .replace(/^-|-$/g, '');       // trim leading/trailing hyphens
+
+  // If result is empty (e.g., only Hebrew), use transliteration-style fallback
+  if (!slug || /^[\u0590-\u05FF-]+$/.test(slug)) {
+    return 'org-' + generateId().substring(0, 8);
+  }
+  return slug;
+};
+
+const ensureUniqueSlug = (slug: string, excludeId?: string): string => {
+  const companies = readAll<Company>('companies');
+  let candidate = slug;
+  let counter = 1;
+  while (companies.some(c => c.slug === candidate && c.id !== excludeId)) {
+    candidate = `${slug}-${counter}`;
+    counter++;
+  }
+  return candidate;
+};
+
+// ============ Company CRUD ============
+
+export const getCompanies = (): Company[] => {
+  return readAll<Company>('companies');
+};
+
+export const getCompanyBySlug = (slug: string): Company | null => {
+  const companies = getCompanies();
+  return companies.find(c => c.slug === slug) || null;
+};
+
+export const addCompany = (data: Omit<Company, 'id' | 'slug' | 'created_at' | 'updated_at'> & { slug?: string }): Company => {
+  const companies = getCompanies();
+  const baseSlug = data.slug || generateSlug(data.name);
+  const uniqueSlug = ensureUniqueSlug(baseSlug);
+  const newCompany: Company = {
+    ...data,
+    id: generateId(),
+    slug: uniqueSlug,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  companies.push(newCompany);
+  localStorage.setItem('companies', JSON.stringify(companies));
+  return newCompany;
+};
+
+export const updateCompany = (id: string, updates: Partial<Company>): Company | null => {
+  const companies = getCompanies();
+  const index = companies.findIndex(c => c.id === id);
+  if (index === -1) return null;
+  // Ensure slug uniqueness if slug is being updated
+  if (updates.slug) {
+    updates.slug = ensureUniqueSlug(updates.slug, id);
+  }
+  companies[index] = { ...companies[index], ...updates, updated_at: new Date().toISOString() };
+  localStorage.setItem('companies', JSON.stringify(companies));
+  return companies[index];
+};
+
+export const deleteCompany = (id: string): boolean => {
+  const companies = getCompanies();
+  const filtered = companies.filter(c => c.id !== id);
+  if (filtered.length === companies.length) return false;
+  localStorage.setItem('companies', JSON.stringify(filtered));
+
+  // Also delete all data belonging to this company
+  const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
+  entityKeys.forEach(key => {
+    const items = readAll<{ company_id: string }>(key);
+    const remaining = items.filter(item => item.company_id !== id);
+    localStorage.setItem(key, JSON.stringify(remaining));
+  });
+
+  // Remove user-company assignments for this company
+  const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
+  const remainingAssignments = assignments.filter(a => a.company_id !== id);
+  localStorage.setItem('user-company-assignments', JSON.stringify(remainingAssignments));
+
+  return true;
+};
+
+// ============ User-Company Assignments ============
+
+export const getUserCompanyAssignments = (userId?: string): UserCompanyAssignment[] => {
+  const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
+  if (userId) return assignments.filter(a => a.user_id === userId);
+  return assignments;
+};
+
+export const getCompanyUserAssignments = (companyId: string): UserCompanyAssignment[] => {
+  const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
+  return assignments.filter(a => a.company_id === companyId);
+};
+
+export const addUserCompanyAssignment = (
+  userId: string,
+  companyId: string,
+  role: UserCompanyAssignment['role'] = 'viewer',
+  isPrimary = false
+): UserCompanyAssignment => {
+  const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
+
+  // Check if already exists
+  const existing = assignments.find(a => a.user_id === userId && a.company_id === companyId);
+  if (existing) return existing;
+
+  const newAssignment: UserCompanyAssignment = {
+    id: generateId(),
+    user_id: userId,
+    company_id: companyId,
+    role,
+    is_primary: isPrimary,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  assignments.push(newAssignment);
+  localStorage.setItem('user-company-assignments', JSON.stringify(assignments));
+  return newAssignment;
+};
+
+export const removeUserCompanyAssignment = (userId: string, companyId: string): boolean => {
+  const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
+  const filtered = assignments.filter(a => !(a.user_id === userId && a.company_id === companyId));
+  if (filtered.length === assignments.length) return false;
+  localStorage.setItem('user-company-assignments', JSON.stringify(filtered));
+  return true;
+};
+
+export const updateUserCompanyRole = (userId: string, companyId: string, role: UserCompanyAssignment['role']): boolean => {
+  const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
+  const index = assignments.findIndex(a => a.user_id === userId && a.company_id === companyId);
+  if (index === -1) return false;
+  assignments[index].role = role;
+  assignments[index].updated_at = new Date().toISOString();
+  localStorage.setItem('user-company-assignments', JSON.stringify(assignments));
+  return true;
+};
+
+// ============ Cases ============
 
 // Generate case number starting from 1000
 let caseCounter = 1000;
@@ -118,316 +336,378 @@ const generateCaseNumber = (): string => {
   if (cases.length === 0) {
     caseCounter = 1000;
   } else {
-    // Find the highest existing case number
     const existingNumbers = cases
       .map(c => parseInt(c.id))
       .filter(num => !isNaN(num))
       .sort((a, b) => b - a);
-    
+
     if (existingNumbers.length > 0) {
       caseCounter = Math.max(existingNumbers[0] + 1, 1000);
     } else {
       caseCounter = 1000;
     }
   }
-  
+
   return caseCounter.toString();
 };
 
-// Cases
 export const getCases = (): Case[] => {
-  const cases = localStorage.getItem('cases');
-  return cases ? JSON.parse(cases) : [];
+  return filterByCompany(readAll<Case>('cases'));
 };
 
-export const addCase = (caseData: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>): Case => {
-  const cases = getCases();
+export const addCase = (caseData: Omit<Case, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): Case => {
+  const allCases = readAll<Case>('cases');
+  const companyId = getCurrentCompany();
   const newCase: Case = {
     ...caseData,
     id: generateCaseNumber(),
+    company_id: companyId || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
-  cases.push(newCase);
-  localStorage.setItem('cases', JSON.stringify(cases));
+
+  allCases.push(newCase);
+  localStorage.setItem('cases', JSON.stringify(allCases));
   return newCase;
 };
 
 export const updateCase = (id: string, updates: Partial<Case>): Case | null => {
-  const cases = getCases();
-  const index = cases.findIndex(c => c.id === id);
-  
+  const allCases = readAll<Case>('cases');
+  const index = allCases.findIndex(c => c.id === id);
+
   if (index === -1) return null;
-  
-  cases[index] = {
-    ...cases[index],
+
+  allCases[index] = {
+    ...allCases[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  
-  localStorage.setItem('cases', JSON.stringify(cases));
-  return cases[index];
+
+  localStorage.setItem('cases', JSON.stringify(allCases));
+  return allCases[index];
 };
 
 export const deleteCase = (id: string): boolean => {
-  const cases = getCases();
-  const filteredCases = cases.filter(c => c.id !== id);
-  
-  if (filteredCases.length === cases.length) return false;
-  
+  const allCases = readAll<Case>('cases');
+  const filteredCases = allCases.filter(c => c.id !== id);
+
+  if (filteredCases.length === allCases.length) return false;
+
   localStorage.setItem('cases', JSON.stringify(filteredCases));
   return true;
 };
 
-// Clients
+// ============ Clients ============
+
 export const getClients = (): Client[] => {
-  const clients = localStorage.getItem('clients');
-  return clients ? JSON.parse(clients) : [];
+  return filterByCompany(readAll<Client>('clients'));
 };
 
-export const addClient = (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt' | 'activeCases'>): Client => {
-  const clients = getClients();
+export const addClient = (clientData: Omit<Client, 'id' | 'company_id' | 'createdAt' | 'updatedAt' | 'activeCases'>): Client => {
+  const allClients = readAll<Client>('clients');
+  const companyId = getCurrentCompany();
   const newClient: Client = {
     ...clientData,
     id: generateId(),
+    company_id: companyId || '',
     activeCases: 0,
-    status: 'פעיל',
+    status: clientData.status || 'פעיל',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
-  clients.push(newClient);
-  localStorage.setItem('clients', JSON.stringify(clients));
+
+  allClients.push(newClient);
+  localStorage.setItem('clients', JSON.stringify(allClients));
   return newClient;
 };
 
 export const updateClient = (id: string, updates: Partial<Client>): Client | null => {
-  const clients = getClients();
-  const index = clients.findIndex(c => c.id === id);
-  
+  const allClients = readAll<Client>('clients');
+  const index = allClients.findIndex(c => c.id === id);
+
   if (index === -1) return null;
-  
-  clients[index] = {
-    ...clients[index],
+
+  allClients[index] = {
+    ...allClients[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  
-  localStorage.setItem('clients', JSON.stringify(clients));
-  return clients[index];
+
+  localStorage.setItem('clients', JSON.stringify(allClients));
+  return allClients[index];
 };
 
 export const deleteClient = (id: string): boolean => {
-  const clients = getClients();
-  const filteredClients = clients.filter(c => c.id !== id);
-  
-  if (filteredClients.length === clients.length) return false;
-  
+  const allClients = readAll<Client>('clients');
+  const filteredClients = allClients.filter(c => c.id !== id);
+
+  if (filteredClients.length === allClients.length) return false;
+
   localStorage.setItem('clients', JSON.stringify(filteredClients));
   return true;
 };
 
-// Invoices
+// ============ Invoices ============
+
 export const getInvoices = (): Invoice[] => {
-  const invoices = localStorage.getItem('invoices');
-  return invoices ? JSON.parse(invoices) : [];
+  return filterByCompany(readAll<Invoice>('invoices'));
 };
 
-export const addInvoice = (invoiceData: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Invoice => {
-  const invoices = getInvoices();
+export const addInvoice = (invoiceData: Omit<Invoice, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): Invoice => {
+  const allInvoices = readAll<Invoice>('invoices');
+  const companyId = getCurrentCompany();
   const newInvoice: Invoice = {
     ...invoiceData,
     id: generateId(),
-    status: 'חדש',
+    company_id: companyId || '',
+    status: invoiceData.status || 'חדש',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
-  invoices.push(newInvoice);
-  localStorage.setItem('invoices', JSON.stringify(invoices));
+
+  allInvoices.push(newInvoice);
+  localStorage.setItem('invoices', JSON.stringify(allInvoices));
   return newInvoice;
 };
 
-// Events
+// ============ Events ============
+
 export const getEvents = (): Event[] => {
-  const events = localStorage.getItem('events');
-  return events ? JSON.parse(events) : [];
+  return filterByCompany(readAll<Event>('events'));
 };
 
-export const addEvent = (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Event => {
-  const events = getEvents();
+export const addEvent = (eventData: Omit<Event, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): Event => {
+  const allEvents = readAll<Event>('events');
+  const companyId = getCurrentCompany();
   const newEvent: Event = {
     ...eventData,
     id: generateId(),
+    company_id: companyId || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
-  events.push(newEvent);
-  localStorage.setItem('events', JSON.stringify(events));
+
+  allEvents.push(newEvent);
+  localStorage.setItem('events', JSON.stringify(allEvents));
   return newEvent;
 };
 
-// Documents
+// ============ Documents ============
+
 export const getDocuments = (): Document[] => {
-  const documents = localStorage.getItem('documents');
-  return documents ? JSON.parse(documents) : [];
+  return filterByCompany(readAll<Document>('documents'));
 };
 
-export const addDocument = (documentData: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Document => {
-  const documents = getDocuments();
+export const addDocument = (documentData: Omit<Document, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): Document => {
+  const allDocuments = readAll<Document>('documents');
+  const companyId = getCurrentCompany();
   const newDocument: Document = {
     ...documentData,
     id: generateId(),
-    status: 'פעיל',
+    company_id: companyId || '',
+    status: documentData.status || 'פעיל',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
-  documents.push(newDocument);
-  localStorage.setItem('documents', JSON.stringify(documents));
+
+  allDocuments.push(newDocument);
+  localStorage.setItem('documents', JSON.stringify(allDocuments));
   return newDocument;
 };
 
-// Get documents by case ID
 export const getDocumentsByCase = (caseId: string): Document[] => {
   const documents = getDocuments();
   return documents.filter(doc => doc.case === caseId);
 };
 
-// Update document
 export const updateDocument = (id: string, updates: Partial<Document>): Document | null => {
-  const documents = getDocuments();
-  const index = documents.findIndex(d => d.id === id);
-  
+  const allDocuments = readAll<Document>('documents');
+  const index = allDocuments.findIndex(d => d.id === id);
+
   if (index === -1) return null;
-  
-  documents[index] = {
-    ...documents[index],
+
+  allDocuments[index] = {
+    ...allDocuments[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
-  
-  localStorage.setItem('documents', JSON.stringify(documents));
-  return documents[index];
+
+  localStorage.setItem('documents', JSON.stringify(allDocuments));
+  return allDocuments[index];
 };
 
-// Delete document
 export const deleteDocument = (id: string): boolean => {
-  const documents = getDocuments();
-  const filteredDocuments = documents.filter(d => d.id !== id);
-  
-  if (filteredDocuments.length === documents.length) return false;
-  
+  const allDocuments = readAll<Document>('documents');
+  const filteredDocuments = allDocuments.filter(d => d.id !== id);
+
+  if (filteredDocuments.length === allDocuments.length) return false;
+
   localStorage.setItem('documents', JSON.stringify(filteredDocuments));
   return true;
 };
 
-// Cash Flow Entries
+// ============ Cash Flow Entries ============
+
 export const getCashFlowEntries = (): CashFlowEntry[] => {
-  const entries = localStorage.getItem('cashFlowEntries');
-  return entries ? JSON.parse(entries) : [];
+  return filterByCompany(readAll<CashFlowEntry>('cashFlowEntries'));
 };
 
-export const addCashFlowEntry = (data: Omit<CashFlowEntry, 'id' | 'createdAt' | 'updatedAt'>): CashFlowEntry => {
-  const entries = getCashFlowEntries();
+export const addCashFlowEntry = (data: Omit<CashFlowEntry, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): CashFlowEntry => {
+  const allEntries = readAll<CashFlowEntry>('cashFlowEntries');
+  const companyId = getCurrentCompany();
   const newEntry: CashFlowEntry = {
     ...data,
     id: generateId(),
+    company_id: companyId || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  entries.push(newEntry);
-  localStorage.setItem('cashFlowEntries', JSON.stringify(entries));
+  allEntries.push(newEntry);
+  localStorage.setItem('cashFlowEntries', JSON.stringify(allEntries));
   return newEntry;
 };
 
 export const updateCashFlowEntry = (id: string, updates: Partial<CashFlowEntry>): CashFlowEntry | null => {
-  const entries = getCashFlowEntries();
-  const index = entries.findIndex(e => e.id === id);
+  const allEntries = readAll<CashFlowEntry>('cashFlowEntries');
+  const index = allEntries.findIndex(e => e.id === id);
   if (index === -1) return null;
-  entries[index] = { ...entries[index], ...updates, updatedAt: new Date().toISOString() };
-  localStorage.setItem('cashFlowEntries', JSON.stringify(entries));
-  return entries[index];
+  allEntries[index] = { ...allEntries[index], ...updates, updatedAt: new Date().toISOString() };
+  localStorage.setItem('cashFlowEntries', JSON.stringify(allEntries));
+  return allEntries[index];
 };
 
 export const deleteCashFlowEntry = (id: string): boolean => {
-  const entries = getCashFlowEntries();
-  const filtered = entries.filter(e => e.id !== id);
-  if (filtered.length === entries.length) return false;
+  const allEntries = readAll<CashFlowEntry>('cashFlowEntries');
+  const filtered = allEntries.filter(e => e.id !== id);
+  if (filtered.length === allEntries.length) return false;
   localStorage.setItem('cashFlowEntries', JSON.stringify(filtered));
   return true;
 };
 
-// Budget Items
+// ============ Budget Items ============
+
 export const getBudgetItems = (): BudgetItem[] => {
-  const items = localStorage.getItem('budgetItems');
-  return items ? JSON.parse(items) : [];
+  return filterByCompany(readAll<BudgetItem>('budgetItems'));
 };
 
-export const addBudgetItem = (data: Omit<BudgetItem, 'id' | 'createdAt' | 'updatedAt'>): BudgetItem => {
-  const items = getBudgetItems();
+export const addBudgetItem = (data: Omit<BudgetItem, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): BudgetItem => {
+  const allItems = readAll<BudgetItem>('budgetItems');
+  const companyId = getCurrentCompany();
   const newItem: BudgetItem = {
     ...data,
     id: generateId(),
+    company_id: companyId || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  items.push(newItem);
-  localStorage.setItem('budgetItems', JSON.stringify(items));
+  allItems.push(newItem);
+  localStorage.setItem('budgetItems', JSON.stringify(allItems));
   return newItem;
 };
 
 export const updateBudgetItem = (id: string, updates: Partial<BudgetItem>): BudgetItem | null => {
-  const items = getBudgetItems();
-  const index = items.findIndex(i => i.id === id);
+  const allItems = readAll<BudgetItem>('budgetItems');
+  const index = allItems.findIndex(i => i.id === id);
   if (index === -1) return null;
-  items[index] = { ...items[index], ...updates, updatedAt: new Date().toISOString() };
-  localStorage.setItem('budgetItems', JSON.stringify(items));
-  return items[index];
+  allItems[index] = { ...allItems[index], ...updates, updatedAt: new Date().toISOString() };
+  localStorage.setItem('budgetItems', JSON.stringify(allItems));
+  return allItems[index];
 };
 
 export const deleteBudgetItem = (id: string): boolean => {
-  const items = getBudgetItems();
-  const filtered = items.filter(i => i.id !== id);
-  if (filtered.length === items.length) return false;
+  const allItems = readAll<BudgetItem>('budgetItems');
+  const filtered = allItems.filter(i => i.id !== id);
+  if (filtered.length === allItems.length) return false;
   localStorage.setItem('budgetItems', JSON.stringify(filtered));
   return true;
 };
 
-// Fix existing case numbers to start from 1000
+// ============ Migration ============
+
+export const migrateToMultiTenant = () => {
+  if (localStorage.getItem('multi-tenant-migrated')) return;
+
+  // Create default company
+  const defaultCompanyId = generateId();
+  const defaultCompany: Company = {
+    id: defaultCompanyId,
+    slug: 'main',
+    name: 'משרד ראשי',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const existingCompanies = readAll<Company>('companies');
+  if (existingCompanies.length === 0) {
+    localStorage.setItem('companies', JSON.stringify([defaultCompany]));
+  } else {
+    // Add slug to existing companies that don't have one
+    let companiesChanged = false;
+    existingCompanies.forEach((company, index) => {
+      if (!company.slug) {
+        existingCompanies[index].slug = index === 0 ? 'main' : ensureUniqueSlug(generateSlug(company.name));
+        companiesChanged = true;
+      }
+    });
+    if (companiesChanged) {
+      localStorage.setItem('companies', JSON.stringify(existingCompanies));
+    }
+  }
+
+  const companyIdToUse = existingCompanies.length > 0 ? existingCompanies[0].id : defaultCompanyId;
+  setCurrentCompany(companyIdToUse);
+
+  // Add company_id to all existing entities
+  const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
+  entityKeys.forEach(key => {
+    const items = readAll<any>(key);
+    let changed = false;
+    items.forEach((item: any) => {
+      if (!item.company_id) {
+        item.company_id = companyIdToUse;
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem(key, JSON.stringify(items));
+    }
+  });
+
+  localStorage.setItem('multi-tenant-migrated', 'true');
+  console.log('Multi-tenant migration completed');
+};
+
+// ============ Fix Case Numbers ============
+
 export const fixCaseNumbers = () => {
-  const cases = getCases();
+  const cases = readAll<Case>('cases');
   let hasChanges = false;
-  
-  // Find cases with non-numeric IDs or IDs below 1000
+
   const casesToFix = cases.filter(c => {
     const numId = parseInt(c.id);
     return isNaN(numId) || numId < 1000;
   });
-  
+
   if (casesToFix.length > 0) {
     let nextNumber = 1000;
-    
-    // Find the highest existing valid case number
+
     const validNumbers = cases
       .map(c => parseInt(c.id))
       .filter(num => !isNaN(num) && num >= 1000)
       .sort((a, b) => b - a);
-    
+
     if (validNumbers.length > 0) {
       nextNumber = validNumbers[0] + 1;
     }
-    
-    // Fix the cases that need fixing
+
     casesToFix.forEach(caseToFix => {
       caseToFix.id = nextNumber.toString();
       caseToFix.updatedAt = new Date().toISOString();
       nextNumber++;
       hasChanges = true;
     });
-    
+
     if (hasChanges) {
       localStorage.setItem('cases', JSON.stringify(cases));
       console.log(`Fixed ${casesToFix.length} case numbers to start from 1000+`);
@@ -435,17 +715,20 @@ export const fixCaseNumbers = () => {
   }
 };
 
-// Initialize with sample data if empty
+// ============ Initialize Sample Data ============
+
 export const initializeSampleData = () => {
-  // Fix existing case numbers first
+  // Run migration first
+  migrateToMultiTenant();
+
+  // Fix existing case numbers
   fixCaseNumbers();
-  
+
   // Initialize cases
   if (getCases().length === 0) {
-    // Reset counter for initial data
     caseCounter = 1000;
-    
-    const sampleCases: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>[] = [
+
+    const sampleCases: Omit<Case, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>[] = [
       {
         title: 'תביעת נזיקין - יוסף אברהם',
         client: 'יוסף אברהם',
@@ -467,13 +750,13 @@ export const initializeSampleData = () => {
         status: 'בהמתנה'
       }
     ];
-    
+
     sampleCases.forEach(caseData => addCase(caseData));
   }
 
   // Initialize clients
   if (getClients().length === 0) {
-    const sampleClients: Omit<Client, 'id' | 'createdAt' | 'updatedAt' | 'activeCases'>[] = [
+    const sampleClients: Omit<Client, 'id' | 'company_id' | 'createdAt' | 'updatedAt' | 'activeCases'>[] = [
       {
         name: 'יוסף אברהם',
         email: 'yosef@email.com',
@@ -499,7 +782,7 @@ export const initializeSampleData = () => {
         status: 'פעיל'
       }
     ];
-    
+
     sampleClients.forEach(clientData => addClient(clientData));
   }
 
@@ -507,12 +790,12 @@ export const initializeSampleData = () => {
   if (getDocuments().length === 0) {
     const cases = getCases();
     if (cases.length > 0) {
-      const sampleDocuments: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>[] = [
+      const sampleDocuments: Omit<Document, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>[] = [
         {
           title: 'חוזה שכירות דירה',
           category: 'contract',
           client: 'יוסף אברהם',
-          case: cases[0].id, // First case
+          case: cases[0].id,
           description: 'חוזה שכירות לדירת 3 חדרים בתל אביב',
           tags: 'חוזה, שכירות, דירה',
           fileName: 'lease_agreement.pdf',
@@ -524,7 +807,7 @@ export const initializeSampleData = () => {
           title: 'תמונות נזק לרכב',
           category: 'evidence',
           client: 'יוסף אברהם',
-          case: cases[0].id, // First case
+          case: cases[0].id,
           description: 'תמונות המתעדות נזקים לרכב בעקבות התאונה',
           tags: 'ראיות, תאונה, נזק',
           fileName: 'car_damage_photos.jpg',
@@ -539,7 +822,7 @@ export const initializeSampleData = () => {
           title: 'הסכם מכירת דירה',
           category: 'contract',
           client: 'משפחת לוי',
-          case: cases[1].id, // Second case
+          case: cases[1].id,
           description: 'הסכם למכירת דירת 4 חדרים בירושלים',
           tags: 'הסכם, מכירה, דירה',
           fileName: 'sale_agreement.docx',
@@ -555,7 +838,7 @@ export const initializeSampleData = () => {
 
   // Initialize sample cash flow entries
   if (getCashFlowEntries().length === 0) {
-    const sampleCashFlow: Omit<CashFlowEntry, 'id' | 'createdAt' | 'updatedAt'>[] = [
+    const sampleCashFlow: Omit<CashFlowEntry, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>[] = [
       {
         type: 'income',
         category: 'שכר טרחה',
@@ -607,7 +890,7 @@ export const initializeSampleData = () => {
 
   // Initialize sample budget items
   if (getBudgetItems().length === 0) {
-    const sampleBudget: Omit<BudgetItem, 'id' | 'createdAt' | 'updatedAt'>[] = [
+    const sampleBudget: Omit<BudgetItem, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>[] = [
       {
         category: 'משכורות ושכר',
         description: 'שכר עובדים ומזכירות',
@@ -657,4 +940,3 @@ export const initializeSampleData = () => {
     sampleBudget.forEach(item => addBudgetItem(item));
   }
 };
-
