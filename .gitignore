@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - NEVER commit secrets
+.env
+.env.local
+.env.production
+.env.development
+.env.*.local
+
+# Nested duplicate directory
+legal-nexus-israel/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
