@@ -1,5 +1,7 @@
-// Data Manager - ניהול נתונים עם Local Storage
-// בעתיד זה יוחלף ב-Supabase
+// Data Manager - ניהול נתונים עם Local Storage + Supabase sync
+// Companies & assignments are synced to Supabase for persistence across browsers
+
+import { pushCompaniesToSupabase, pushAssignmentsToSupabase } from './companyService';
 
 // ============ Company Types ============
 
@@ -14,6 +16,7 @@ export interface Company {
   postal_code?: string;
   phone?: string;
   email?: string;
+  logo_url?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -232,6 +235,7 @@ export const addCompany = (data: Omit<Company, 'id' | 'slug' | 'created_at' | 'u
   };
   companies.push(newCompany);
   localStorage.setItem('companies', JSON.stringify(companies));
+  pushCompaniesToSupabase(); // async sync to Supabase
   return newCompany;
 };
 
@@ -245,6 +249,7 @@ export const updateCompany = (id: string, updates: Partial<Company>): Company | 
   }
   companies[index] = { ...companies[index], ...updates, updated_at: new Date().toISOString() };
   localStorage.setItem('companies', JSON.stringify(companies));
+  pushCompaniesToSupabase(); // async sync to Supabase
   return companies[index];
 };
 
@@ -253,6 +258,7 @@ export const deleteCompany = (id: string): boolean => {
   const filtered = companies.filter(c => c.id !== id);
   if (filtered.length === companies.length) return false;
   localStorage.setItem('companies', JSON.stringify(filtered));
+  pushCompaniesToSupabase(); // async sync to Supabase
 
   // Also delete all data belonging to this company
   const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
@@ -266,6 +272,7 @@ export const deleteCompany = (id: string): boolean => {
   const assignments = readAll<UserCompanyAssignment>('user-company-assignments');
   const remainingAssignments = assignments.filter(a => a.company_id !== id);
   localStorage.setItem('user-company-assignments', JSON.stringify(remainingAssignments));
+  pushAssignmentsToSupabase(); // async sync to Supabase
 
   return true;
 };
@@ -306,6 +313,7 @@ export const addUserCompanyAssignment = (
   };
   assignments.push(newAssignment);
   localStorage.setItem('user-company-assignments', JSON.stringify(assignments));
+  pushAssignmentsToSupabase(); // async sync to Supabase
   return newAssignment;
 };
 
@@ -314,6 +322,7 @@ export const removeUserCompanyAssignment = (userId: string, companyId: string): 
   const filtered = assignments.filter(a => !(a.user_id === userId && a.company_id === companyId));
   if (filtered.length === assignments.length) return false;
   localStorage.setItem('user-company-assignments', JSON.stringify(filtered));
+  pushAssignmentsToSupabase(); // async sync to Supabase
   return true;
 };
 
@@ -324,6 +333,7 @@ export const updateUserCompanyRole = (userId: string, companyId: string, role: U
   assignments[index].role = role;
   assignments[index].updated_at = new Date().toISOString();
   localStorage.setItem('user-company-assignments', JSON.stringify(assignments));
+  pushAssignmentsToSupabase(); // async sync to Supabase
   return true;
 };
 
@@ -946,6 +956,60 @@ export const initializeSampleData = () => {
 
 export const initializeDefaultAdmin = () => {
   const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+
+  // Ensure lironbek88@gmail.com always exists as admin
+  const hasLiron = existingUsers.some((u: any) => u.email === 'lironbek88@gmail.com');
+  if (!hasLiron && existingUsers.length > 0) {
+    const now = new Date().toISOString();
+    const lironId = generateId();
+    existingUsers.push({
+      id: lironId,
+      email: 'lironbek88@gmail.com',
+      full_name: 'לירון בק',
+      role: 'admin',
+      phone: '',
+      department: 'הנהלה',
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    });
+    localStorage.setItem('mock-users', JSON.stringify(existingUsers));
+
+    // Store password
+    const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
+    mockPasswords['lironbek88@gmail.com'] = '123456';
+    localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords));
+
+    // Create admin permissions
+    const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]');
+    existingPermissions.push({
+      id: generateId(),
+      user_id: lironId,
+      can_view_dashboard: true,
+      can_view_cases: true, can_edit_cases: true, can_delete_cases: true,
+      can_view_clients: true, can_edit_clients: true,
+      can_view_reports: true, can_edit_reports: true,
+      can_view_documents: true, can_edit_documents: true,
+      can_view_calendar: true, can_edit_calendar: true,
+      can_view_billing: true, can_edit_billing: true,
+      can_view_time_tracking: true, can_edit_time_tracking: true,
+      can_view_legal_library: true, can_edit_legal_library: true,
+      can_view_disability_calculator: true, can_edit_disability_calculator: true,
+      can_view_cash_flow: true, can_edit_cash_flow: true,
+      can_view_budget: true, can_edit_budget: true,
+      can_manage_users: true, can_manage_permission_groups: true,
+      can_manage_system_settings: true, can_view_audit_logs: true,
+      created_at: now, updated_at: now
+    });
+    localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions));
+
+    // Assign to default company
+    const companies = getCompanies();
+    if (companies.length > 0) {
+      addUserCompanyAssignment(lironId, companies[0].id, 'admin', true);
+    }
+  }
+
   if (existingUsers.length > 0) return; // Users already exist
 
   const adminId = generateId();
@@ -953,8 +1017,8 @@ export const initializeDefaultAdmin = () => {
 
   const defaultAdmin = {
     id: adminId,
-    email: 'admin@legalnexus.co.il',
-    full_name: 'מנהל המערכת',
+    email: 'lironbek88@gmail.com',
+    full_name: 'לירון בק',
     role: 'admin',
     phone: '',
     department: 'הנהלה',
@@ -964,6 +1028,11 @@ export const initializeDefaultAdmin = () => {
   };
 
   localStorage.setItem('mock-users', JSON.stringify([defaultAdmin]));
+
+  // Store default password
+  const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
+  mockPasswords['lironbek88@gmail.com'] = '123456';
+  localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords));
 
   // Create admin permissions
   const adminPermissions = {

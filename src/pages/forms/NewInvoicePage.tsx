@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +30,7 @@ interface InvoiceItem {
 }
 
 export default function NewInvoicePage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [formData, setFormData] = useState({
     clientId: '',

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import { getClients, updateClient } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function EditClientPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { clientId } = useParams<{ clientId: string }>();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({

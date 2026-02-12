@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,7 +93,7 @@ const currentWeek = [
 ];
 
 export default function CalendarPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [selectedDate, setSelectedDate] = useState('2024-06-15');
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
 

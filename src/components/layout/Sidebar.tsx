@@ -1,6 +1,8 @@
 
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUsers } from '@/hooks/useUsers';
 import {
   Sidebar,
   SidebarContent,
@@ -109,11 +111,46 @@ function LogoDisplay() {
 
 export function AppSidebar() {
   const location = useLocation();
+  const { slug } = useParams<{ slug: string }>();
+  const { user, isImpersonating } = useAuth();
+  const { getUserMenuItems } = useUsers();
+
+  // Prefix a URL with /org/:slug
+  const prefixUrl = (url: string) => {
+    if (!slug) return url;
+    return `/org/${slug}${url === '/' ? '' : url}`;
+  };
+
+  // Strip /org/:slug prefix from pathname for comparisons
+  const strippedPathname = location.pathname.replace(/^\/org\/[^/]+/, '') || '/';
+
+  // When impersonating, filter nav items by the impersonated user's permissions
+  const allowedPaths = useMemo(() => {
+    if (!isImpersonating || !user) return null; // null = show all
+    const items = getUserMenuItems(user.id);
+    const paths = new Set(items.map(item => item.path));
+    if (paths.has('/dashboard')) paths.add('/');
+    return paths;
+  }, [isImpersonating, user, getUserMenuItems]);
 
   const isActive = (url: string) => {
-    if (url === '/') return location.pathname === '/';
-    return location.pathname.startsWith(url);
+    if (url === '/') return strippedPathname === '/';
+    return strippedPathname.startsWith(url);
   };
+
+  // Filter nav groups by allowed paths when impersonating
+  const filteredNavGroups = useMemo(() => {
+    if (!allowedPaths) return navGroups;
+    return navGroups
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => allowedPaths.has(item.url)),
+      }))
+      .filter(group => group.items.length > 0);
+  }, [allowedPaths]);
+
+  // Hide settings when impersonating a non-admin user
+  const showSettings = !isImpersonating;
 
   return (
     <Sidebar
@@ -142,7 +179,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <SidebarContent className="px-3 py-4">
-        {navGroups.map((group, groupIndex) => (
+        {filteredNavGroups.map((group, groupIndex) => (
           <SidebarGroup key={group.label} className={groupIndex > 0 ? 'mt-2' : ''}>
             <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground/70 px-3 mb-1 group-data-[collapsible=icon]:hidden">
               {group.label}
@@ -164,7 +201,7 @@ export function AppSidebar() {
                           }
                         `}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 w-full">
+                        <Link to={prefixUrl(item.url)} className="flex items-center gap-3 w-full">
                           <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-primary' : 'text-muted-foreground/70'}`} />
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                           {active && (
@@ -186,26 +223,28 @@ export function AppSidebar() {
 
       {/* Footer - Settings */}
       <SidebarFooter className="border-t border-border px-3 py-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip={settingsItem.title}
-              className={`
-                justify-start gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 text-sm font-medium
-                ${isActive(settingsItem.url)
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }
-              `}
-            >
-              <Link to={settingsItem.url} className="flex items-center gap-3 w-full">
-                <settingsItem.icon className={`h-[18px] w-[18px] shrink-0 ${isActive(settingsItem.url) ? 'text-primary' : 'text-muted-foreground/70'}`} />
-                <span className="group-data-[collapsible=icon]:hidden">{settingsItem.title}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {showSettings && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip={settingsItem.title}
+                className={`
+                  justify-start gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 text-sm font-medium
+                  ${isActive(settingsItem.url)
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }
+                `}
+              >
+                <Link to={prefixUrl(settingsItem.url)} className="flex items-center gap-3 w-full">
+                  <settingsItem.icon className={`h-[18px] w-[18px] shrink-0 ${isActive(settingsItem.url) ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                  <span className="group-data-[collapsible=icon]:hidden">{settingsItem.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
 
         {/* Security Badge */}
         <div className="mt-3 px-3 py-2 rounded-lg bg-muted/50 group-data-[collapsible=icon]:hidden">

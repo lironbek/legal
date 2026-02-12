@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import { addDocument } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function UploadCaseDocumentPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { caseId } = useParams<{ caseId: string }>();
   const location = useLocation();
   const caseTitle = location.state?.caseTitle || '';

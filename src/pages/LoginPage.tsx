@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getCompanyBySlug, Company } from '@/lib/dataManager';
+import { getCompanyBySlug, getUserCompanyAssignments, getCompanies, Company } from '@/lib/dataManager';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Scale, Loader2, Eye, EyeOff, AlertTriangle, Info } from 'lucide-react';
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, signOut, user } = useAuth();
   const navigate = useNavigate();
   const { companySlug } = useParams<{ companySlug?: string }>();
   const [email, setEmail] = useState('');
@@ -21,6 +21,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [company, setCompany] = useState<Company | null>(null);
   const [companyNotFound, setCompanyNotFound] = useState(false);
+  const [showMockHint, setShowMockHint] = useState(!supabase);
+  const [signingOut, setSigningOut] = useState(false);
+
+  // If user is already logged in and visiting a company-specific login, sign them out
+  useEffect(() => {
+    if (companySlug && user && !signingOut) {
+      setSigningOut(true);
+      signOut().then(() => setSigningOut(false));
+    }
+  }, [companySlug, user, signOut, signingOut]);
 
   useEffect(() => {
     if (companySlug) {
@@ -44,11 +54,33 @@ export default function LoginPage() {
 
     if (result.error) {
       setError(result.error);
+      setShowMockHint(true); // Show hint after failed login (likely mock mode fallback)
       setLoading(false);
     } else {
-      navigate('/', { replace: true });
+      // Determine where to redirect after login
+      if (company) {
+        // Company-specific login → go to that org
+        navigate(`/org/${company.slug}/`, { replace: true });
+      } else if (result.error === null) {
+        // Generic login — check role from updated auth state
+        // We need to figure out from the mock/supabase auth what user just logged in
+        // For simplicity, navigate to / and let BackofficeOrRedirect handle it
+        navigate('/', { replace: true });
+      }
     }
   };
+
+  // Still signing out — show loader
+  if (signingOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4" dir="rtl">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">מתנתק...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Company slug provided but not found
   if (companySlug && companyNotFound) {
@@ -75,9 +107,15 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo / Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Scale className="h-8 w-8 text-primary" />
-          </div>
+          {company?.logo_url ? (
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4">
+              <img src={company.logo_url} alt={company.name} className="max-w-full max-h-full object-contain" />
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+              <Scale className="h-8 w-8 text-primary" />
+            </div>
+          )}
           {company ? (
             <>
               <h1 className="text-2xl font-bold text-foreground">{company.name}</h1>
@@ -146,14 +184,13 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Show default credentials hint only in mock mode (no real Supabase) */}
-              {!company && !supabase && (
+              {/* Show credentials hint in mock mode or after failed login (Supabase unreachable) */}
+              {!company && showMockHint && (
                 <Alert className="border-blue-200 bg-blue-50">
                   <Info className="h-4 w-4" />
                   <AlertDescription className="text-blue-800 text-sm">
-                    <strong>פרטי התחברות ברירת מחדל:</strong><br />
-                    אימייל: <code className="bg-blue-100 px-1 rounded text-xs">admin@legalnexus.co.il</code><br />
-                    סיסמה: כל ערך (מצב פיתוח)
+                    <strong>מצב לא מקוון:</strong> השתמש באימייל של משתמש קיים במערכת.<br />
+                    סיסמה: הסיסמה שהוגדרה או מספר הטלפון
                   </AlertDescription>
                 </Alert>
               )}

@@ -33,6 +33,7 @@ export function AddUserForm() {
   
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [usePhoneAsPassword, setUsePhoneAsPassword] = useState(false)
   const [selectedPermissionGroup, setSelectedPermissionGroup] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -44,19 +45,27 @@ export function AddUserForm() {
       return
     }
     
-    if (!formData.password) {
-      toast.error('יש למלא סיסמה')
-      return
-    }
-    
-    if (formData.password.length < 6) {
-      toast.error('הסיסמה חייבת להכיל לפחות 6 תווים')
-      return
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('הסיסמאות אינן זהות')
-      return
+    // Determine effective password
+    const effectivePassword = usePhoneAsPassword ? formData.phone : formData.password
+
+    if (usePhoneAsPassword) {
+      if (!formData.phone) {
+        toast.error('יש למלא מספר טלפון כדי להשתמש בו כסיסמה')
+        return
+      }
+    } else {
+      if (!formData.password) {
+        toast.error('יש למלא סיסמה')
+        return
+      }
+      if (formData.password.length < 6) {
+        toast.error('הסיסמה חייבת להכיל לפחות 6 תווים')
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('הסיסמאות אינן זהות')
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -68,7 +77,7 @@ export function AddUserForm() {
         ...userData,
         is_active: true,
         updated_at: new Date().toISOString()
-      }, password)
+      }, effectivePassword)
       
       if (success) {
         setFormData({
@@ -154,63 +163,81 @@ export function AddUserForm() {
                 />
               </div>
               
-              <div>
-                <Label htmlFor="password" className="text-right block">סיסמה *</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    placeholder="הזן סיסמה (לפחות 6 תווים)"
-                    required
-                    className="pl-10 text-right"
+              <div className="col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={usePhoneAsPassword}
+                    onChange={(e) => setUsePhoneAsPassword(e.target.checked)}
+                    className="rounded border-gray-300"
                   />
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
+                  <span className="text-sm text-muted-foreground">
+                    השתמש במספר טלפון כסיסמה ראשונית
+                  </span>
+                </label>
               </div>
-              
-              <div>
-                <Label htmlFor="confirmPassword" className="text-right block">אימות סיסמה *</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                    placeholder="הזן שוב את הסיסמה"
-                    required
-                    className="pl-10 text-right"
-                  />
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+
+              {!usePhoneAsPassword && (
+                <>
+                  <div>
+                    <Label htmlFor="password" className="text-right block">סיסמה *</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        placeholder="הזן סיסמה (לפחות 6 תווים)"
+                        required
+                        className="pl-10 text-right"
+                      />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPassword" className="text-right block">אימות סיסמה *</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        placeholder="הזן שוב את הסיסמה"
+                        required
+                        className="pl-10 text-right"
+                      />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
               
               <div>
                 <Label htmlFor="role" className="text-right block">תפקיד</Label>

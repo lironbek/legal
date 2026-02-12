@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { motion } from 'framer-motion';
 import {
   Card,
@@ -44,7 +45,7 @@ import { getClients, Client, deleteClient } from '@/lib/dataManager';
 // Mock clients removed - now using real data from dataManager
 
 export default function ClientsPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [allClients, setAllClients] = useState<Client[]>([]);
@@ -90,9 +91,7 @@ export default function ClientsPage() {
   };
 
   const handleViewClient = (clientId: string) => {
-    console.log('צפייה בלקוח:', clientId);
-    // TODO: Navigate to client view page
-    alert(`צפייה בלקוח ${clientId}`);
+    navigate(`/clients/${clientId}/edit`);
   };
 
   const handleEditClient = (clientId: string) => {

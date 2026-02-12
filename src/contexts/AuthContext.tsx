@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from '@/lib/supabase';
 import type { UserProfile } from '@/lib/supabase';
 import { getUserCompanyAssignments, setCurrentCompany } from '@/lib/dataManager';
+import { addAuditEntry } from '@/lib/auditLog';
 
 interface AuthUser {
   id: string;
@@ -14,6 +15,11 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string, companyId?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  // Impersonation
+  isImpersonating: boolean;
+  realAdmin: { user: AuthUser; profile: UserProfile } | null;
+  startImpersonation: (targetUser: AuthUser, targetProfile: UserProfile) => void;
+  stopImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [realAdmin, setRealAdmin] = useState<{ user: AuthUser; profile: UserProfile } | null>(null);
+
+  const isImpersonating = realAdmin !== null;
 
   const fetchProfile = useCallback(async (userId: string) => {
     if (!supabase) return null;
@@ -77,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('Supabase session check timed out - falling back to mock mode');
       restoreMockAuth();
       setLoading(false);
-    }, 15000);
+    }, 3000);
 
     supabase.auth.getSession().then(async ({ data: { session } }: any) => {
       clearTimeout(sessionTimeout);
@@ -130,41 +139,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   // Helper: try mock login against localStorage users
-  const tryMockSignIn = useCallback((email: string, companyId?: string): { error: string | null } => {
+  const tryMockSignIn = useCallback((email: string, password: string, companyId?: string): { error: string | null } => {
     const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
     const mockUser = mockUsers.find((u: any) => u.email === email);
-    if (mockUser) {
-      if (companyId) {
-        const isAdmin = mockUser.role === 'admin';
-        if (!isAdmin) {
-          const assignments = getUserCompanyAssignments(mockUser.id);
-          const hasAccess = assignments.some(a => a.company_id === companyId);
-          if (!hasAccess) {
-            return { error: 'אין לך הרשאה לארגון זה' };
-          }
-        }
-        setCurrentCompany(companyId);
-      }
-      const authUser = { id: mockUser.id, email: mockUser.email };
-      setUser(authUser);
-      setProfile(mockUser);
-      localStorage.setItem('mock-auth-user', JSON.stringify({ user: authUser, profile: mockUser }));
-      return { error: null };
+
+    if (!mockUser) {
+      addAuditEntry({
+        action: 'login_failed',
+        user_email: email,
+        user_name: email,
+        details: 'משתמש לא נמצא',
+      });
+      return { error: 'אימייל או סיסמה שגויים' };
     }
-    return { error: 'אימייל או סיסמה שגויים' };
+
+    // Validate password: check stored password, or phone number as fallback
+    const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
+    const storedPassword = mockPasswords[email];
+    if (storedPassword) {
+      // User has a stored password - must match
+      if (password !== storedPassword) {
+        addAuditEntry({
+          action: 'login_failed',
+          user_email: email,
+          user_name: mockUser.full_name || email,
+          user_id: mockUser.id,
+          details: 'סיסמה שגויה',
+        });
+        return { error: 'אימייל או סיסמה שגויים' };
+      }
+    } else if (mockUser.phone) {
+      // No stored password - phone number is the default password
+      if (password !== mockUser.phone) {
+        addAuditEntry({
+          action: 'login_failed',
+          user_email: email,
+          user_name: mockUser.full_name || email,
+          user_id: mockUser.id,
+          details: 'סיסמה שגויה (ברירת מחדל: טלפון)',
+        });
+        return { error: 'אימייל או סיסמה שגויים. הסיסמה הראשונית היא מספר הטלפון' };
+      }
+    }
+    // If no stored password AND no phone - allow any password (legacy/admin users)
+
+    if (companyId) {
+      setCurrentCompany(companyId);
+    }
+
+    const authUser = { id: mockUser.id, email: mockUser.email };
+    setUser(authUser);
+    setProfile(mockUser);
+    localStorage.setItem('mock-auth-user', JSON.stringify({ user: authUser, profile: mockUser }));
+
+    addAuditEntry({
+      action: 'login_success',
+      user_email: mockUser.email,
+      user_name: mockUser.full_name || mockUser.email,
+      user_id: mockUser.id,
+      company_context: companyId || undefined,
+    });
+
+    return { error: null };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string, companyId?: string): Promise<{ error: string | null }> => {
     // If no Supabase client, go straight to mock mode
     if (!supabase) {
-      return tryMockSignIn(email, companyId);
+      return tryMockSignIn(email, password, companyId);
     }
 
     // Try real Supabase auth with timeout
     try {
       const signInResult = await Promise.race([
         supabase.auth.signInWithPassword({ email, password }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 15000))
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 3000))
       ]);
 
       const { data, error } = signInResult as any;
@@ -172,12 +221,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Network / fetch errors → mock fallback
         if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('Failed')) {
           console.warn('Supabase auth failed (network), trying mock mode:', error.message);
-          return tryMockSignIn(email, companyId);
+          return tryMockSignIn(email, password, companyId);
         }
         // Invalid credentials → try mock mode as fallback (user may be a local-only user)
         if (error.message === 'Invalid login credentials') {
-          const mockResult = tryMockSignIn(email, companyId);
+          const mockResult = tryMockSignIn(email, password, companyId);
           if (!mockResult.error) return mockResult;
+          addAuditEntry({
+            action: 'login_failed',
+            user_email: email,
+            user_name: email,
+            details: 'אימייל או סיסמה שגויים (Supabase + mock)',
+          });
           return { error: 'אימייל או סיסמה שגויים' };
         }
         return { error: error.message };
@@ -194,6 +249,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const hasAccess = assignments.some(a => a.company_id === companyId);
             if (!hasAccess) {
               await supabase.auth.signOut();
+              addAuditEntry({
+                action: 'login_failed',
+                user_email: data.user.email || email,
+                user_name: prof?.full_name || email,
+                user_id: data.user.id,
+                details: 'אין הרשאה לארגון',
+                company_context: companyId,
+              });
               return { error: 'אין לך הרשאה לארגון זה' };
             }
           }
@@ -202,27 +265,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setUser(authUser);
         setProfile(prof);
+
+        addAuditEntry({
+          action: 'login_success',
+          user_email: data.user.email || '',
+          user_name: prof?.full_name || data.user.email || '',
+          user_id: data.user.id,
+          company_context: companyId || undefined,
+        });
       }
       return { error: null };
     } catch (err) {
       // Timeout or network error → fall back to mock mode
       console.warn('Supabase signIn failed, trying mock mode:', err);
-      return tryMockSignIn(email, companyId);
+      return tryMockSignIn(email, password, companyId);
     }
   }, [fetchProfile, tryMockSignIn]);
 
   const signOut = useCallback(async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
+    // Log before clearing state
+    if (user) {
+      addAuditEntry({
+        action: 'logout',
+        user_email: user.email,
+        user_name: profile?.full_name || user.email,
+        user_id: user.id,
+      });
     }
-    // Clear mock auth too
+
+    // Clear impersonation state
+    setRealAdmin(null);
+
+    // Clear local state immediately (don't wait for Supabase)
     localStorage.removeItem('mock-auth-user');
     setUser(null);
     setProfile(null);
-  }, []);
+    // Try Supabase signOut with timeout - don't block on failure
+    if (supabase) {
+      try {
+        await Promise.race([
+          supabase.auth.signOut(),
+          new Promise(resolve => setTimeout(resolve, 3000))
+        ]);
+      } catch {
+        // Ignore - local state already cleared
+      }
+    }
+  }, [user, profile]);
+
+  // Impersonation
+  const startImpersonation = useCallback((targetUser: AuthUser, targetProfile: UserProfile) => {
+    if (!user || !profile || profile.role !== 'admin') return;
+
+    addAuditEntry({
+      action: 'impersonation_start',
+      user_email: user.email,
+      user_name: profile.full_name,
+      user_id: user.id,
+      details: `צפייה כמשתמש: ${targetProfile.full_name} (${targetUser.email})`,
+    });
+
+    // Save real admin identity
+    setRealAdmin({ user, profile });
+
+    // Override with target user
+    setUser(targetUser);
+    setProfile(targetProfile);
+  }, [user, profile]);
+
+  const stopImpersonation = useCallback(() => {
+    if (!realAdmin) return;
+
+    addAuditEntry({
+      action: 'impersonation_stop',
+      user_email: realAdmin.user.email,
+      user_name: realAdmin.profile.full_name,
+      user_id: realAdmin.user.id,
+      details: `סיום צפייה כמשתמש: ${profile?.full_name || user?.email}`,
+    });
+
+    // Restore admin identity
+    setUser(realAdmin.user);
+    setProfile(realAdmin.profile);
+    setRealAdmin(null);
+  }, [realAdmin, user, profile]);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user, profile, loading, signIn, signOut,
+      isImpersonating, realAdmin, startImpersonation, stopImpersonation,
+    }}>
       {children}
     </AuthContext.Provider>
   );

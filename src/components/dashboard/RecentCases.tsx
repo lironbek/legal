@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Calendar, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 
 const recentCases = [
   {
@@ -36,7 +36,7 @@ const recentCases = [
 ];
 
 export function RecentCases() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   return (
     <Card>

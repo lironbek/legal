@@ -1,4 +1,5 @@
 import { useCompany } from '@/contexts/CompanyContext';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,8 +13,20 @@ import { Building2, Check, ChevronDown } from 'lucide-react';
 
 export function CompanySwitcher() {
   const { currentCompany, companies, switchCompany } = useCompany();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { slug } = useParams<{ slug: string }>();
 
   if (!currentCompany) return null;
+
+  const handleSwitch = (company: typeof currentCompany) => {
+    switchCompany(company.id);
+    // If inside an org route, navigate to the same page under the new org slug
+    if (slug) {
+      const newPath = location.pathname.replace(`/org/${slug}`, `/org/${company.slug}`);
+      navigate(newPath, { replace: true });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -32,7 +45,7 @@ export function CompanySwitcher() {
           .map((company) => (
             <DropdownMenuItem
               key={company.id}
-              onClick={() => switchCompany(company.id)}
+              onClick={() => handleSwitch(company)}
               className="flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-2">

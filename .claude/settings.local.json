@@ -47,7 +47,22 @@
       "Bash(ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2NjE5MzQsImV4cCI6MjA2NTIzNzkzNH0.1MaoZ8omIIOfv0tdGEZj7y6DLiWtCKxNoXlo7ipnxTc\":*)",
       "Bash(__NEW_LINE_b05178e9e718bd8d__ echo \"=== profiles ===\")",
       "Bash(__NEW_LINE_b05178e9e718bd8d__ echo -e \"\\\\n\\\\n=== user_permissions ===\")",
-      "Bash(__NEW_LINE_b05178e9e718bd8d__ echo -e \"\\\\n\\\\n=== permission_groups ===\")"
+      "Bash(__NEW_LINE_b05178e9e718bd8d__ echo -e \"\\\\n\\\\n=== permission_groups ===\")",
+      "Bash(source:*)",
+      "Bash(python3:*)",
+      "Bash(SERVICE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTY2MTkzNCwiZXhwIjoyMDY1MjM3OTM0fQ.xFjN13Ah0o1hzaTBP9ABmV5EJ3o67Awd-FqGyKFsPSs\")",
+      "Bash(npx vite build:*)",
+      "Bash(npx playwright:*)",
+      "Bash(node test-login.mjs:*)",
+      "Bash(npm ls:*)",
+      "Bash(node:*)",
+      "Bash(SRK=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTY2MTkzNCwiZXhwIjoyMDY1MjM3OTM0fQ.xFjN13Ah0o1hzaTBP9ABmV5EJ3o67Awd-FqGyKFsPSs\")",
+      "Bash(npx supabase db push:*)",
+      "Bash(npx supabase migration repair:*)",
+      "Bash(npx supabase link:*)",
+      "Bash(npx supabase migration list:*)",
+      "Bash(psql:*)",
+      "Bash(SRK=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTY2MTkzNCwiZXhwIjoyMDY1MjM3OTM0fQ.xFjN13Ah0o1hzaTBP9ABmV5EJ3o67Awd-FqGyKFsPSs\" echo \"=== Companies List ===\" curl -s --connect-timeout 10 \"https://lbaqrfbobfomkcfmfahq.supabase.co/rest/v1/global_firm_settings?setting_key=eq.companies_list&select=setting_value\" -H \"apikey: $SRK\" -H \"Authorization: Bearer $SRK\")"
     ],
     "deny": []
   }

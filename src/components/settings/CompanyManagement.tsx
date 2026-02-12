@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Building2, Plus, Edit, Trash2, Users, MapPin, Phone, Mail, Copy, Link } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Users, MapPin, Phone, Mail, Copy, Link, Upload, X } from 'lucide-react';
 import {
   Company,
   getCompanies,
@@ -45,6 +45,7 @@ const emptyForm = {
   postal_code: '',
   phone: '',
   email: '',
+  logo_url: '',
 };
 
 export function CompanyManagement() {
@@ -55,6 +56,7 @@ export function CompanyManagement() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const loadCompanies = () => {
     setCompanies(getCompanies());
@@ -82,6 +84,7 @@ export function CompanyManagement() {
       postal_code: company.postal_code || '',
       phone: company.phone || '',
       email: company.email || '',
+      logo_url: company.logo_url || '',
     });
     setIsFormOpen(true);
   };
@@ -105,6 +108,7 @@ export function CompanyManagement() {
         postal_code: formData.postal_code || undefined,
         phone: formData.phone || undefined,
         email: formData.email || undefined,
+        logo_url: formData.logo_url || undefined,
       });
       toast.success('המשרד עודכן בהצלחה');
     } else {
@@ -118,6 +122,7 @@ export function CompanyManagement() {
         postal_code: formData.postal_code || undefined,
         phone: formData.phone || undefined,
         email: formData.email || undefined,
+        logo_url: formData.logo_url || undefined,
         is_active: true,
       });
       toast.success('המשרד נוצר בהצלחה');
@@ -365,6 +370,60 @@ export function CompanyManagement() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
+              {/* Logo Upload */}
+              <div className="col-span-2">
+                <Label>לוגו המשרד (PNG, JPG - מקסימום 2MB)</Label>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error('קובץ הלוגו גדול מדי. מקסימום 2MB');
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      const result = ev.target?.result as string;
+                      setFormData({ ...formData, logo_url: result });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <div className="flex items-center gap-3 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                    בחר קובץ
+                  </Button>
+                  {formData.logo_url && (
+                    <div className="relative">
+                      <img
+                        src={formData.logo_url}
+                        alt="Logo preview"
+                        className="h-16 w-16 object-contain border rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                        onClick={() => setFormData({ ...formData, logo_url: '' })}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="col-span-2">
                 <Label>כתובת</Label>
                 <Input

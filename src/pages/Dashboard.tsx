@@ -10,10 +10,10 @@ import { Users, Clock, Briefcase, Gavel, FileCheck, PlusCircle, Upload } from 'l
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 
 export function Dashboard() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [statsRef, statsInView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [chartsRef, chartsInView] = useInView({ triggerOnce: true, threshold: 0.1 });
 

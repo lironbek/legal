@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,7 @@ import {
 } from '@/lib/documentScanService';
 import { getCases, getClients } from '@/lib/dataManager';
 export default function ScannedDocumentsPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [documents, setDocuments] = useState<ScannedDocument[]>([]);
   const [filteredDocs, setFilteredDocs] = useState<ScannedDocument[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

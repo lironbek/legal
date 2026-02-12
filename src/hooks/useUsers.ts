@@ -131,6 +131,11 @@ export function useUsers() {
         existingUsers.push(newUser)
         localStorage.setItem('mock-users', JSON.stringify(existingUsers))
 
+        // Store password (use phone number as default if password is empty)
+        const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}')
+        mockPasswords[userData.email] = password || userData.phone || '123456'
+        localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords))
+
         // Create default permissions
         const defaultPermissions = getDefaultPermissionsForRole(userData.role)
         const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]')
@@ -604,7 +609,14 @@ export function useUsers() {
   const changeUserPassword = async (userId: string, newPassword: string) => {
     try {
       if (isAdminMockMode()) {
-        // Mock mode - just acknowledge the change
+        // Mock mode - store the new password
+        const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]')
+        const user = mockUsers.find((u: any) => u.id === userId)
+        if (user) {
+          const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}')
+          mockPasswords[user.email] = newPassword
+          localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords))
+        }
         toast.success('סיסמה שונתה בהצלחה')
         return true
       }

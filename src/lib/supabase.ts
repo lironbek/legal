@@ -77,7 +77,7 @@ export function isSupabaseReachable(): Promise<boolean> {
   }
   _connectivityPromise = Promise.race([
     supabase.from('profiles').select('id').limit(1).then((res: any) => !res.error),
-    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 15000))
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3000))
   ]).catch(() => false)
   return _connectivityPromise
 }

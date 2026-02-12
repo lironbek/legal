@@ -117,19 +117,13 @@ export function UserManagement() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 transition-colors">
+                <Card className="border-dashed border-2 border-gray-300">
                   <CardContent className="p-6 text-center">
                     <Settings className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                     <h3 className="font-medium mb-2">הגדרות מערכת</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      הגדר הגדרות כלליות למערכת
+                    <p className="text-sm text-gray-600">
+                      השתמש בטאבים למעלה לניהול הגדרות המערכת
                     </p>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                    >
-                      הגדרות
-                    </Button>
                   </CardContent>
                 </Card>
               </div>

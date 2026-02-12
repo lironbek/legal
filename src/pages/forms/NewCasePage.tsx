@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function NewCasePage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [formData, setFormData] = useState({
     title: '',
     client: '',

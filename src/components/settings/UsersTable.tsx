@@ -30,6 +30,8 @@ import {
 } from 'lucide-react'
 import { UserProfile, UserPermission } from '@/lib/supabase'
 import { useUsers } from '@/hooks/useUsers'
+import { useAuth } from '@/contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Company,
@@ -60,6 +62,9 @@ export function UsersTable({ className }: UsersTableProps) {
     deleteUser,
     toggleUserStatus
   } = useUsers()
+
+  const { user: currentUser, profile: currentProfile, startImpersonation, isImpersonating } = useAuth()
+  const navigate = useNavigate()
 
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null)
   const [editingPermissions, setEditingPermissions] = useState<UserPermission | null>(null)
@@ -381,6 +386,37 @@ export function UsersTable({ className }: UsersTableProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center gap-1 justify-end">
+                      {currentProfile?.role === 'admin' && user.id !== currentUser?.id && !isImpersonating && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-amber-600 border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+                              onClick={() => {
+                                startImpersonation(
+                                  { id: user.id, email: user.email },
+                                  user
+                                );
+                                // Navigate to the impersonated user's primary org
+                                const assignments = getUserCompanyAssignments(user.id);
+                                const primary = assignments.find(a => a.is_primary) || assignments[0];
+                                if (primary) {
+                                  const company = allCompanies.find(c => c.id === primary.company_id);
+                                  if (company) {
+                                    navigate(`/org/${company.slug}/`);
+                                    return;
+                                  }
+                                }
+                                navigate('/');
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>צפה כמשתמש זה</TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>

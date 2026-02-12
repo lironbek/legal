@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { addClient } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function NewClientPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',

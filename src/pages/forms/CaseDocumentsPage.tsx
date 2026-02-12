@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,11 +19,11 @@ import {
   Trash2,
   Plus
 } from 'lucide-react';
-import { getDocumentsByCase, Document, deleteDocument } from '@/lib/dataManager';
+import { getDocumentsByCase, Document, deleteDocument, updateDocument } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function CaseDocumentsPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { caseId } = useParams<{ caseId: string }>();
   const location = useLocation();
   const caseTitle = location.state?.caseTitle || '';
@@ -75,13 +76,30 @@ export default function CaseDocumentsPage() {
   };
 
   const handleViewDocument = (documentId: string) => {
-    // TODO: Implement document viewer
-    alert(`צפייה במסמך ${documentId}`);
+    const doc = allDocuments.find(d => d.id === documentId);
+    if (doc) {
+      const details = [
+        `שם: ${doc.title}`,
+        `קובץ: ${doc.fileName}`,
+        `סוג: ${doc.fileType}`,
+        `גודל: ${doc.fileSize}`,
+        doc.category ? `קטגוריה: ${getCategoryText(doc.category)}` : '',
+        doc.description ? `תיאור: ${doc.description}` : '',
+        `תאריך: ${new Date(doc.createdAt).toLocaleDateString('he-IL')}`,
+      ].filter(Boolean).join('\n');
+      alert(details);
+    }
   };
 
   const handleEditDocument = (documentId: string) => {
-    // TODO: Implement document editor
-    alert(`עריכת מסמך ${documentId}`);
+    const doc = allDocuments.find(d => d.id === documentId);
+    if (doc) {
+      const newTitle = prompt('שם המסמך:', doc.title);
+      if (newTitle && newTitle !== doc.title) {
+        updateDocument(documentId, { title: newTitle, updatedAt: new Date().toISOString() });
+        loadDocuments();
+      }
+    }
   };
 
   const handleDeleteDocument = (documentId: string, documentTitle: string) => {
@@ -97,9 +115,12 @@ export default function CaseDocumentsPage() {
     }
   };
 
-  const handleDownloadDocument = (documentId: string, fileName: string) => {
-    // TODO: Implement actual file download
-    alert(`הורדת קובץ: ${fileName}`);
+  const handleDownloadDocument = (_documentId: string, fileName: string) => {
+    // Mock mode - no actual file to download, show feedback
+    const link = document.createElement('a');
+    link.href = '#';
+    link.download = fileName;
+    alert(`הקובץ "${fileName}" אינו זמין להורדה במצב לא מקוון`);
   };
 
   const getFileIcon = (fileType: string) => {

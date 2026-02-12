@@ -1,5 +1,5 @@
 
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -7,6 +7,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Bell, Search, LogOut, User, Settings, Moon, Sun, ChevronLeft } from 'lucide-react';
 import { CompanySwitcher } from './CompanySwitcher';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,11 +41,15 @@ const pageTitles: Record<string, { title: string; breadcrumbs: string[] }> = {
 };
 
 function getPageInfo(pathname: string) {
-  if (pageTitles[pathname]) return pageTitles[pathname];
+  // Strip /org/:slug prefix before lookup
+  const stripped = pathname.replace(/^\/org\/[^/]+/, '') || '/';
+  if (pageTitles[stripped]) return pageTitles[stripped];
   // Handle dynamic routes
-  if (pathname.match(/^\/cases\/[^/]+\/documents$/)) return { title: 'מסמכי תיק', breadcrumbs: ['ראשי', 'תיקים', 'מסמכים'] };
-  if (pathname.match(/^\/cases\/[^/]+\/documents\/upload$/)) return { title: 'העלאת מסמך לתיק', breadcrumbs: ['ראשי', 'תיקים', 'העלאה'] };
-  if (pathname.match(/^\/clients\/[^/]+\/edit$/)) return { title: 'עריכת לקוח', breadcrumbs: ['ראשי', 'לקוחות', 'עריכה'] };
+  if (stripped.match(/^\/cases\/[^/]+\/documents$/)) return { title: 'מסמכי תיק', breadcrumbs: ['ראשי', 'תיקים', 'מסמכים'] };
+  if (stripped.match(/^\/cases\/[^/]+\/documents\/upload$/)) return { title: 'העלאת מסמך לתיק', breadcrumbs: ['ראשי', 'תיקים', 'העלאה'] };
+  if (stripped.match(/^\/cases\/[^/]+\/view$/)) return { title: 'צפייה בתיק', breadcrumbs: ['ראשי', 'תיקים', 'צפייה'] };
+  if (stripped.match(/^\/cases\/[^/]+\/edit$/)) return { title: 'עריכת תיק', breadcrumbs: ['ראשי', 'תיקים', 'עריכה'] };
+  if (stripped.match(/^\/clients\/[^/]+\/edit$/)) return { title: 'עריכת לקוח', breadcrumbs: ['ראשי', 'לקוחות', 'עריכה'] };
   return { title: '', breadcrumbs: [] };
 }
 
@@ -59,6 +64,7 @@ function getInitials(name: string): string {
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const orgNavigate = useOrgNavigate();
   const { theme, setTheme } = useTheme();
   const { user, profile, signOut } = useAuth();
   const pageInfo = getPageInfo(location.pathname);
@@ -124,6 +130,8 @@ export function Header() {
             variant="ghost"
             size="icon"
             className="relative h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+            onClick={() => orgNavigate('/settings')}
+            title="התראות"
           >
             <Bell className="h-4 w-4" />
             <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center">
@@ -153,7 +161,7 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <DropdownMenuItem onClick={() => orgNavigate('/settings')}>
                 <Settings className="h-4 w-4 ml-2" />
                 הגדרות
               </DropdownMenuItem>

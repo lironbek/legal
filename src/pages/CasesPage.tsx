@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import {
 import { getCases, Case, deleteCase, fixCaseNumbers } from '@/lib/dataManager';
 
 export default function CasesPage() {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCases, setFilteredCases] = useState<Case[]>([]);
