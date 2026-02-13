@@ -4,19 +4,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Users, ScrollText, LogOut, Scale, LogIn, MapPin, Phone } from 'lucide-react';
+import { Building2, Users, ScrollText, LogOut, Scale, LogIn, MapPin, Phone, Boxes, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { CompanyManagement } from '@/components/settings/CompanyManagement';
 import { UserManagement } from '@/components/settings/UserManagement';
 import { AuditLogSettings } from '@/components/settings/AuditLogSettings';
-import { getCompanyUserAssignments } from '@/lib/dataManager';
+import { ModuleConfiguration } from '@/components/settings/ModuleConfiguration';
+import { getCompanyUserAssignments, type Company } from '@/lib/dataManager';
+import { PurgeCompanyDataDialog } from '@/components/settings/PurgeCompanyDataDialog';
 
 export default function BackofficePage() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { companies } = useCompany();
   const [activeTab, setActiveTab] = useState('organizations');
+  const [purgeCompany, setPurgeCompany] = useState<Company | null>(null);
+  const [isPurgeOpen, setIsPurgeOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -54,7 +58,7 @@ export default function BackofficePage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto p-6 lg:p-8" dir="rtl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-card border border-border mb-6">
+          <TabsList className="grid w-full grid-cols-4 bg-card border border-border mb-6">
             <TabsTrigger value="organizations" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
               <Building2 className="h-4 w-4" />
               ארגונים
@@ -62,6 +66,10 @@ export default function BackofficePage() {
             <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
               <Users className="h-4 w-4" />
               משתמשים
+            </TabsTrigger>
+            <TabsTrigger value="modules" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
+              <Boxes className="h-4 w-4" />
+              מודולים
             </TabsTrigger>
             <TabsTrigger value="audit-log" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
               <ScrollText className="h-4 w-4" />
@@ -84,6 +92,14 @@ export default function BackofficePage() {
                         )}
                         <span>{company.name}</span>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => { setPurgeCompany(company); setIsPurgeOpen(true); }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -129,11 +145,21 @@ export default function BackofficePage() {
             <UserManagement />
           </TabsContent>
 
+          <TabsContent value="modules">
+            <ModuleConfiguration />
+          </TabsContent>
+
           <TabsContent value="audit-log">
             <AuditLogSettings />
           </TabsContent>
         </Tabs>
       </div>
+
+      <PurgeCompanyDataDialog
+        company={purgeCompany}
+        open={isPurgeOpen}
+        onOpenChange={setIsPurgeOpen}
+      />
     </div>
   );
 }

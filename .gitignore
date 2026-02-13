@@ -22,6 +22,12 @@ dist-ssr
 # Nested duplicate directory
 legal-nexus-israel/
 
+# Supabase temp files
+supabase/.temp/
+
+# Test files with credentials
+test-login.mjs
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

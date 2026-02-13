@@ -2,7 +2,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useUsers } from '@/hooks/useUsers';
+import { URL_TO_MODULE } from '@/lib/moduleConfig';
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +36,7 @@ import {
   TrendingUp,
   PieChart,
   Scan,
+  PenTool,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
@@ -63,6 +66,7 @@ const navGroups = [
     items: [
       { title: 'מסמכים', url: '/documents', icon: FileImage },
       { title: 'סריקת מסמכים', url: '/scanned-documents', icon: Scan },
+      { title: 'חתימה דיגיטלית', url: '/signing', icon: PenTool },
       { title: 'ספרייה משפטית', url: '/legal-library', icon: BookOpen },
       { title: 'מחשבון נכות', url: '/disability-calculator', icon: Calculator },
     ],
@@ -71,40 +75,34 @@ const navGroups = [
 
 const settingsItem = { title: 'הגדרות', url: '/settings', icon: Settings };
 
-function LogoDisplay() {
-  const [logo, setLogo] = useState<string | null>(null);
+function LogoDisplay({ logoUrl }: { logoUrl?: string }) {
+  const [globalLogo, setGlobalLogo] = useState<string | null>(null);
 
   useEffect(() => {
     const savedLogo = localStorage.getItem('app-logo');
-    if (savedLogo) {
-      setLogo(savedLogo);
-    }
+    if (savedLogo) setGlobalLogo(savedLogo);
   }, []);
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const savedLogo = localStorage.getItem('app-logo');
-      setLogo(savedLogo);
-    };
+    const handleStorageChange = () => setGlobalLogo(localStorage.getItem('app-logo'));
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  if (logo) {
+  // Org logo takes priority, then global logo, then default icon
+  const src = logoUrl || globalLogo;
+
+  if (src) {
     return (
-      <div className="w-10 h-10 rounded-xl overflow-hidden border border-border bg-muted/50">
-        <img
-          src={logo}
-          alt="לוגו המערכת"
-          className="w-full h-full object-contain"
-        />
+      <div className="w-14 h-14 rounded-xl overflow-hidden border border-border bg-muted/50">
+        <img src={src} alt="לוגו" className="w-full h-full object-contain" />
       </div>
     );
   }
 
   return (
-    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-      <Scale className="h-5 w-5 text-white" />
+    <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+      <Scale className="h-6 w-6 text-white" />
     </div>
   );
 }
@@ -113,6 +111,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { slug } = useParams<{ slug: string }>();
   const { user, isImpersonating } = useAuth();
+  const { currentCompany } = useCompany();
   const { getUserMenuItems } = useUsers();
 
   // Prefix a URL with /org/:slug
@@ -138,16 +137,37 @@ export function AppSidebar() {
     return strippedPathname.startsWith(url);
   };
 
-  // Filter nav groups by allowed paths when impersonating
+  // Filter nav groups by allowed paths (impersonation) and enabled modules (per-org)
   const filteredNavGroups = useMemo(() => {
-    if (!allowedPaths) return navGroups;
-    return navGroups
-      .map(group => ({
-        ...group,
-        items: group.items.filter(item => allowedPaths.has(item.url)),
-      }))
-      .filter(group => group.items.length > 0);
-  }, [allowedPaths]);
+    let groups = navGroups;
+
+    // Filter by impersonation allowed paths
+    if (allowedPaths) {
+      groups = groups
+        .map(group => ({
+          ...group,
+          items: group.items.filter(item => allowedPaths.has(item.url)),
+        }))
+        .filter(group => group.items.length > 0);
+    }
+
+    // Filter by company enabled modules
+    if (currentCompany?.enabled_modules && currentCompany.enabled_modules.length > 0) {
+      const enabledSet = new Set(currentCompany.enabled_modules);
+      groups = groups
+        .map(group => ({
+          ...group,
+          items: group.items.filter(item => {
+            const moduleKey = URL_TO_MODULE[item.url];
+            if (!moduleKey) return true;
+            return enabledSet.has(moduleKey);
+          }),
+        }))
+        .filter(group => group.items.length > 0);
+    }
+
+    return groups;
+  }, [allowedPaths, currentCompany?.enabled_modules]);
 
   // Hide settings when impersonating a non-admin user
   const showSettings = !isImpersonating;
@@ -165,7 +185,7 @@ export function AppSidebar() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3"
         >
-          <LogoDisplay />
+          <LogoDisplay logoUrl={currentCompany?.logo_url} />
           <div className="group-data-[collapsible=icon]:hidden">
             <h1 className="text-base font-bold text-foreground font-display leading-tight">
               Legal Nexus

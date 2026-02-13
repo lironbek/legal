@@ -36,6 +36,9 @@ import CaseDocumentsPage from "./pages/forms/CaseDocumentsPage";
 import ViewCasePage from "./pages/forms/ViewCasePage";
 import EditCasePage from "./pages/forms/EditCasePage";
 import ScannedDocumentsPage from "./pages/ScannedDocumentsPage";
+import SigningPage from "./pages/SigningPage";
+import SigningEditorPage from "./pages/SigningEditorPage";
+import PublicSigningPage from "./pages/PublicSigningPage";
 
 // Data manager
 import { initializeSampleData, getUserCompanyAssignments, getCompanies } from "./lib/dataManager";
@@ -143,6 +146,9 @@ const AppRoutes = () => {
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="documents/upload" element={<UploadDocumentPage />} />
         <Route path="scanned-documents" element={<ScannedDocumentsPage />} />
+        <Route path="signing" element={<SigningPage />} />
+        <Route path="signing/new" element={<SigningEditorPage />} />
+        <Route path="signing/:id" element={<SigningEditorPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="cash-flow" element={<CashFlowPage />} />
         <Route path="budget" element={<BudgetPage />} />
@@ -150,6 +156,9 @@ const AppRoutes = () => {
         <Route path="disability-calculator" element={<DisabilityCalculatorPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
+
+      {/* Public signing page - no auth required */}
+      <Route path="/sign/:token" element={<PublicSigningPage />} />
 
       {/* Catch-all route */}
       <Route path="*" element={<NotFound />} />

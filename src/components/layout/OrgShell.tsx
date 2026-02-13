@@ -41,6 +41,18 @@ export function OrgShell() {
     setStatus('ready');
   }, [slug, user, profile, authLoading, currentCompany, switchCompany]);
 
+  // Dynamic favicon: update browser tab icon to match org logo
+  useEffect(() => {
+    const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
+    if (!link) return;
+    if (currentCompany?.logo_url) {
+      link.href = currentCompany.logo_url;
+    } else {
+      link.href = '/favicon.ico';
+    }
+    return () => { link.href = '/favicon.ico'; };
+  }, [currentCompany?.logo_url]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

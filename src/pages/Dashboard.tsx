@@ -11,9 +11,11 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Dashboard() {
   const navigate = useOrgNavigate();
+  const { profile } = useAuth();
   const [statsRef, statsInView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [chartsRef, chartsInView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
@@ -28,7 +30,7 @@ export function Dashboard() {
       >
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">
-            בוקר טוב, עו"ד כהן
+            בוקר טוב, {profile?.full_name || 'משתמש'}
           </h1>
           <p className="text-muted-foreground mt-1">
             הנה סיכום הפעילות של המשרד שלך

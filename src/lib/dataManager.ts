@@ -17,6 +17,7 @@ export interface Company {
   phone?: string;
   email?: string;
   logo_url?: string;
+  enabled_modules?: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -145,6 +146,20 @@ export interface BudgetItem {
   createdAt: string;
   updatedAt: string;
 }
+
+// ============ Data Category Types ============
+
+export type DataCategory = 'cases' | 'clients' | 'invoices' | 'events' | 'documents' | 'cashFlowEntries' | 'budgetItems';
+
+export const DATA_CATEGORY_LABELS: Record<DataCategory, string> = {
+  cases: 'תיקים',
+  clients: 'לקוחות',
+  invoices: 'חשבוניות',
+  events: 'אירועים',
+  documents: 'מסמכים',
+  cashFlowEntries: 'תזרים מזומנים',
+  budgetItems: 'תקציב',
+};
 
 // ============ Current Company State ============
 
@@ -630,6 +645,29 @@ export const deleteBudgetItem = (id: string): boolean => {
   if (filtered.length === allItems.length) return false;
   localStorage.setItem('budgetItems', JSON.stringify(filtered));
   return true;
+};
+
+// ============ Bulk Purge ============
+
+export const getCompanyDataCounts = (companyId: string): Record<DataCategory, number> => {
+  const categories: DataCategory[] = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
+  const counts = {} as Record<DataCategory, number>;
+  categories.forEach(key => {
+    const items = readAll<{ company_id: string }>(key);
+    counts[key] = items.filter(item => item.company_id === companyId).length;
+  });
+  return counts;
+};
+
+export const purgeCompanyData = (companyId: string, dataTypes: DataCategory[]): Record<DataCategory, number> => {
+  const deleted = {} as Record<DataCategory, number>;
+  dataTypes.forEach(key => {
+    const items = readAll<{ company_id: string }>(key);
+    const remaining = items.filter(item => item.company_id !== companyId);
+    deleted[key] = items.length - remaining.length;
+    localStorage.setItem(key, JSON.stringify(remaining));
+  });
+  return deleted;
 };
 
 // ============ Migration ============

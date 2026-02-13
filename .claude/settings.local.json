@@ -62,7 +62,9 @@
       "Bash(npx supabase link:*)",
       "Bash(npx supabase migration list:*)",
       "Bash(psql:*)",
-      "Bash(SRK=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTY2MTkzNCwiZXhwIjoyMDY1MjM3OTM0fQ.xFjN13Ah0o1hzaTBP9ABmV5EJ3o67Awd-FqGyKFsPSs\" echo \"=== Companies List ===\" curl -s --connect-timeout 10 \"https://lbaqrfbobfomkcfmfahq.supabase.co/rest/v1/global_firm_settings?setting_key=eq.companies_list&select=setting_value\" -H \"apikey: $SRK\" -H \"Authorization: Bearer $SRK\")"
+      "Bash(SRK=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxiYXFyZmJvYmZvbWtjZm1mYWhxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTY2MTkzNCwiZXhwIjoyMDY1MjM3OTM0fQ.xFjN13Ah0o1hzaTBP9ABmV5EJ3o67Awd-FqGyKFsPSs\" echo \"=== Companies List ===\" curl -s --connect-timeout 10 \"https://lbaqrfbobfomkcfmfahq.supabase.co/rest/v1/global_firm_settings?setting_key=eq.companies_list&select=setting_value\" -H \"apikey: $SRK\" -H \"Authorization: Bearer $SRK\")",
+      "Bash(npx vercel:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": []
   }

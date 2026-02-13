@@ -3,7 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 // Use environment variables or fallback to development values
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
-const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key'
+
+// SECURITY: Service role key must NEVER be in client-side code.
+// Admin operations (user creation/deletion) use mock mode on client
+// or should be moved to Supabase Edge Functions for production.
 
 // Only create main client if we have valid credentials
 let supabase: any = null
@@ -18,47 +21,12 @@ if (supabaseUrl && supabaseAnonKey &&
   }
 }
 
-// Admin client is lazy-initialized to avoid "Multiple GoTrueClient" warning
-let _supabaseAdmin: any = null
-let _adminInitialized = false
+// supabaseAdmin is no longer available on the client.
+// All admin operations fall back to mock mode (localStorage).
+const supabaseAdmin: any = null
 
-function getSupabaseAdmin() {
-  if (_adminInitialized) return _supabaseAdmin
-  _adminInitialized = true
-
-  if (supabaseUrl && supabaseServiceRoleKey &&
-      supabaseUrl !== 'https://placeholder.supabase.co' &&
-      supabaseServiceRoleKey !== 'placeholder-service-key') {
-    try {
-      _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-          detectSessionInUrl: false,
-          storageKey: 'supabase-admin-auth'
-        }
-      })
-    } catch (error) {
-      console.warn('Failed to create Supabase admin client:', error)
-    }
-  }
-  return _supabaseAdmin
-}
-
-// supabaseAdmin is a getter that lazy-initializes on first access
-const supabaseAdmin = new Proxy({} as any, {
-  get(_target, prop) {
-    const admin = getSupabaseAdmin()
-    if (!admin) return undefined
-    return admin[prop]
-  }
-})
-
-// Check if admin client would be available (without initializing)
 export function hasAdminCredentials(): boolean {
-  return !!(supabaseUrl && supabaseServiceRoleKey &&
-    supabaseUrl !== 'https://placeholder.supabase.co' &&
-    supabaseServiceRoleKey !== 'placeholder-service-key')
+  return false // Admin credentials are never available on the client
 }
 
 export { supabase, supabaseAdmin }
@@ -98,6 +66,7 @@ export interface UserProfile {
   emergency_contact?: string
   emergency_phone?: string
   notes?: string
+  two_factor_method?: 'none' | 'whatsapp' | 'email'
   is_active: boolean
   created_at: string
   updated_at: string

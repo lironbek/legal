@@ -27,6 +27,7 @@ import {
   Link as LinkIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { DropZoneUploader } from '@/components/documents/DropZoneUploader';
 import {
   ScannedDocument,
   getScannedDocumentsAsync,
@@ -183,6 +184,9 @@ export default function ScannedDocumentsPage() {
           </Button>
         }
       />
+
+      {/* Drop Zone Uploader */}
+      <DropZoneUploader onScanComplete={() => loadDocuments()} />
 
       {/* Filters */}
       <Card className="shadow-sm">

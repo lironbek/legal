@@ -17,6 +17,7 @@ import {
   Trash2,
   Users,
   Shield,
+  ShieldCheck,
   Building2,
   AlertTriangle,
   Eye,
@@ -374,7 +375,7 @@ export function UsersTable({ className }: UsersTableProps) {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
+                    <div className="flex items-center gap-2 justify-end flex-wrap">
                       <Switch
                         checked={user.is_active}
                         onCheckedChange={(checked) => toggleUserStatus(user.id, checked)}
@@ -382,6 +383,12 @@ export function UsersTable({ className }: UsersTableProps) {
                       <Badge variant={user.is_active ? 'default' : 'secondary'}>
                         {user.is_active ? 'פעיל' : 'לא פעיל'}
                       </Badge>
+                      {user.two_factor_method && user.two_factor_method !== 'none' && (
+                        <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300 gap-1">
+                          <ShieldCheck className="h-3 w-3" />
+                          2FA
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -537,6 +544,30 @@ export function UsersTable({ className }: UsersTableProps) {
                       value={editingUser.department || ''}
                       onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value })}
                     />
+                  </div>
+                  <div>
+                    <Label htmlFor="two_factor_method" className="flex items-center gap-1.5">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      אימות דו-שלבי (2FA)
+                    </Label>
+                    <Select
+                      value={editingUser.two_factor_method || 'none'}
+                      onValueChange={(value) => setEditingUser({ ...editingUser, two_factor_method: value as any })}
+                    >
+                      <SelectTrigger id="two_factor_method">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">ללא אימות דו-שלבי</SelectItem>
+                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                        <SelectItem value="email">אימייל</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {editingUser.two_factor_method === 'whatsapp' && 'קוד אימות יישלח ב-WhatsApp לאחר הזנת סיסמה'}
+                      {editingUser.two_factor_method === 'email' && 'קוד אימות יישלח לאימייל לאחר הזנת סיסמה'}
+                      {(!editingUser.two_factor_method || editingUser.two_factor_method === 'none') && 'כניסה עם סיסמה בלבד'}
+                    </p>
                   </div>
                 </div>
               </TabsContent>

@@ -463,6 +463,6 @@ Deno.serve(async (req) => {
       // Ignore
     }
 
-    return new Response(JSON.stringify({ ok: false, error: String(error) }));
+    return new Response(JSON.stringify({ ok: false, error: "Internal server error" }));
   }
 });

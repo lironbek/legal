@@ -2,10 +2,7 @@ import Anthropic from "npm:@anthropic-ai/sdk@0.30.1";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { SYSTEM_PROMPT, USER_PROMPT } from "../_shared/legal-prompts.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -99,7 +96,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Error processing document:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to process document", success: false }),
+      JSON.stringify({ error: "Failed to process document", success: false }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
