@@ -5,184 +5,58 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Database, ExternalLink, Users, Shield, Settings, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react'
+import { Users, Shield, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react'
 import { AddUserForm } from './AddUserForm'
 import { UsersTable } from './UsersTable'
-import { UserStats } from './UserStats'
-import { FirstUserSetup } from './FirstUserSetup'
-import { SupabaseConnectionTest } from './SupabaseConnectionTest'
 import { useUsers } from '@/hooks/useUsers'
 
 export function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'permissions'>('overview')
+  const [activeTab, setActiveTab] = useState<'users' | 'permissions'>('users')
+  const [showAddUser, setShowAddUser] = useState(false)
 
   return (
     <div className="space-y-6" dir="rtl">
       {/* Header */}
-      <Card className="bg-background border border-border">
-        <CardHeader className="bg-muted/50 border-b border-border">
-          <CardTitle className="flex items-center gap-2 text-foreground justify-end">
-            <Users className="h-5 w-5" />
-            ניהול משתמשים והרשאות
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 bg-background">
-          <div className="flex items-center justify-between">
-            <p className="text-foreground text-right">
-              ניהול משתמשים, הרשאות ותפריטים במערכת
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant={activeTab === 'overview' ? 'default' : 'outline'}
-                onClick={() => setActiveTab('overview')}
-                size="sm"
-              >
-                סקירה כללית
-              </Button>
-              <Button
-                variant={activeTab === 'users' ? 'default' : 'outline'}
-                onClick={() => setActiveTab('users')}
-                size="sm"
-              >
-                ניהול משתמשים
-              </Button>
-              <Button
-                variant={activeTab === 'permissions' ? 'default' : 'outline'}
-                onClick={() => setActiveTab('permissions')}
-                size="sm"
-              >
-                קבוצות הרשאות
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Content based on active tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Supabase Connection Test */}
-          <SupabaseConnectionTest />
-
-          {/* First User Setup */}
-          <FirstUserSetup />
-
-          {/* User Statistics */}
-          <UserStats />
-
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 justify-end">
-                <Shield className="h-5 w-5" />
-                פעולות מהירות
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border-dashed border-2 border-input hover:border-primary transition-colors">
-                  <CardContent className="p-6 text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <h3 className="font-medium mb-2">הוסף משתמש חדש</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      צור משתמש חדש עם הרשאות מותאמות
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setActiveTab('users')}
-                      className="w-full"
-                    >
-                      הוסף משתמש
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-dashed border-2 border-input hover:border-primary transition-colors">
-                  <CardContent className="p-6 text-center">
-                    <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <h3 className="font-medium mb-2">צור קבוצת הרשאות</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      הגדר קבוצת הרשאות לשימוש חוזר
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setActiveTab('permissions')}
-                      className="w-full"
-                    >
-                      צור קבוצה
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-dashed border-2 border-input">
-                  <CardContent className="p-6 text-center">
-                    <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <h3 className="font-medium mb-2">הגדרות מערכת</h3>
-                    <p className="text-sm text-muted-foreground">
-                      השתמש בטאבים למעלה לניהול הגדרות המערכת
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* System Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 justify-end">
-                <Database className="h-5 w-5" />
-                מידע על המערכת
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted/50 p-6 rounded-lg border-2 border-dashed border-input text-center">
-                <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  נדרש חיבור למסד נתונים
-                </h3>
-                <p className="text-foreground mb-4">
-                  כדי לנהל משתמשים והרשאות, יש צורך בחיבור ל-Supabase לאחסון המידע במסד הנתונים
-                </p>
-                <div className="space-y-3">
-                  <div className="bg-background p-4 rounded-lg border border-border text-right">
-                    <h4 className="font-medium text-foreground">תכונות זמינות עם Supabase:</h4>
-                    <ul className="text-sm text-foreground mt-2 space-y-1">
-                      <li>• מערכת התחברות (email/password)</li>
-                      <li>• ניהול משתמשים והרשאות מתקדם</li>
-                      <li>• קבוצות הרשאות לשימוש חוזר</li>
-                      <li>• מסד נתונים לאחסון פרטי משתמשים</li>
-                      <li>• בטיחות מידע ואבטחה</li>
-                      <li>• APIs לניהול המשתמשים</li>
-                    </ul>
-                  </div>
-                  <Button variant="outline" className="flex items-center gap-2 bg-background text-foreground border-input hover:bg-muted/50">
-                    <ExternalLink className="h-4 w-4" />
-                    חיבור ל-Supabase
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeTab === 'users' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('users')}
+            size="sm"
+          >
+            <Users className="h-4 w-4 ml-1" />
+            משתמשים
+          </Button>
+          <Button
+            variant={activeTab === 'permissions' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('permissions')}
+            size="sm"
+          >
+            <Shield className="h-4 w-4 ml-1" />
+            קבוצות הרשאות
+          </Button>
         </div>
-      )}
+        {activeTab === 'users' && (
+          <Button onClick={() => setShowAddUser(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            הוסף משתמש
+          </Button>
+        )}
+      </div>
 
+      {/* Content */}
       {activeTab === 'users' && (
-        <div className="space-y-6">
-          {/* Add User Form */}
-          <AddUserForm />
-
-          {/* Users Table */}
-          <UsersTable />
-        </div>
+        <UsersTable />
       )}
 
       {activeTab === 'permissions' && (
         <PermissionGroupsManager />
       )}
+
+      {/* Add User Dialog */}
+      <AddUserForm open={showAddUser} onOpenChange={setShowAddUser} />
     </div>
   )
 }
@@ -379,7 +253,6 @@ function PermissionGroupsManager() {
                     checked={perms[key] || false}
                     onCheckedChange={(checked) => {
                       const updated = { ...perms, [key]: checked }
-                      // Auto-enable view when enabling edit
                       if (checked && key.startsWith('can_edit_')) {
                         const viewKey = key.replace('can_edit_', 'can_view_')
                         if (viewKey in updated) updated[viewKey] = true

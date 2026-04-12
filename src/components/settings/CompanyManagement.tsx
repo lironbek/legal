@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Building2, Plus, Edit, Trash2, Users, MapPin, Phone, Mail, Copy, Link, Upload, X } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Users, MapPin, Phone, Mail, Copy, Link, Upload, X, LogIn, Eraser } from 'lucide-react';
 import {
   Company,
   getCompanies,
@@ -33,6 +33,8 @@ import {
   getCompanyUserAssignments,
 } from '@/lib/dataManager';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useNavigate } from 'react-router-dom';
+import { PurgeCompanyDataDialog } from './PurgeCompanyDataDialog';
 import { toast } from 'sonner';
 
 const emptyForm = {
@@ -48,14 +50,21 @@ const emptyForm = {
   logo_url: '',
 };
 
-export function CompanyManagement() {
+interface CompanyManagementProps {
+  showBackofficeActions?: boolean;
+}
+
+export function CompanyManagement({ showBackofficeActions = false }: CompanyManagementProps) {
   const { refreshCompanies } = useCompany();
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [purgeCompany, setPurgeCompany] = useState<Company | null>(null);
+  const [isPurgeOpen, setIsPurgeOpen] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const loadCompanies = () => {
@@ -164,48 +173,122 @@ export function CompanyManagement() {
   return (
     <div className="space-y-6" dir="rtl">
       {/* Header */}
-      <Card>
-        <CardHeader className="bg-muted/50 border-b border-border">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              ניהול משרדים
-            </div>
-            <Button onClick={handleOpenCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              משרד חדש
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">
-            צור ונהל משרדי עורכי דין. כל משרד מנהל את הנתונים שלו באופן עצמאי ומבודד.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between mb-4">
+        <Button onClick={handleOpenCreate} className="gap-2">
+          <Plus className="h-4 w-4" />
+          משרד חדש
+        </Button>
+      </div>
 
-      {/* Companies Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {companies.map((company) => (
-          <Card key={company.id} className={!company.is_active ? 'opacity-60' : ''}>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  <span>{company.name}</span>
-                  {!company.is_active && (
-                    <Badge variant="secondary">מושבת</Badge>
+      {/* Companies List */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border">
+            {companies.map((company) => (
+              <div
+                key={company.id}
+                className={`flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40 ${!company.is_active ? 'opacity-50' : ''}`}
+              >
+                {/* Logo / Icon */}
+                <div className="shrink-0">
+                  {company.logo_url ? (
+                    <div className="w-10 h-10 rounded-lg overflow-hidden border border-border">
+                      <img src={company.logo_url} alt={company.name} className="w-full h-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-primary" />
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm truncate">{company.name}</h3>
+                    {!company.is_active && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">מושבת</Badge>}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                    {company.legal_name && <span>{company.legal_name}</span>}
+                    {company.phone && (
+                      <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{company.phone}</span>
+                    )}
+                    {company.email && (
+                      <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{company.email}</span>
+                    )}
+                    {(company.address || company.city) && (
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{[company.address, company.city].filter(Boolean).join(', ')}</span>
+                    )}
+                  </div>
+                  {company.slug && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <Link className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                      <code className="text-xs text-primary/80 bg-primary/5 px-1.5 py-0.5 rounded font-mono truncate" dir="ltr">
+                        {window.location.origin}/login/{company.slug}
+                      </code>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/login/${company.slug}`);
+                          toast.success('קישור ההתחברות הועתק');
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Users count */}
+                <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>{getUserCount(company.id)}</span>
+                </div>
+
+                {/* Active toggle */}
+                <div className="shrink-0">
+                  <Switch
+                    checked={company.is_active}
+                    onCheckedChange={() => handleToggleActive(company)}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {showBackofficeActions && company.is_active && company.slug && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => navigate(`/org/${company.slug}/`)}
+                      title="כניסה לארגון"
+                    >
+                      <LogIn className="h-3.5 w-3.5" />
+                      כניסה
+                    </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8"
                     onClick={() => handleOpenEdit(company)}
+                    title="עריכה"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  {showBackofficeActions && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-orange-500 hover:text-orange-600"
+                      onClick={() => { setPurgeCompany(company); setIsPurgeOpen(true); }}
+                      title="מחיקת נתונים"
+                    >
+                      <Eraser className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
@@ -214,82 +297,16 @@ export function CompanyManagement() {
                       setCompanyToDelete(company);
                       setIsDeleteOpen(true);
                     }}
+                    title="מחיקה"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {company.legal_name && (
-                <p className="text-sm text-muted-foreground">{company.legal_name}</p>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {company.tax_id && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">ע.מ:</span>
-                    <span>{company.tax_id}</span>
-                  </div>
-                )}
-                {company.phone && (
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{company.phone}</span>
-                  </div>
-                )}
-                {company.email && (
-                  <div className="flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{company.email}</span>
-                  </div>
-                )}
-                {(company.address || company.city) && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{[company.address, company.city].filter(Boolean).join(', ')}</span>
-                  </div>
-                )}
               </div>
-
-              {/* Login URL */}
-              {company.slug && (
-                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-sm">
-                  <Link className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <code className="text-xs flex-1 truncate" dir="ltr">
-                    {window.location.origin}/login/{company.slug}
-                  </code>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/login/${company.slug}`);
-                      toast.success('קישור ההתחברות הועתק');
-                    }}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Users className="h-3.5 w-3.5" />
-                  <span>{getUserCount(company.id)} משתמשים</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">פעיל</span>
-                  <Switch
-                    checked={company.is_active}
-                    onCheckedChange={() => handleToggleActive(company)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {companies.length === 0 && (
         <Card>
@@ -480,6 +497,15 @@ export function CompanyManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showBackofficeActions && (
+        <PurgeCompanyDataDialog
+          company={purgeCompany}
+          open={isPurgeOpen}
+          onOpenChange={setIsPurgeOpen}
+          onPurgeComplete={loadCompanies}
+        />
+      )}
     </div>
   );
 }

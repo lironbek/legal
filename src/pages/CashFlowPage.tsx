@@ -59,9 +59,12 @@ import {
   deleteCashFlowEntry,
   getClients,
   getCases,
+  getBudgetItems,
+  updateBudgetItem,
   type CashFlowEntry,
   type Client,
   type Case,
+  type BudgetItem,
 } from '@/lib/dataManager';
 
 const statusMap: Record<CashFlowEntry['status'], string> = {
@@ -91,12 +94,14 @@ const emptyForm: Omit<CashFlowEntry, 'id' | 'createdAt' | 'updatedAt'> = {
   recurringFrequency: undefined,
   client: '',
   caseRef: '',
+  budgetItemId: undefined,
   status: 'expected',
   notes: '',
 };
 
 export default function CashFlowPage() {
   const [entries, setEntries] = useState<CashFlowEntry[]>([]);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [cases, setCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,6 +119,7 @@ export default function CashFlowPage() {
 
   const loadData = () => {
     setEntries(getCashFlowEntries());
+    setBudgetItems(getBudgetItems());
     setClients(getClients());
     setCases(getCases());
   };
@@ -180,6 +186,7 @@ export default function CashFlowPage() {
       recurringFrequency: entry.recurringFrequency,
       client: entry.client || '',
       caseRef: entry.caseRef || '',
+      budgetItemId: entry.budgetItemId,
       status: entry.status,
       notes: entry.notes,
     });
@@ -188,10 +195,31 @@ export default function CashFlowPage() {
 
   const handleSave = () => {
     if (editingEntry) {
+      // If budget link changed, adjust old budget item
+      if (editingEntry.budgetItemId && editingEntry.budgetItemId !== form.budgetItemId) {
+        const oldBudget = budgetItems.find(b => b.id === editingEntry.budgetItemId);
+        if (oldBudget) {
+          updateBudgetItem(oldBudget.id, {
+            actualAmount: Math.max(0, oldBudget.actualAmount - editingEntry.amount),
+          });
+        }
+      }
       updateCashFlowEntry(editingEntry.id, form);
     } else {
       addCashFlowEntry(form);
     }
+
+    // Update linked budget item actualAmount
+    if (form.budgetItemId && form.type === 'expense') {
+      const budget = budgetItems.find(b => b.id === form.budgetItemId);
+      if (budget) {
+        const prevAmount = editingEntry?.budgetItemId === form.budgetItemId ? editingEntry.amount : 0;
+        updateBudgetItem(budget.id, {
+          actualAmount: budget.actualAmount - prevAmount + form.amount,
+        });
+      }
+    }
+
     setDialogOpen(false);
     setEditingEntry(null);
     setForm(emptyForm);
@@ -385,7 +413,12 @@ export default function CashFlowPage() {
                             <RefreshCw className="inline h-3 w-3 text-muted-foreground mr-1" />
                           )}
                         </TableCell>
-                        <TableCell className="text-foreground">{entry.category}</TableCell>
+                        <TableCell className="text-foreground">
+                          <span>{entry.category}</span>
+                          {entry.budgetItemId && (
+                            <span className="block text-[10px] text-primary/70 mt-0.5" title="משויך לתקציב">תקציב</span>
+                          )}
+                        </TableCell>
                         <TableCell className="hidden md:table-cell text-muted-foreground">
                           {entry.description}
                         </TableCell>
@@ -480,6 +513,40 @@ export default function CashFlowPage() {
                 </Button>
               </div>
             </div>
+
+            {/* Budget Link (expense only) */}
+            {form.type === 'expense' && budgetItems.length > 0 && (
+              <div className="space-y-2">
+                <Label>סעיף תקציבי</Label>
+                <Select
+                  value={form.budgetItemId || '__none__'}
+                  onValueChange={(value) => {
+                    if (value === '__none__') {
+                      setForm({ ...form, budgetItemId: undefined });
+                    } else {
+                      const bi = budgetItems.find(b => b.id === value);
+                      setForm({
+                        ...form,
+                        budgetItemId: value,
+                        category: bi ? bi.category : form.category,
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="border-border">
+                    <SelectValue placeholder="שייך לסעיף תקציבי" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">ללא שיוך תקציבי</SelectItem>
+                    {budgetItems.map((bi) => (
+                      <SelectItem key={bi.id} value={bi.id}>
+                        {bi.category}{bi.description ? ` - ${bi.description}` : ''} ({bi.plannedAmount.toLocaleString('he-IL')} ₪)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Category */}
             <div className="space-y-2">

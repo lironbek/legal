@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,6 +29,7 @@ import {
   XCircle,
   RotateCcw,
   MessageCircle,
+  Search,
 } from 'lucide-react'
 import { UserProfile, UserPermission } from '@/lib/supabase'
 import { useUsers } from '@/hooks/useUsers'
@@ -87,6 +88,8 @@ export function UsersTable({ className }: UsersTableProps) {
   const [assignCompanyId, setAssignCompanyId] = useState('')
   const [assignRole, setAssignRole] = useState<UserCompanyAssignment['role']>('viewer')
   const [editDialogTab, setEditDialogTab] = useState('basic')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [companyFilter, setCompanyFilter] = useState<string>('all')
 
   // Load companies list for table display
   useEffect(() => {
@@ -303,6 +306,40 @@ export function UsersTable({ className }: UsersTableProps) {
     }).filter(Boolean) as string[]
   }
 
+  const isAdmin = currentProfile?.role === 'admin'
+
+  const filteredUsers = useMemo(() => {
+    let result = users
+
+    // Text search filter (name or email)
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      result = result.filter(u =>
+        u.full_name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q)
+      )
+    }
+
+    // Company filter
+    if (companyFilter !== 'all') {
+      if (companyFilter === 'unassigned') {
+        result = result.filter(u => {
+          if (u.role === 'admin') return false
+          const assignments = getUserCompanyAssignments(u.id)
+          return assignments.length === 0
+        })
+      } else {
+        result = result.filter(u => {
+          if (u.role === 'admin') return true // admins have access to all
+          const assignments = getUserCompanyAssignments(u.id)
+          return assignments.some(a => a.company_id === companyFilter)
+        })
+      }
+    }
+
+    return result
+  }, [users, searchQuery, companyFilter])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -317,13 +354,41 @@ export function UsersTable({ className }: UsersTableProps) {
   return (
     <div className={className} dir="rtl">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 justify-end">
-            <Users className="h-5 w-5" />
-            ניהול משתמשים
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
+          {/* Search & Filter Row */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="חיפוש לפי שם או אימייל..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-9"
+              />
+            </div>
+            {isAdmin && allCompanies.length > 0 && (
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="כל המשרדים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל המשרדים</SelectItem>
+                  <SelectItem value="unassigned">לא משויכים</SelectItem>
+                  {allCompanies.filter(c => c.is_active).map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {(searchQuery || companyFilter !== 'all') && (
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {filteredUsers.length} מתוך {users.length}
+              </span>
+            )}
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -336,16 +401,20 @@ export function UsersTable({ className }: UsersTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.length === 0 && (
+              {filteredUsers.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-12">
                     <Users className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-                    <p className="text-muted-foreground font-medium">אין משתמשים במערכת</p>
-                    <p className="text-sm text-muted-foreground/70 mt-1">הוסף משתמש חדש באמצעות הטופס למעלה</p>
+                    <p className="text-muted-foreground font-medium">
+                      {searchQuery || companyFilter !== 'all' ? 'לא נמצאו משתמשים תואמים' : 'אין משתמשים במערכת'}
+                    </p>
+                    {!searchQuery && companyFilter === 'all' && (
+                      <p className="text-sm text-muted-foreground/70 mt-1">הוסף משתמש חדש באמצעות הכפתור למעלה</p>
+                    )}
                   </TableCell>
                 </TableRow>
               )}
-              {users.map((user) => {
+              {filteredUsers.map((user) => {
                 const companies = getUserCompanies(user.id)
                 return (
                 <TableRow key={user.id}>
@@ -488,19 +557,32 @@ export function UsersTable({ className }: UsersTableProps) {
             <DialogDescription>ערוך את פרטי המשתמש, כתובת, פרטים אישיים ושיוך למשרדים</DialogDescription>
           </DialogHeader>
           {editingUser && (
-            <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="basic">מידע בסיסי</TabsTrigger>
-                <TabsTrigger value="address">כתובת</TabsTrigger>
-                <TabsTrigger value="personal">אישי</TabsTrigger>
-                <TabsTrigger value="emergency">חירום</TabsTrigger>
-                <TabsTrigger value="companies" className="flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" />
-                  משרדים
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="basic" className="space-y-4">
+            <Tabs value={editDialogTab} onValueChange={setEditDialogTab} className="w-full" orientation="vertical">
+              <div className="flex gap-6">
+                <TabsList className="flex flex-col h-auto w-40 shrink-0 bg-transparent p-0 gap-1 border-r border-border pr-4">
+                  <TabsTrigger value="basic" className="w-full justify-start gap-2.5 text-sm px-3 py-2.5 rounded-lg data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted/50">
+                    <Users className="h-4 w-4" />
+                    מידע בסיסי
+                  </TabsTrigger>
+                  <TabsTrigger value="address" className="w-full justify-start gap-2.5 text-sm px-3 py-2.5 rounded-lg data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted/50">
+                    <Building2 className="h-4 w-4" />
+                    כתובת
+                  </TabsTrigger>
+                  <TabsTrigger value="personal" className="w-full justify-start gap-2.5 text-sm px-3 py-2.5 rounded-lg data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted/50">
+                    <Shield className="h-4 w-4" />
+                    אישי
+                  </TabsTrigger>
+                  <TabsTrigger value="emergency" className="w-full justify-start gap-2.5 text-sm px-3 py-2.5 rounded-lg data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted/50">
+                    <AlertTriangle className="h-4 w-4" />
+                    חירום
+                  </TabsTrigger>
+                  <TabsTrigger value="companies" className="w-full justify-start gap-2.5 text-sm px-3 py-2.5 rounded-lg data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted/50">
+                    <Building2 className="h-4 w-4" />
+                    משרדים
+                  </TabsTrigger>
+                </TabsList>
+                <div className="flex-1 min-w-0">
+              <TabsContent value="basic" className="space-y-4 mt-0">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="full_name">שם מלא</Label>
@@ -590,7 +672,7 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="address" className="space-y-4">
+              <TabsContent value="address" className="space-y-4 mt-0">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <Label htmlFor="address">כתובת</Label>
@@ -619,7 +701,7 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="personal" className="space-y-4">
+              <TabsContent value="personal" className="space-y-4 mt-0">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="birth_date">תאריך לידה</Label>
@@ -641,7 +723,7 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="emergency" className="space-y-4">
+              <TabsContent value="emergency" className="space-y-4 mt-0">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="emergency_contact">איש קשר לחירום</Label>
@@ -671,7 +753,7 @@ export function UsersTable({ className }: UsersTableProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="companies" className="space-y-4">
+              <TabsContent value="companies" className="space-y-4 mt-0">
                 {editingUser.role === 'admin' && (
                   <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm">
                     <Badge variant="destructive" className="mb-1">מנהל על</Badge>
@@ -763,6 +845,8 @@ export function UsersTable({ className }: UsersTableProps) {
                   </div>
                 </div>
               </TabsContent>
+              </div>
+              </div>
             </Tabs>
           )}
           <div className="flex justify-end gap-2 mt-6">

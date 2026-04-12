@@ -330,7 +330,7 @@ export function AppSidebar() {
               style={groupIndex > 0 ? { borderTop: `1px solid ${SIDEBAR_COLORS.border}` } : undefined}
             >
               <SidebarGroupLabel
-                className="text-[10px] font-medium tracking-[0.12em] uppercase px-3 mb-0.5 group-data-[collapsible=icon]:hidden cursor-pointer select-none flex items-center justify-between"
+                className="text-[10px] font-medium tracking-[0.12em] uppercase px-3 mb-0.5 h-6 group-data-[collapsible=icon]:hidden cursor-pointer select-none flex items-center justify-between"
                 style={{ color: SIDEBAR_COLORS.textMuted }}
                 onClick={() => toggleGroup(group.label)}
               >

@@ -131,9 +131,9 @@ export function useUsers() {
         existingUsers.push(newUser)
         localStorage.setItem('mock-users', JSON.stringify(existingUsers))
 
-        // Store password (use phone number as default if password is empty)
+        // Store password (normalized email key)
         const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}')
-        mockPasswords[userData.email] = password || userData.phone || '123456'
+        mockPasswords[userData.email.toLowerCase()] = password
         localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords))
 
         // Create default permissions
@@ -614,7 +614,7 @@ export function useUsers() {
         const user = mockUsers.find((u: any) => u.id === userId)
         if (user) {
           const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}')
-          mockPasswords[user.email] = newPassword
+          mockPasswords[user.email.toLowerCase()] = newPassword
           localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords))
         }
         toast.success('סיסמה שונתה בהצלחה')

@@ -245,8 +245,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Helper: try mock login against localStorage users
   const tryMockSignIn = useCallback((email: string, password: string, companyId?: string): SignInResult => {
+    const normalizedEmail = email.toLowerCase();
     const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-    const mockUser = mockUsers.find((u: any) => u.email === email);
+    const mockUser = mockUsers.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
 
     if (!mockUser) {
       addAuditEntry({
@@ -260,7 +261,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Validate password: check stored password, or phone number as fallback
     const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
-    const storedPassword = mockPasswords[email];
+    // Try exact key first, then normalized lowercase key
+    const storedPassword = mockPasswords[mockUser.email] ?? mockPasswords[normalizedEmail];
     if (storedPassword) {
       // User has a stored password - must match
       if (password !== storedPassword) {

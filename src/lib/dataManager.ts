@@ -187,6 +187,7 @@ export interface CashFlowEntry {
   recurringFrequency?: 'monthly' | 'quarterly' | 'yearly';
   client?: string;
   caseRef?: string;
+  budgetItemId?: string;
   status: 'expected' | 'confirmed' | 'received' | 'paid';
   notes: string;
   createdAt: string;

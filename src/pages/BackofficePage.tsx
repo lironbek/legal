@@ -2,33 +2,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Building2, Users, ScrollText, LogOut, Scale, LogIn, MapPin, Phone, Boxes, Trash2 } from 'lucide-react';
+import { Building2, Users, ScrollText, LogOut, Scale, Boxes } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
 import { CompanyManagement } from '@/components/settings/CompanyManagement';
 import { UserManagement } from '@/components/settings/UserManagement';
 import { AuditLogSettings } from '@/components/settings/AuditLogSettings';
 import { ModuleConfiguration } from '@/components/settings/ModuleConfiguration';
-import { getCompanyUserAssignments, type Company } from '@/lib/dataManager';
-import { PurgeCompanyDataDialog } from '@/components/settings/PurgeCompanyDataDialog';
 
 export default function BackofficePage() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
-  const { companies } = useCompany();
   const [activeTab, setActiveTab] = useState('organizations');
-  const [purgeCompany, setPurgeCompany] = useState<Company | null>(null);
-  const [isPurgeOpen, setIsPurgeOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login', { replace: true });
-  };
-
-  const getUserCount = (companyId: string): number => {
-    return getCompanyUserAssignments(companyId).length;
   };
 
   return (
@@ -78,67 +66,7 @@ export default function BackofficePage() {
           </TabsList>
 
           <TabsContent value="organizations">
-            {/* Org Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {companies.filter(c => c.is_active).map((company) => (
-                <Card key={company.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between text-lg">
-                      <div className="flex items-center gap-2">
-                        {company.logo_url ? (
-                          <img src={company.logo_url} alt={company.name} className="h-8 w-8 object-contain rounded" />
-                        ) : (
-                          <Building2 className="h-5 w-5 text-primary" />
-                        )}
-                        <span>{company.name}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => { setPurgeCompany(company); setIsPurgeOpen(true); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs font-mono">{company.slug}</Badge>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
-                        {getUserCount(company.id)} משתמשים
-                      </span>
-                    </div>
-
-                    {(company.address || company.city) && (
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5" />
-                        <span>{[company.address, company.city].filter(Boolean).join(', ')}</span>
-                      </div>
-                    )}
-
-                    {company.phone && (
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Phone className="h-3.5 w-3.5" />
-                        <span>{company.phone}</span>
-                      </div>
-                    )}
-
-                    <Button
-                      className="w-full gap-2 mt-2"
-                      onClick={() => navigate(`/org/${company.slug}/`)}
-                    >
-                      <LogIn className="h-4 w-4" />
-                      כניסה
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Full Company Management below */}
-            <CompanyManagement />
+            <CompanyManagement showBackofficeActions />
           </TabsContent>
 
           <TabsContent value="users">
@@ -154,12 +82,6 @@ export default function BackofficePage() {
           </TabsContent>
         </Tabs>
       </div>
-
-      <PurgeCompanyDataDialog
-        company={purgeCompany}
-        open={isPurgeOpen}
-        onOpenChange={setIsPurgeOpen}
-      />
     </div>
   );
 }
