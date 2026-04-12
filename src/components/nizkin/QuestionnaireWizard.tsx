@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowRight, ArrowLeft, Save, Check, AlertTriangle, Clock, Gavel, Sparkles, Loader2, Copy, FileText, Bot } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { ArrowRight, ArrowLeft, Save, Check, AlertTriangle, Clock, Gavel, Sparkles, Loader2, Copy, FileText, Bot, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,9 @@ import { AiContentGenerator } from '@/components/tort/AiContentGenerator';
 import { AiGuidePanel } from '@/components/nizkin/AiGuidePanel';
 import { AiInterview } from '@/components/nizkin/AiInterview';
 import { saveAutosave } from '@/lib/tortClaimService';
+import { getClients } from '@/lib/dataManager';
+import type { Client } from '@/lib/dataManager';
+import { DocumentAttachmentsStep } from '@/components/nizkin/DocumentAttachmentsStep';
 import { generateClaimDraft } from '@/lib/nizkin/claim-generator';
 import type { ClaimDraftResult } from '@/lib/nizkin/claim-generator';
 import {
@@ -43,6 +46,7 @@ import type {
   CourtType,
   TortDamageType,
   DamageHead,
+  TortDocumentAttachment,
 } from '@/lib/tortClaimTypes';
 
 interface QuestionnaireWizardProps {
@@ -410,9 +414,59 @@ function renderStepContent(
       );
 
     // ---- Step: Plaintiff ----
-    case 'plaintiff':
+    case 'plaintiff': {
+      const clients = getClients();
+      const handleClientSelect = (clientId: string) => {
+        if (clientId === '__manual__') {
+          updateField('client_id' as keyof TortClaim, undefined as any);
+          return;
+        }
+        const client = clients.find(c => c.id === clientId);
+        if (!client) return;
+        updateField('client_id' as keyof TortClaim, clientId as any);
+        updateField('plaintiff_name', client.name);
+        updateField('plaintiff_id', client.idNumber || '');
+        updateField('plaintiff_address', client.address || '');
+        updateField('plaintiff_city', client.city || '');
+        updateField('plaintiff_contact', {
+          phone: client.phone || '',
+          email: client.email || '',
+          secondary_phone: client.secondaryPhone,
+        });
+      };
       return (
         <div className="space-y-4">
+          {/* Client selector */}
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <User className="h-4 w-4" />
+              בחירת לקוח מהמערכת
+            </Label>
+            <Select
+              value={(data as any).client_id || '__manual__'}
+              onValueChange={handleClientSelect}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="בחר לקוח או הזן ידנית..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__manual__">הזנה ידנית</SelectItem>
+                {clients.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}{c.idNumber ? ` (${c.idNumber})` : ''}{c.phone ? ` - ${c.phone}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(data as any).client_id && (
+              <p className="text-xs text-muted-foreground">
+                הפרטים מולאו אוטומטית מנתוני הלקוח. ניתן לערוך את השדות.
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>שם מלא {errors.plaintiff_name && <span className="text-destructive text-xs">({errors.plaintiff_name})</span>}</Label>
@@ -469,6 +523,7 @@ function renderStepContent(
           </div>
         </div>
       );
+    }
 
     // ---- Step: Defendants ----
     case 'defendants':
@@ -845,6 +900,17 @@ function renderStepContent(
             />
           </div>
         </div>
+      );
+
+    // ---- Step: Document Attachments ----
+    case 'document_attachments':
+      return (
+        <DocumentAttachmentsStep
+          clientId={(data as any).client_id}
+          companyId={data.company_id}
+          documentAttachments={(data as any).document_attachments || []}
+          onChange={(attachments: TortDocumentAttachment[]) => updateField('document_attachments' as keyof TortClaim, attachments as any)}
+        />
       );
 
     // ---- Step: Summary ----

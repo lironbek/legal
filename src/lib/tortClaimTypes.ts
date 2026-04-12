@@ -73,6 +73,16 @@ export interface TortAttachment {
   uploaded_at: string;
 }
 
+export interface TortDocumentAttachment {
+  id: string;
+  source: 'scanned' | 'document';
+  source_id: string;
+  display_name: string;
+  order: number;
+  file_url?: string;
+  file_name: string;
+}
+
 export interface VehicleDetails {
   license_plate: string;
   make: string;
@@ -97,6 +107,7 @@ export interface TortClaim {
   id: string;
   company_id: string;
   case_id?: string;
+  client_id?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -137,6 +148,7 @@ export interface TortClaim {
 
   // Attachments
   attachments: TortAttachment[];
+  document_attachments: TortDocumentAttachment[];
 
   // Generated documents
   generated_draft?: string;
@@ -304,6 +316,7 @@ export const createEmptyTortClaim = (companyId: string, createdBy: string): Omit
   total_claim_amount: 0,
 
   attachments: [],
+  document_attachments: [],
 
   legal_arguments: '',
   causes_of_action: [],

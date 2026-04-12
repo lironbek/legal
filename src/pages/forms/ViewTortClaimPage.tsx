@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Gavel, Edit, FileDown, Loader2, AlertTriangle, Sparkles, Copy } from 'lucide-react';
+import { Gavel, Edit, FileDown, Loader2, AlertTriangle, Sparkles, Copy, Merge } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { getTortClaimById } from '@/lib/tortClaimService';
-import { generateTortClaimDocx, generateTortClaimPdf, downloadBlob } from '@/lib/tortDocumentGenerator';
+import { generateTortClaimDocx, generateTortClaimPdf, generateMergedTortClaimPdf, downloadBlob } from '@/lib/tortDocumentGenerator';
 import { calculateStatuteOfLimitations, calculateTotalDamages } from '@/lib/nizkin/questionnaire-engine';
 import { generateClaimDraft } from '@/lib/nizkin/claim-generator';
 import type { ClaimDraftResult } from '@/lib/nizkin/claim-generator';
@@ -24,6 +24,7 @@ export default function ViewTortClaimPage() {
   const navigate = useOrgNavigate();
   const [generatingDocx, setGeneratingDocx] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [generatingMerged, setGeneratingMerged] = useState(false);
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [draftResult, setDraftResult] = useState<ClaimDraftResult | null>(null);
 
@@ -73,6 +74,42 @@ export default function ViewTortClaimPage() {
     }
   };
 
+  const hasAttachments = (claim.document_attachments?.length || 0) > 0;
+
+  const handleDownloadMergedPdf = async () => {
+    setGeneratingMerged(true);
+    try {
+      // Fetch attachment PDF blobs from their URLs
+      const attachmentBlobs: Blob[] = [];
+      const attachments = claim.document_attachments || [];
+      const sorted = [...attachments].sort((a, b) => a.order - b.order);
+
+      for (const att of sorted) {
+        if (att.file_url) {
+          try {
+            const resp = await fetch(att.file_url);
+            if (resp.ok) {
+              const blob = await resp.blob();
+              // Only include PDF files
+              if (blob.type === 'application/pdf' || att.file_name.endsWith('.pdf')) {
+                attachmentBlobs.push(blob);
+              }
+            }
+          } catch {
+            console.warn(`Failed to fetch attachment: ${att.file_name}`);
+          }
+        }
+      }
+
+      const blob = await generateMergedTortClaimPdf(claim, attachmentBlobs);
+      downloadBlob(blob, `כתב_תביעה_מאוחד_${claim.plaintiff_name}.pdf`);
+    } catch {
+      toast.error('שגיאה ביצירת PDF מאוחד');
+    } finally {
+      setGeneratingMerged(false);
+    }
+  };
+
   const handleGenerateDraft = async () => {
     setGeneratingDraft(true);
     try {
@@ -112,6 +149,12 @@ export default function ViewTortClaimPage() {
             {generatingPdf ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileDown className="ml-2 h-4 w-4" />}
             PDF
           </Button>
+          {hasAttachments && (
+            <Button variant="secondary" onClick={handleDownloadMergedPdf} disabled={generatingMerged}>
+              {generatingMerged ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Merge className="ml-2 h-4 w-4" />}
+              PDF מאוחד ({claim.document_attachments!.length})
+            </Button>
+          )}
           <Button variant="secondary" onClick={handleGenerateDraft} disabled={generatingDraft}>
             {generatingDraft ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Sparkles className="ml-2 h-4 w-4" />}
             נסח עם AI

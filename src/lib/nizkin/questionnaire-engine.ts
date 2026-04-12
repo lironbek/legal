@@ -31,7 +31,7 @@ export const QUESTIONNAIRE_STEPS: QuestionnaireStep[] = [
   {
     id: 'plaintiff',
     title: 'פרטי התובע',
-    description: 'שם, ת.ז., כתובת ופרטי קשר של התובע',
+    description: 'בחירת לקוח מהמערכת או הזנה ידנית, ת.ז., כתובת ופרטי קשר',
     claimTypes: [],
     requiredFields: ['plaintiff_name', 'plaintiff_id'],
   },
@@ -81,6 +81,13 @@ export const QUESTIONNAIRE_STEPS: QuestionnaireStep[] = [
     id: 'legal_arguments',
     title: 'טיעונים משפטיים',
     description: 'עילות תביעה, חקיקה וטיעונים',
+    claimTypes: [],
+    requiredFields: [],
+  },
+  {
+    id: 'document_attachments',
+    title: 'מסמכים מצורפים',
+    description: 'בחירת מסמכים מתוייקים לצירוף לכתב התביעה',
     claimTypes: [],
     requiredFields: [],
   },
@@ -174,6 +181,10 @@ export function validateStep(
 
     case 'legal_arguments':
       // Optional - AI can fill these
+      break;
+
+    case 'document_attachments':
+      // Optional step - no required validation
       break;
 
     case 'summary':

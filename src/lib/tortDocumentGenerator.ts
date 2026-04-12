@@ -12,6 +12,7 @@ import DOMPurify from 'dompurify';
 import type { TortClaim } from './tortClaimTypes';
 import { CLAIM_TYPE_LABELS, DEFENDANT_TYPE_LABELS, DAMAGE_TYPE_LABELS } from './tortClaimTypes';
 import { calculateTotalDamages } from './nizkin/questionnaire-engine';
+import { mergePdfs } from './pdfMergeUtils';
 
 // ============ DOCX Generation ============
 
@@ -341,6 +342,28 @@ function buildClaimHtml(claim: TortClaim, amount: number, formatCurrency: (n: nu
       <p style="font-size:12px;">תאריך: ${new Date().toLocaleDateString('he-IL')}</p>
     </div>
   `;
+}
+
+// ============ Merged PDF (claim + attachments) ============
+
+/**
+ * Generates a merged PDF with the tort claim document followed by attachment PDFs.
+ * Non-PDF attachments are skipped (only PDF attachments can be merged).
+ */
+export async function generateMergedTortClaimPdf(
+  claim: TortClaim,
+  attachmentBlobs: Blob[]
+): Promise<Blob> {
+  // Generate the main claim PDF
+  const claimPdf = await generateTortClaimPdf(claim);
+
+  // If no attachments, just return the claim PDF
+  if (attachmentBlobs.length === 0) {
+    return claimPdf;
+  }
+
+  // Merge: claim PDF first, then all attachment PDFs
+  return mergePdfs([claimPdf, ...attachmentBlobs]);
 }
 
 // ============ Download Helper ============
