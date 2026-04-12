@@ -5,13 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollText, Trash2, Search, RefreshCw } from 'lucide-react';
+import { ScrollText, Trash2, Search, RefreshCw, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { getAuditLog, clearAuditLog, AuditLogEntry } from '@/lib/auditLog';
 
 const actionConfig: Record<string, { label: string; variant: 'default' | 'destructive' | 'secondary' | 'outline' }> = {
   login_success: { label: 'התחברות מוצלחת', variant: 'default' },
   login_failed: { label: 'כניסה נכשלה', variant: 'destructive' },
   logout: { label: 'התנתקות', variant: 'secondary' },
+  login_2fa_sent: { label: 'קוד 2FA נשלח', variant: 'outline' },
+  login_2fa_verified: { label: '2FA אומת', variant: 'default' },
+  login_2fa_failed: { label: '2FA נכשל', variant: 'destructive' },
+  login_2fa_expired: { label: '2FA פג תוקף', variant: 'secondary' },
+  login_2fa_cancelled: { label: '2FA בוטל', variant: 'secondary' },
   impersonation_start: { label: 'צפייה כמשתמש', variant: 'outline' },
   impersonation_stop: { label: 'סיום צפייה', variant: 'outline' },
 };
@@ -29,6 +34,13 @@ function formatTimestamp(ts: string): string {
   } catch {
     return ts;
   }
+}
+
+function DeviceIcon({ type }: { type?: string }) {
+  if (type === 'mobile') return <Smartphone className="h-3.5 w-3.5" />;
+  if (type === 'tablet') return <Tablet className="h-3.5 w-3.5" />;
+  if (type === 'desktop') return <Monitor className="h-3.5 w-3.5" />;
+  return null;
 }
 
 export function AuditLogSettings() {
@@ -52,7 +64,8 @@ export function AuditLogSettings() {
       result = result.filter(entry =>
         entry.user_email.toLowerCase().includes(term) ||
         entry.user_name.toLowerCase().includes(term) ||
-        (entry.details?.toLowerCase() || '').includes(term)
+        (entry.details?.toLowerCase() || '').includes(term) ||
+        (entry.ip_address || '').includes(term)
       );
     }
     return result;
@@ -90,12 +103,13 @@ export function AuditLogSettings() {
         <CardContent className="pt-4 space-y-4">
           {/* Filters */}
           <div className="flex gap-3 items-center flex-wrap">
-            <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-xs">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="חיפוש לפי אימייל או שם..."
+                placeholder="חיפוש לפי אימייל, שם או IP..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-9"
               />
             </div>
             <Select value={filter} onValueChange={setFilter}>
@@ -107,6 +121,9 @@ export function AuditLogSettings() {
                 <SelectItem value="login_success">התחברות מוצלחת</SelectItem>
                 <SelectItem value="login_failed">כניסה נכשלה</SelectItem>
                 <SelectItem value="logout">התנתקות</SelectItem>
+                <SelectItem value="login_2fa_sent">2FA נשלח</SelectItem>
+                <SelectItem value="login_2fa_verified">2FA אומת</SelectItem>
+                <SelectItem value="login_2fa_failed">2FA נכשל</SelectItem>
                 <SelectItem value="impersonation_start">צפייה כמשתמש</SelectItem>
                 <SelectItem value="impersonation_stop">סיום צפייה</SelectItem>
               </SelectContent>
@@ -122,13 +139,15 @@ export function AuditLogSettings() {
                   <TableHead>משתמש</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>פעולה</TableHead>
+                  <TableHead>כתובת IP</TableHead>
+                  <TableHead>מכשיר</TableHead>
                   <TableHead>פרטים</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLog.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
+                    <TableCell colSpan={7} className="text-center py-12">
                       <ScrollText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
                       <p className="text-muted-foreground font-medium">אין רשומות ביומן הפעילות</p>
                       <p className="text-sm text-muted-foreground/70 mt-1">פעולות התחברות, התנתקות וצפייה כמשתמש יופיעו כאן</p>
@@ -147,8 +166,21 @@ export function AuditLogSettings() {
                         <TableCell className="text-right">
                           <Badge variant={config.variant}>{config.label}</Badge>
                         </TableCell>
-                        <TableCell className="text-right text-sm text-muted-foreground max-w-[250px] truncate">
-                          {entry.details || '-'}
+                        <TableCell className="text-sm font-mono" dir="ltr">
+                          {entry.ip_address || '—'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <DeviceIcon type={entry.device_type} />
+                            <span className="text-xs">
+                              {entry.device_type === 'mobile' ? 'נייד' :
+                               entry.device_type === 'tablet' ? 'טאבלט' :
+                               entry.device_type === 'desktop' ? 'מחשב' : '—'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right text-sm text-muted-foreground max-w-[200px] truncate">
+                          {entry.details || '—'}
                         </TableCell>
                       </TableRow>
                     );

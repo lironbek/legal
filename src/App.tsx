@@ -57,8 +57,8 @@ import { Scale, Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-// Backoffice or redirect for non-admins
-function BackofficeOrRedirect() {
+// Post-login redirect: admin → backoffice, non-admin → their org
+function PostLoginRedirect() {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
@@ -81,9 +81,9 @@ function BackofficeOrRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  // Admin → show backoffice
+  // Admin → backoffice
   if (profile?.role === 'admin') {
-    return <BackofficePage />;
+    return <Navigate to="/backoffice" replace />;
   }
 
   // Non-admin → redirect to their primary org
@@ -97,7 +97,39 @@ function BackofficeOrRedirect() {
     }
   }
 
-  // No assignments at all - show backoffice anyway (will be empty)
+  // No assignments found - send to login
+  return <Navigate to="/login" replace />;
+}
+
+// Protected backoffice route — admin only
+function BackofficeGuard() {
+  const { user, profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+            <Scale className="h-8 w-8 text-primary" />
+          </div>
+          <div className="flex items-center gap-2 justify-center text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>טוען...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Non-admin → redirect to their org
+  if (profile?.role !== 'admin') {
+    return <PostLoginRedirect />;
+  }
+
   return <BackofficePage />;
 }
 
@@ -130,10 +162,13 @@ const AppRoutes = () => {
     <Routes>
       {/* Public routes */}
       <Route path="/login/:companySlug" element={<LoginPage />} />
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={user ? <PostLoginRedirect /> : <LoginPage />} />
 
-      {/* Root: Backoffice (admin) or redirect to org (non-admin) */}
-      <Route path="/" element={<BackofficeOrRedirect />} />
+      {/* Root always goes to login */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* Backoffice (protected) */}
+      <Route path="/backoffice" element={<BackofficeGuard />} />
 
       {/* Org-scoped routes */}
       <Route path="/org/:slug" element={<OrgShell />}>

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from '@/lib/supabase';
 import type { UserProfile } from '@/lib/supabase';
 import { getUserCompanyAssignments, setCurrentCompany } from '@/lib/dataManager';
-import { addAuditEntry } from '@/lib/auditLog';
+import { addAuditEntryWithDevice } from '@/lib/auditLog';
 import { sendWhatsAppMessage } from '@/lib/documentScanService';
 
 interface AuthUser {
@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(prof);
     localStorage.setItem('mock-auth-user', JSON.stringify({ user: authUser, profile: prof }));
 
-    addAuditEntry({
+    addAuditEntryWithDevice({
       action: 'login_success',
       user_email: authUser.email,
       user_name: prof.full_name || authUser.email,
@@ -232,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Send the code via WhatsApp / email
     dispatch2FACode(code, method, prof);
 
-    addAuditEntry({
+    addAuditEntryWithDevice({
       action: 'login_2fa_sent',
       user_email: authUser.email,
       user_name: prof.full_name || authUser.email,
@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const mockUser = mockUsers.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
 
     if (!mockUser) {
-      addAuditEntry({
+      addAuditEntryWithDevice({
         action: 'login_failed',
         user_email: email,
         user_name: email,
@@ -266,7 +266,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedPassword) {
       // User has a stored password - must match
       if (password !== storedPassword) {
-        addAuditEntry({
+        addAuditEntryWithDevice({
           action: 'login_failed',
           user_email: email,
           user_name: mockUser.full_name || email,
@@ -278,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (mockUser.phone) {
       // No stored password - phone number is the default password
       if (password !== mockUser.phone) {
-        addAuditEntry({
+        addAuditEntryWithDevice({
           action: 'login_failed',
           user_email: email,
           user_name: mockUser.full_name || email,
@@ -289,7 +289,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } else {
       // No stored password AND no phone — reject login (no open-door fallback)
-      addAuditEntry({
+      addAuditEntryWithDevice({
         action: 'login_failed',
         user_email: email,
         user_name: mockUser.full_name || email,
@@ -359,7 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const hasAccess = assignments.some(a => a.company_id === companyId);
             if (!hasAccess) {
               await supabase.auth.signOut();
-              addAuditEntry({
+              addAuditEntryWithDevice({
                 action: 'login_failed',
                 user_email: data.user.email || email,
                 user_name: prof?.full_name || email,
@@ -389,7 +389,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCurrentCompany(companyId);
         }
 
-        addAuditEntry({
+        addAuditEntryWithDevice({
           action: 'login_success',
           user_email: data.user.email || '',
           user_name: prof?.full_name || data.user.email || '',
@@ -413,7 +413,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (Date.now() > pending2FAState.expiresAt) {
       setPending2FAState(null);
-      addAuditEntry({
+      addAuditEntryWithDevice({
         action: 'login_2fa_expired',
         user_email: pending2FAState.authUser.email,
         user_name: pending2FAState.profile.full_name || pending2FAState.authUser.email,
@@ -423,7 +423,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (code !== pending2FAState.code) {
-      addAuditEntry({
+      addAuditEntryWithDevice({
         action: 'login_2fa_failed',
         user_email: pending2FAState.authUser.email,
         user_name: pending2FAState.profile.full_name || pending2FAState.authUser.email,
@@ -437,7 +437,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     completeLogin(pending2FAState.authUser, pending2FAState.profile, pending2FAState.companyId);
     setPending2FAState(null);
 
-    addAuditEntry({
+    addAuditEntryWithDevice({
       action: 'login_2fa_verified',
       user_email: pending2FAState.authUser.email,
       user_name: pending2FAState.profile.full_name || pending2FAState.authUser.email,
@@ -450,7 +450,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Cancel 2FA flow
   const cancel2FA = useCallback(() => {
     if (pending2FAState) {
-      addAuditEntry({
+      addAuditEntryWithDevice({
         action: 'login_2fa_cancelled',
         user_email: pending2FAState.authUser.email,
         user_name: pending2FAState.profile.full_name || pending2FAState.authUser.email,
@@ -473,7 +473,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Send the new code via WhatsApp / email
     dispatch2FACode(newCode, pending2FAState.method, pending2FAState.profile);
 
-    addAuditEntry({
+    addAuditEntryWithDevice({
       action: 'login_2fa_sent',
       user_email: pending2FAState.authUser.email,
       user_name: pending2FAState.profile.full_name || pending2FAState.authUser.email,
@@ -492,7 +492,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     // Log before clearing state
     if (user) {
-      addAuditEntry({
+      addAuditEntryWithDevice({
         action: 'logout',
         user_email: user.email,
         user_name: profile?.full_name || user.email,
@@ -524,7 +524,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const startImpersonation = useCallback((targetUser: AuthUser, targetProfile: UserProfile) => {
     if (!user || !profile || profile.role !== 'admin') return;
 
-    addAuditEntry({
+    addAuditEntryWithDevice({
       action: 'impersonation_start',
       user_email: user.email,
       user_name: profile.full_name,
@@ -543,7 +543,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const stopImpersonation = useCallback(() => {
     if (!realAdmin) return;
 
-    addAuditEntry({
+    addAuditEntryWithDevice({
       action: 'impersonation_stop',
       user_email: realAdmin.user.email,
       user_name: realAdmin.profile.full_name,

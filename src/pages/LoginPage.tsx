@@ -165,11 +165,12 @@ export default function LoginPage() {
 
     if (result.error) {
       setError(result.error);
-setLoading(false);
+      setLoading(false);
     } else {
       if (company) {
         navigate(`/org/${company.slug}/`, { replace: true });
-      } else if (result.error === null) {
+      } else {
+        // PostLoginRedirect will route admin→backoffice, non-admin→their org
         navigate('/', { replace: true });
       }
     }

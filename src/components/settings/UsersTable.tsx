@@ -30,12 +30,14 @@ import {
   RotateCcw,
   MessageCircle,
   Search,
+  Activity,
 } from 'lucide-react'
 import { UserProfile, UserPermission } from '@/lib/supabase'
 import { useUsers } from '@/hooks/useUsers'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { UserActivityDialog } from './UserActivityDialog'
 import {
   Company,
   UserCompanyAssignment,
@@ -90,6 +92,8 @@ export function UsersTable({ className }: UsersTableProps) {
   const [editDialogTab, setEditDialogTab] = useState('basic')
   const [searchQuery, setSearchQuery] = useState('')
   const [companyFilter, setCompanyFilter] = useState<string>('all')
+  const [activityUser, setActivityUser] = useState<UserProfile | null>(null)
+  const [isActivityOpen, setIsActivityOpen] = useState(false)
 
   // Load companies list for table display
   useEffect(() => {
@@ -532,6 +536,20 @@ export function UsersTable({ className }: UsersTableProps) {
                         </TooltipTrigger>
                         <TooltipContent>שינוי סיסמה</TooltipContent>
                       </Tooltip>
+                      {currentProfile?.role === 'admin' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setActivityUser(user); setIsActivityOpen(true); }}
+                            >
+                              <Activity className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>היסטוריית פעילות</TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user)}>
@@ -1263,6 +1281,17 @@ export function UsersTable({ className }: UsersTableProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* User Activity Dialog */}
+      {activityUser && (
+        <UserActivityDialog
+          userId={activityUser.id}
+          userName={activityUser.full_name}
+          userEmail={activityUser.email}
+          open={isActivityOpen}
+          onOpenChange={setIsActivityOpen}
+        />
+      )}
     </div>
   )
 }

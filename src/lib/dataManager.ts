@@ -1360,7 +1360,83 @@ export const initializeDefaultAdmin = () => {
     }
   }
 
-  if (existingUsers.length > 0) return; // Users already exist
+  // Ensure "שפרגר ושות'" company exists
+  const companies = getCompanies();
+  let spergerCompany = companies.find(c => c.slug === 'sperger-law');
+  if (!spergerCompany) {
+    const now = new Date().toISOString();
+    spergerCompany = {
+      id: generateId(),
+      slug: 'sperger-law',
+      name: 'שפרגר ושות׳ משרד עורכי דין',
+      legal_name: 'שפרגר ושות׳ משרד עורכי דין',
+      email: 'ts@sperger-law.co.il',
+      phone: '046208110',
+      address: 'אקליטופס 1 רמת ישי',
+      logo_url: 'https://lbaqrfbobfomkcfmfahq.supabase.co/storage/v1/object/public/firm-logos/firm-logo-1752326111878.png',
+      is_active: true,
+      created_at: now,
+      updated_at: now,
+    } as Company;
+    const allCompanies = [...companies, spergerCompany];
+    localStorage.setItem('companies', JSON.stringify(allCompanies));
+  }
+
+  // Ensure "טל שפרגר" user exists
+  const hasTal = existingUsers.some((u: any) => u.email === 'ts@sperger-law.co.il');
+  if (!hasTal) {
+    const now = new Date().toISOString();
+    const talId = generateId();
+    existingUsers.push({
+      id: talId,
+      email: 'ts@sperger-law.co.il',
+      full_name: 'טל שפרגר',
+      role: 'lawyer',
+      phone: '052-375-5556',
+      department: '',
+      is_active: true,
+      created_at: now,
+      updated_at: now
+    });
+    localStorage.setItem('mock-users', JSON.stringify(existingUsers));
+
+    // Set password (phone number as default)
+    const talPwds = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
+    if (!talPwds['ts@sperger-law.co.il']) {
+      talPwds['ts@sperger-law.co.il'] = '0523755556';
+      localStorage.setItem('mock-passwords', JSON.stringify(talPwds));
+    }
+
+    // Create permissions
+    const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]');
+    existingPermissions.push({
+      id: generateId(),
+      user_id: talId,
+      can_view_dashboard: true,
+      can_view_cases: true, can_edit_cases: true, can_delete_cases: true,
+      can_view_clients: true, can_edit_clients: true,
+      can_view_reports: true, can_edit_reports: true,
+      can_view_documents: true, can_edit_documents: true,
+      can_view_calendar: true, can_edit_calendar: true,
+      can_view_billing: true, can_edit_billing: true,
+      can_view_time_tracking: true, can_edit_time_tracking: true,
+      can_view_legal_library: true, can_edit_legal_library: true,
+      can_view_disability_calculator: true, can_edit_disability_calculator: true,
+      can_view_cash_flow: true, can_edit_cash_flow: true,
+      can_view_budget: true, can_edit_budget: true,
+      can_manage_users: false, can_manage_permission_groups: false,
+      can_manage_system_settings: false, can_view_audit_logs: false,
+      created_at: now, updated_at: now
+    });
+    localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions));
+
+    // Assign to שפרגר company
+    if (spergerCompany) {
+      addUserCompanyAssignment(talId, spergerCompany.id, 'owner', true);
+    }
+  }
+
+  if (existingUsers.length > 0) return; // Users already exist (beyond the ones we just added)
 
   const adminId = generateId();
   const now = new Date().toISOString();
@@ -1406,9 +1482,9 @@ export const initializeDefaultAdmin = () => {
   };
   localStorage.setItem('mock-permissions', JSON.stringify([adminPermissions]));
 
-  // Assign admin to default company
-  const companies = getCompanies();
-  if (companies.length > 0) {
-    addUserCompanyAssignment(adminId, companies[0].id, 'admin', true);
-  }
+  // Assign admin to all companies
+  const allCompanies = getCompanies();
+  allCompanies.forEach((company, i) => {
+    addUserCompanyAssignment(adminId, company.id, 'admin', i === 0);
+  });
 };
