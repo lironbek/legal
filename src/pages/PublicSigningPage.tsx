@@ -169,7 +169,7 @@ export default function PublicSigningPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4" dir="rtl">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
             <h1 className="text-xl font-bold">המסמך כבר נחתם</h1>
             <p className="text-muted-foreground">מסמך זה כבר נחתם בעבר.</p>
           </CardContent>
@@ -183,7 +183,7 @@ export default function PublicSigningPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4" dir="rtl">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
             <h1 className="text-2xl font-bold">תודה! המסמך נחתם בהצלחה</h1>
             <p className="text-muted-foreground">
               החתימה נשמרה והמסמך נשלח חזרה למערכת.

@@ -67,6 +67,7 @@ export interface UserProfile {
   emergency_phone?: string
   notes?: string
   two_factor_method?: 'none' | 'whatsapp' | 'email'
+  whatsapp_authorized?: boolean
   is_active: boolean
   created_at: string
   updated_at: string

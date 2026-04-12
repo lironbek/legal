@@ -13,6 +13,8 @@ export type ModuleKey =
   | 'legal-library'
   | 'disability-calculator'
   | 'signing'
+  | 'tort-claims'
+  | 'nizkin'
   | 'settings';
 
 export const ALL_MODULES: { key: ModuleKey; label: string; alwaysEnabled?: boolean }[] = [
@@ -30,8 +32,15 @@ export const ALL_MODULES: { key: ModuleKey; label: string; alwaysEnabled?: boole
   { key: 'legal-library', label: 'ספרייה משפטית' },
   { key: 'disability-calculator', label: 'מחשבון נכות' },
   { key: 'signing', label: 'חתימה דיגיטלית' },
+  { key: 'tort-claims', label: 'כתבי תביעה בנזיקין' },
+  { key: 'nizkin', label: 'נזיקין', alwaysEnabled: true },
   { key: 'settings', label: 'הגדרות', alwaysEnabled: true },
 ];
+
+/** Set of module keys that are always enabled regardless of per-org settings */
+export const ALWAYS_ENABLED_MODULES = new Set<ModuleKey>(
+  ALL_MODULES.filter(m => m.alwaysEnabled).map(m => m.key)
+);
 
 export const URL_TO_MODULE: Record<string, ModuleKey> = {
   '/': 'dashboard',
@@ -48,5 +57,7 @@ export const URL_TO_MODULE: Record<string, ModuleKey> = {
   '/legal-library': 'legal-library',
   '/disability-calculator': 'disability-calculator',
   '/signing': 'signing',
+  '/tort-claims': 'tort-claims',
+  '/nizkin': 'nizkin',
   '/settings': 'settings',
 };

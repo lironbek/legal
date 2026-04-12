@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,10 +72,10 @@ const statusMap: Record<CashFlowEntry['status'], string> = {
 };
 
 const statusColorMap: Record<CashFlowEntry['status'], string> = {
-  expected: 'bg-yellow-500',
-  confirmed: 'bg-blue-500',
-  received: 'bg-green-500',
-  paid: 'bg-muted-foreground',
+  expected: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800',
+  confirmed: 'bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800',
+  received: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+  paid: 'bg-muted text-muted-foreground',
 };
 
 const incomeCategories = ['שכר טרחה', 'ריטיינר', 'פשרה', 'החזר הוצאות', 'אחר'];
@@ -219,39 +219,32 @@ export default function CashFlowPage() {
   const currentCategories = form.type === 'income' ? incomeCategories : expenseCategories;
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="תזרים מזומנים"
         subtitle="ניהול הכנסות והוצאות צפויות"
         actions={
           <div className="flex gap-2">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button className="gap-2" onClick={() => openAddDialog('income')}>
+            <Button className="gap-2" onClick={() => openAddDialog('income')}>
                 <Plus className="h-4 w-4" /> הכנסה צפויה
               </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button variant="outline" className="gap-2" onClick={() => openAddDialog('expense')}>
+            <Button variant="outline" className="gap-2" onClick={() => openAddDialog('expense')}>
                 <Plus className="h-4 w-4" /> הוצאה צפויה
               </Button>
-            </motion.div>
           </div>
         }
       />
 
       {/* Summary Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+      <div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-green-600" />
+              <div className="w-12 h-12 bg-[hsl(var(--accent-emerald-light))] rounded-xl flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-[hsl(var(--accent-emerald))]" />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{formatAmount(totalIncome)}</p>
@@ -261,11 +254,11 @@ export default function CashFlowPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center">
-                <TrendingDown className="h-6 w-6 text-rose-600" />
+              <div className="w-12 h-12 bg-[hsl(var(--accent-rose-light))] rounded-xl flex items-center justify-center">
+                <TrendingDown className="h-6 w-6 text-[hsl(var(--accent-rose))]" />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{formatAmount(totalExpenses)}</p>
@@ -275,11 +268,11 @@ export default function CashFlowPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Wallet className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-[hsl(var(--accent-blue-light))] rounded-xl flex items-center justify-center">
+                <Wallet className="h-6 w-6 text-[hsl(var(--accent-blue))]" />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{formatAmount(balance)}</p>
@@ -289,11 +282,11 @@ export default function CashFlowPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Activity className="h-6 w-6 text-purple-600" />
+              <div className="w-12 h-12 bg-[hsl(var(--accent-violet-light))] rounded-xl flex items-center justify-center">
+                <Activity className="h-6 w-6 text-[hsl(var(--accent-violet))]" />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{currentMonthCount}</p>
@@ -302,26 +295,22 @@ export default function CashFlowPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Table Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="border-border shadow-sm">
+      <div>
+        <Card className="border-border">
           {/* Filters */}
           <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">רשימת תנועות</CardTitle>
+            <CardTitle className="text-base font-semibold">רשימת תנועות</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חיפוש לפי תיאור, קטגוריה או לקוח..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 border-border"
+                  className="w-full pr-9 pl-4 border-border"
                 />
               </div>
               <div className="flex gap-2">
@@ -358,14 +347,14 @@ export default function CashFlowPage() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="border-border">
-                    <TableHead className="text-foreground font-semibold">תאריך</TableHead>
-                    <TableHead className="text-foreground font-semibold">סוג</TableHead>
-                    <TableHead className="text-foreground font-semibold">קטגוריה</TableHead>
-                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תיאור</TableHead>
-                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">לקוח</TableHead>
-                    <TableHead className="text-foreground font-semibold">סכום</TableHead>
-                    <TableHead className="text-foreground font-semibold">סטטוס</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">פעולות</TableHead>
+                    <TableHead>תאריך</TableHead>
+                    <TableHead>סוג</TableHead>
+                    <TableHead>קטגוריה</TableHead>
+                    <TableHead className="hidden md:table-cell">תיאור</TableHead>
+                    <TableHead className="hidden lg:table-cell">לקוח</TableHead>
+                    <TableHead>סכום</TableHead>
+                    <TableHead>סטטוס</TableHead>
+                    <TableHead>פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -377,11 +366,8 @@ export default function CashFlowPage() {
                     </TableRow>
                   ) : (
                     filteredEntries.map((entry, index) => (
-                      <motion.tr
+                      <tr
                         key={entry.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
                         className="hover:bg-muted/50 border-border transition-colors group"
                       >
                         <TableCell className="text-muted-foreground">{entry.date}</TableCell>
@@ -389,8 +375,8 @@ export default function CashFlowPage() {
                           <Badge
                             className={
                               entry.type === 'income'
-                                ? 'bg-green-500 text-white'
-                                : 'bg-rose-500 text-white'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                                : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800'
                             }
                           >
                             {entry.type === 'income' ? 'הכנסה' : 'הוצאה'}
@@ -410,7 +396,7 @@ export default function CashFlowPage() {
                           <span
                             className={
                               entry.type === 'income'
-                                ? 'text-green-600 font-bold'
+                                ? 'text-emerald-600 font-bold'
                                 : 'text-rose-600 font-bold'
                             }
                           >
@@ -419,7 +405,7 @@ export default function CashFlowPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${statusColorMap[entry.status]} text-white`}>
+                          <Badge className={statusColorMap[entry.status]}>
                             {statusMap[entry.status]}
                           </Badge>
                         </TableCell>
@@ -437,7 +423,7 @@ export default function CashFlowPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-50"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/5"
                               onClick={() => openDeleteDialog(entry)}
                               title="מחיקה"
                             >
@@ -445,7 +431,7 @@ export default function CashFlowPage() {
                             </Button>
                           </div>
                         </TableCell>
-                      </motion.tr>
+                      </tr>
                     ))
                   )}
                 </TableBody>
@@ -453,7 +439,7 @@ export default function CashFlowPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -689,7 +675,7 @@ export default function CashFlowPage() {
             <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               מחיקה
             </AlertDialogAction>

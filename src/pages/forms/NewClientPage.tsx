@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, User } from 'lucide-react';
+import { Save, X, User, Loader2 } from 'lucide-react';
 import { addClient } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
 
@@ -21,22 +21,35 @@ export default function NewClientPage() {
     city: '',
     postalCode: '',
     clientType: '',
+    religion: '',
     notes: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) newErrors.name = 'שם מלא הוא שדה חובה';
+    if (!formData.email.trim()) newErrors.email = 'אימייל הוא שדה חובה';
+    if (!formData.phone.trim()) newErrors.phone = 'טלפון הוא שדה חובה';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate() || saving) return;
 
-    // Save the client using dataManager
-    const newClient = addClient({
-      ...formData,
-      status: 'פעיל'
-    });
-
-    console.log('Client saved:', newClient);
-
-    // Navigate back to clients page
-    navigate('/clients');
+    setSaving(true);
+    try {
+      addClient({
+        ...formData,
+        status: 'פעיל'
+      });
+      navigate('/clients');
+    } catch {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -44,7 +57,7 @@ export default function NewClientPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="לקוח חדש"
         subtitle="הוסף לקוח חדש למערכת"
@@ -56,9 +69,9 @@ export default function NewClientPage() {
         }
       />
 
-      <Card className="max-w-2xl shadow-sm">
+      <Card className="max-w-3xl border-border">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
             <User className="h-5 w-5" />
             פרטי הלקוח
           </CardTitle>
@@ -67,39 +80,45 @@ export default function NewClientPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground">שם מלא</Label>
+                <Label htmlFor="name" className="text-foreground">שם מלא *</Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => { setFormData({...formData, name: e.target.value}); setErrors(prev => ({...prev, name: ''})); }}
                   placeholder="שם מלא"
                   required
+                  className={errors.name ? 'border-destructive' : ''}
                 />
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">אימייל</Label>
+                <Label htmlFor="email" className="text-foreground">אימייל *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => { setFormData({...formData, email: e.target.value}); setErrors(prev => ({...prev, email: ''})); }}
                   placeholder="example@email.com"
                   required
+                  className={errors.email ? 'border-destructive' : ''}
                 />
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-foreground">טלפון</Label>
+                <Label htmlFor="phone" className="text-foreground">טלפון *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  onChange={(e) => { setFormData({...formData, phone: e.target.value}); setErrors(prev => ({...prev, phone: ''})); }}
                   placeholder="050-1234567"
                   required
+                  className={errors.phone ? 'border-destructive' : ''}
                 />
+                {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
               </div>
 
               <div className="space-y-2">
@@ -161,6 +180,22 @@ export default function NewClientPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="religion" className="text-foreground">דת</Label>
+              <Select value={formData.religion} onValueChange={(value) => setFormData({...formData, religion: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר דת" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="יהודי">יהודי</SelectItem>
+                  <SelectItem value="מוסלמי">מוסלמי</SelectItem>
+                  <SelectItem value="נוצרי">נוצרי</SelectItem>
+                  <SelectItem value="דרוזי">דרוזי</SelectItem>
+                  <SelectItem value="אחר">אחר</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="notes" className="text-foreground">הערות</Label>
               <Textarea
                 id="notes"
@@ -172,9 +207,9 @@ export default function NewClientPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit">
-                <Save className="h-4 w-4 ml-2" />
-                שמור לקוח
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Save className="h-4 w-4 ml-2" />}
+                {saving ? 'שומר...' : 'שמור לקוח'}
               </Button>
               <Button type="button" variant="outline" onClick={handleCancel}>
                 ביטול

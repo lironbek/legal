@@ -29,6 +29,17 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DropZoneUploader } from '@/components/documents/DropZoneUploader';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import {
   ScannedDocument,
   getScannedDocumentsAsync,
   getScannedDocuments,
@@ -49,6 +60,7 @@ export default function ScannedDocumentsPage() {
   const [reviewDoc, setReviewDoc] = useState<ScannedDocument | null>(null);
   const [linkCase, setLinkCase] = useState('');
   const [linkClient, setLinkClient] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const cases = getCases();
   const clients = getClients();
@@ -98,12 +110,21 @@ export default function ScannedDocumentsPage() {
     setFilteredDocs(result);
   }, [documents, searchTerm, filterType, filterStatus, filterSource]);
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!window.confirm(`האם למחוק את המסמך "${title || 'ללא כותרת'}"?`)) return;
-    const success = await deleteScannedDocument(id);
-    if (success) {
-      await loadDocuments();
+  const handleDelete = (id: string, title: string) => {
+    setDeleteTarget({ id, title: title || 'ללא כותרת' });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTarget) {
+      const success = await deleteScannedDocument(deleteTarget.id);
+      if (success) {
+        toast.success('המסמך נמחק בהצלחה');
+        await loadDocuments();
+      } else {
+        toast.error('שגיאה במחיקת המסמך');
+      }
     }
+    setDeleteTarget(null);
   };
 
   const openReview = (doc: ScannedDocument) => {
@@ -127,21 +148,21 @@ export default function ScannedDocumentsPage() {
     switch (status) {
       case 'processing':
         return (
-          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+          <Badge className="bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">
             <Loader2 className="h-3 w-3 ml-1 animate-spin" />
             בעיבוד
           </Badge>
         );
       case 'needs_verification':
         return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+          <Badge className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
             <Clock className="h-3 w-3 ml-1" />
             לאימות
           </Badge>
         );
       case 'verified':
         return (
-          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+          <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
             <CheckCircle2 className="h-3 w-3 ml-1" />
             מאומת
           </Badge>
@@ -160,12 +181,12 @@ export default function ScannedDocumentsPage() {
 
   const getSourceBadge = (source: string) => {
     return source === 'whatsapp' ? (
-      <Badge variant="outline" className="text-green-600 border-green-300">
+      <Badge variant="outline" className="text-emerald-600 border-emerald-300 dark:text-emerald-400 dark:border-emerald-700">
         <MessageSquare className="h-3 w-3 ml-1" />
         WhatsApp
       </Badge>
     ) : (
-      <Badge variant="outline" className="text-blue-600 border-blue-300">
+      <Badge variant="outline" className="text-sky-600 border-sky-300 dark:text-sky-400 dark:border-sky-700">
         <Globe className="h-3 w-3 ml-1" />
         אתר
       </Badge>
@@ -173,7 +194,7 @@ export default function ScannedDocumentsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="מסמכים סרוקים"
         subtitle="ניהול מסמכים שנסרקו באמצעות AI"
@@ -189,7 +210,7 @@ export default function ScannedDocumentsPage() {
       <DropZoneUploader onScanComplete={() => loadDocuments()} />
 
       {/* Filters */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -246,9 +267,9 @@ export default function ScannedDocumentsPage() {
       </Card>
 
       {/* Documents Table */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Scan className="h-5 w-5" />
             מסמכים ({filteredDocs.length})
           </CardTitle>
@@ -282,12 +303,12 @@ export default function ScannedDocumentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold">סוג</TableHead>
-                    <TableHead className="font-semibold">כותרת</TableHead>
-                    <TableHead className="hidden md:table-cell font-semibold">תאריך</TableHead>
-                    <TableHead className="hidden md:table-cell font-semibold">מקור</TableHead>
-                    <TableHead className="font-semibold">סטטוס</TableHead>
-                    <TableHead className="font-semibold">פעולות</TableHead>
+                    <TableHead>סוג</TableHead>
+                    <TableHead>כותרת</TableHead>
+                    <TableHead className="hidden md:table-cell">תאריך</TableHead>
+                    <TableHead className="hidden md:table-cell">מקור</TableHead>
+                    <TableHead>סטטוס</TableHead>
+                    <TableHead>פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -340,7 +361,7 @@ export default function ScannedDocumentsPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
                             onClick={() => handleDelete(doc.id, doc.title || doc.file_name)}
                             title="מחיקה"
                           >
@@ -384,7 +405,7 @@ export default function ScannedDocumentsPage() {
                         ? 'border-emerald-500 text-emerald-700'
                         : reviewDoc.confidence === 'medium'
                         ? 'border-amber-500 text-amber-700'
-                        : 'border-red-500 text-red-700'
+                        : 'border-destructive text-destructive'
                     }
                   >
                     ביטחון: {reviewDoc.confidence === 'high' ? 'גבוה' :
@@ -523,6 +544,26 @@ export default function ScannedDocumentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת מסמך</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך למחוק את המסמך "{deleteTarget?.title}"? פעולה זו אינה ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              מחק מסמך
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

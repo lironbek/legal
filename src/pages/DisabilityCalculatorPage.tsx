@@ -127,7 +127,7 @@ export default function DisabilityCalculatorPage() {
         {/* הגדרות ראשיות */}
         <Card className="border-border">
           <CardHeader className="bg-muted/50 border-b border-border">
-            <CardTitle className="text-foreground">בחירת סוג וועדה</CardTitle>
+            <CardTitle className="text-base font-semibold">בחירת סוג וועדה</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -175,7 +175,7 @@ export default function DisabilityCalculatorPage() {
         {/* הוספת נכויות */}
         <Card className="border-border">
           <CardHeader className="bg-muted/50 border-b border-border">
-            <CardTitle className="text-foreground">הוספת נכויות</CardTitle>
+            <CardTitle className="text-base font-semibold">הוספת נכויות</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -214,7 +214,7 @@ export default function DisabilityCalculatorPage() {
         {/* רשימת נכויות */}
         <Card className="border-border">
           <CardHeader className="bg-muted/50 border-b border-border">
-            <CardTitle className="text-foreground">רשימת נכויות שהוכנסו</CardTitle>
+            <CardTitle className="text-base font-semibold">רשימת נכויות שהוכנסו</CardTitle>
           </CardHeader>
           <CardContent>
             {entries.length === 0 ? (
@@ -234,7 +234,7 @@ export default function DisabilityCalculatorPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeEntry(entry.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/5"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -248,7 +248,7 @@ export default function DisabilityCalculatorPage() {
         {/* תוצאות */}
         <Card className="border-border">
           <CardHeader className="bg-muted/50 border-b border-border">
-            <CardTitle className="text-foreground">תוצאות החישוב</CardTitle>
+            <CardTitle className="text-base font-semibold">תוצאות החישוב</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
@@ -280,7 +280,7 @@ export default function DisabilityCalculatorPage() {
       {/* הסברים והערות */}
       <Card className="mt-6 border-border">
         <CardHeader className="bg-muted/50 border-b border-border">
-          <CardTitle className="text-foreground">הערות חשובות</CardTitle>
+          <CardTitle className="text-base font-semibold">הערות חשובות</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="prose prose-sm max-w-none">

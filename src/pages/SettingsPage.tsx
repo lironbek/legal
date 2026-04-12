@@ -1,7 +1,5 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Palette, Upload, Users, Scan, Building2, MessageSquare, ScrollText } from 'lucide-react';
+import { Palette, Users, Scan, Building2, MessageSquare, ScrollText } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DesignSettings } from '@/components/settings/DesignSettings';
 import { UserManagement } from '@/components/settings/UserManagement';
@@ -11,72 +9,76 @@ import { WhatsAppSettings } from '@/components/settings/WhatsAppSettings';
 import { AuditLogSettings } from '@/components/settings/AuditLogSettings';
 import { useAuth } from '@/contexts/AuthContext';
 
+const settingsTabs = [
+  { value: 'design', label: 'עיצוב המערכת', icon: Palette },
+  { value: 'scanner', label: 'הגדרות סורק', icon: Scan },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
+  { value: 'users', label: 'ניהול משתמשים', icon: Users },
+  { value: 'companies', label: 'ניהול משרדים', icon: Building2 },
+];
+
+const adminTabs = [
+  { value: 'audit-log', label: 'יומן פעילות', icon: ScrollText },
+];
+
 export default function SettingsPage() {
   const { profile, realAdmin } = useAuth();
-  // Show admin tabs if user is admin OR if admin is impersonating (realAdmin exists)
   const isAdmin = profile?.role === 'admin' || realAdmin !== null;
+
+  const allTabs = isAdmin ? [...settingsTabs, ...adminTabs] : settingsTabs;
+
   return (
-    <div className="container mx-auto p-6 max-w-6xl" dir="rtl">
+    <div className="space-y-6" dir="rtl">
       <PageHeader
         title="הגדרות מערכת"
         subtitle="ניהול והתאמה אישית של המערכת"
       />
 
-      <Tabs defaultValue="design" className="w-full">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} bg-card border border-border`}>
-          <TabsTrigger value="design" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
-            <Palette className="h-4 w-4" />
-            עיצוב המערכת
-          </TabsTrigger>
-          <TabsTrigger value="scanner" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
-            <Scan className="h-4 w-4" />
-            הגדרות סורק
-          </TabsTrigger>
-          <TabsTrigger value="whatsapp" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
-            <MessageSquare className="h-4 w-4" />
-            WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
-            <Users className="h-4 w-4" />
-            ניהול משתמשים
-          </TabsTrigger>
-          <TabsTrigger value="companies" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary border-r border-border">
-            <Building2 className="h-4 w-4" />
-            ניהול משרדים
-          </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="audit-log" className="flex items-center gap-2 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
-              <ScrollText className="h-4 w-4" />
-              יומן פעילות
-            </TabsTrigger>
-          )}
-        </TabsList>
+      <Tabs defaultValue="design" className="w-full" orientation="vertical">
+        <div className="flex gap-6">
+          {/* Vertical Tab List */}
+          <TabsList className="flex flex-col h-auto w-52 shrink-0 bg-card border border-border rounded-lg p-1.5 gap-0.5">
+            {allTabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="w-full justify-start gap-2.5 px-3 py-2.5 text-[13px] rounded-md data-[state=active]:bg-primary/5 data-[state=active]:text-primary data-[state=active]:font-medium"
+              >
+                <tab.icon className="h-4 w-4 shrink-0" />
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <TabsContent value="design" className="mt-6">
-          <DesignSettings />
-        </TabsContent>
+          {/* Tab Content */}
+          <div className="flex-1 min-w-0">
+            <TabsContent value="design" className="mt-0">
+              <DesignSettings />
+            </TabsContent>
 
-        <TabsContent value="scanner" className="mt-6">
-          <ScannerSettings />
-        </TabsContent>
+            <TabsContent value="scanner" className="mt-0">
+              <ScannerSettings />
+            </TabsContent>
 
-        <TabsContent value="whatsapp" className="mt-6">
-          <WhatsAppSettings />
-        </TabsContent>
+            <TabsContent value="whatsapp" className="mt-0">
+              <WhatsAppSettings />
+            </TabsContent>
 
-        <TabsContent value="users" className="mt-6">
-          <UserManagement />
-        </TabsContent>
+            <TabsContent value="users" className="mt-0">
+              <UserManagement />
+            </TabsContent>
 
-        <TabsContent value="companies" className="mt-6">
-          <CompanyManagement />
-        </TabsContent>
+            <TabsContent value="companies" className="mt-0">
+              <CompanyManagement />
+            </TabsContent>
 
-        {isAdmin && (
-          <TabsContent value="audit-log" className="mt-6">
-            <AuditLogSettings />
-          </TabsContent>
-        )}
+            {isAdmin && (
+              <TabsContent value="audit-log" className="mt-0">
+                <AuditLogSettings />
+              </TabsContent>
+            )}
+          </div>
+        </div>
       </Tabs>
     </div>
   );

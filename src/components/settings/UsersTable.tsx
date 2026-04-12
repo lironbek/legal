@@ -27,7 +27,8 @@ import {
   X,
   CheckCheck,
   XCircle,
-  RotateCcw
+  RotateCcw,
+  MessageCircle,
 } from 'lucide-react'
 import { UserProfile, UserPermission } from '@/lib/supabase'
 import { useUsers } from '@/hooks/useUsers'
@@ -326,12 +327,12 @@ export function UsersTable({ className }: UsersTableProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">שם מלא</TableHead>
-                <TableHead className="text-right">אימייל</TableHead>
-                <TableHead className="text-right">תפקיד</TableHead>
-                <TableHead className="text-right">משרד</TableHead>
-                <TableHead className="text-right">סטטוס</TableHead>
-                <TableHead className="text-right">פעולות</TableHead>
+                <TableHead>שם מלא</TableHead>
+                <TableHead>אימייל</TableHead>
+                <TableHead>תפקיד</TableHead>
+                <TableHead>משרד</TableHead>
+                <TableHead>סטטוס</TableHead>
+                <TableHead>פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -387,6 +388,12 @@ export function UsersTable({ className }: UsersTableProps) {
                         <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300 gap-1">
                           <ShieldCheck className="h-3 w-3" />
                           2FA
+                        </Badge>
+                      )}
+                      {user.whatsapp_authorized && (
+                        <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300 dark:text-emerald-400 dark:border-emerald-700 gap-1">
+                          <MessageCircle className="h-3 w-3" />
+                          WA
                         </Badge>
                       )}
                     </div>
@@ -536,6 +543,17 @@ export function UsersTable({ className }: UsersTableProps) {
                       value={editingUser.phone || ''}
                       onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
                     />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Switch
+                        id="whatsapp_authorized"
+                        checked={editingUser.whatsapp_authorized || false}
+                        onCheckedChange={(checked) => setEditingUser({ ...editingUser, whatsapp_authorized: checked })}
+                      />
+                      <Label htmlFor="whatsapp_authorized" className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                        מורשה לשלוח מסמכים ב-WhatsApp
+                      </Label>
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="department">מחלקה</Label>

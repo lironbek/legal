@@ -19,6 +19,7 @@ import {
 } from '@/services/signingService';
 import type { SigningField } from '@/services/signingService';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 function isDocxFile(file: File): boolean {
   return file.name.toLowerCase().endsWith('.docx') ||
@@ -55,7 +56,7 @@ export default function SigningEditorPage() {
 
       getDocumentSignedUrl(existingRequest.file_url)
         .then((url) => setFileUrl(url))
-        .catch(() => alert('שגיאה בטעינת המסמך'));
+        .catch(() => toast.error('שגיאה בטעינת המסמך'));
     }
   }, [existingRequest]);
 
@@ -63,7 +64,7 @@ export default function SigningEditorPage() {
 
   const handleFileSelect = (selectedFile: File) => {
     if (selectedFile.size > MAX_FILE_SIZE) {
-      alert('הקובץ גדול מדי. הגודל המקסימלי הוא 20MB.');
+      toast.error('הקובץ גדול מדי. הגודל המקסימלי הוא 20MB.');
       return;
     }
 
@@ -121,12 +122,12 @@ export default function SigningEditorPage() {
 
   const handleSend = async (phone: string, name: string, expiryDays: number = 30) => {
     if (!currentCompany?.id || !user?.id) {
-      alert('נא להתחבר מחדש');
+      toast.error('נא להתחבר מחדש');
       return;
     }
 
     if (fields.length === 0) {
-      alert('יש להוסיף לפחות שדה אחד למסמך');
+      toast.error('יש להוסיף לפחות שדה אחד למסמך');
       return;
     }
 
@@ -156,24 +157,24 @@ export default function SigningEditorPage() {
       }
 
       if (!currentRequestId) {
-        alert('שגיאה ביצירת הבקשה');
+        toast.error('שגיאה ביצירת הבקשה');
         return;
       }
 
       await sendSigningRequest(currentRequestId);
 
-      alert('המסמך נשלח לחתימה בוואטסאפ!');
+      toast.success('המסמך נשלח לחתימה בוואטסאפ!');
       queryClient.invalidateQueries({ queryKey: ['signing-requests'] });
       navigate('/signing');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'שגיאה בשליחה');
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשליחה');
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate('/signing')}>
@@ -200,7 +201,7 @@ export default function SigningEditorPage() {
 
       {/* Upload Area (only if no file yet and not in Word flow) */}
       {!fileUrl && !wordFile && (
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
             <CardTitle>העלאת מסמך</CardTitle>
             <CardDescription>
@@ -242,7 +243,7 @@ export default function SigningEditorPage() {
 
       {/* Document Editor */}
       {fileUrl && (
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -258,7 +259,7 @@ export default function SigningEditorPage() {
                 <Button
                   onClick={() => setShowSendDialog(true)}
                   disabled={fields.length === 0}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                   <Send className="ml-2 h-4 w-4" />
                   שלח לחתימה

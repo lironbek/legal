@@ -87,7 +87,7 @@ export function OrgShell() {
   if (status === 'not-found') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
-        <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-sm border border-border">
+        <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl border border-border">
           <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mb-6">
             <AlertTriangle className="h-8 w-8 text-destructive" />
           </div>
@@ -106,7 +106,7 @@ export function OrgShell() {
   if (status === 'no-access') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
-        <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-sm border border-border">
+        <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl border border-border">
           <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mb-6">
             <AlertTriangle className="h-8 w-8 text-destructive" />
           </div>

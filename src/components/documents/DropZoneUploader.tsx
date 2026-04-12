@@ -98,11 +98,11 @@ export function DropZoneUploader({ onScanComplete }: DropZoneUploaderProps) {
         isDragging
           ? 'border-primary bg-accent/50 scale-[1.01]'
           : uploadState === 'uploading'
-          ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20'
+          ? 'border-primary/40 bg-primary/5'
           : uploadState === 'success'
           ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20'
           : uploadState === 'error'
-          ? 'border-red-400 bg-red-50/50 dark:bg-red-950/20 cursor-pointer'
+          ? 'border-destructive/40 bg-destructive/5 cursor-pointer'
           : 'border-border hover:border-primary/50 hover:bg-accent/20'
       )}
     >
@@ -126,7 +126,7 @@ export function DropZoneUploader({ onScanComplete }: DropZoneUploaderProps) {
 
       {uploadState === 'uploading' && (
         <>
-          <Loader2 className="h-10 w-10 animate-spin text-blue-500 mx-auto mb-3" />
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-3" />
           <h3 className="font-medium text-sm mb-1">סורק את המסמך...</h3>
           <p className="text-muted-foreground text-xs flex items-center justify-center gap-1">
             <FileText className="h-3 w-3" />
@@ -146,8 +146,8 @@ export function DropZoneUploader({ onScanComplete }: DropZoneUploaderProps) {
 
       {uploadState === 'error' && (
         <>
-          <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
-          <h3 className="font-medium text-sm text-red-700 dark:text-red-400 mb-1">
+          <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+          <h3 className="font-medium text-sm text-destructive mb-1">
             {errorMessage}
           </h3>
           <p className="text-muted-foreground text-xs">לחץ לנסות שוב</p>

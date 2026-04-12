@@ -152,7 +152,7 @@ export const scanDocument = async (
 
   // If no Supabase or unreachable, use mock mode
   if (await isMockMode()) {
-    console.log('Mock mode: simulating document scan');
+    // mock mode scan
     const result = await mockScanDocument(file);
 
     // Store in localStorage for mock mode
@@ -378,40 +378,97 @@ export const deleteScannedDocument = async (id: string): Promise<boolean> => {
   }
 };
 
-// Send document via WhatsApp
+// ============================================================
+// WhatsApp messaging via Green API
+// ============================================================
+
+/** Normalize an Israeli phone number to the 972XXXXXXXXX@c.us format */
+function normalizePhone(phone: string): string {
+  let cleaned = phone.replace(/[\s\-()]/g, '');
+  if (cleaned.startsWith('+')) cleaned = cleaned.slice(1);
+  if (cleaned.startsWith('0')) cleaned = '972' + cleaned.slice(1);
+  if (!cleaned.includes('@')) cleaned += '@c.us';
+  return cleaned;
+}
+
+/** Send a WhatsApp text message directly via Green API (no auth needed) */
+export const sendWhatsAppMessage = async (
+  phone: string,
+  message: string,
+): Promise<{ success: boolean; error?: string }> => {
+  const instanceId = localStorage.getItem('whatsapp-instance-id');
+  const token = localStorage.getItem('whatsapp-api-token');
+
+  if (!instanceId || !token) {
+    return { success: false, error: 'WhatsApp לא מוגדר — הגדר פרטי חיבור בהגדרות' };
+  }
+
+  const chatId = normalizePhone(phone);
+
+  try {
+    const response = await fetch(
+      `https://api.green-api.com/waInstance${instanceId}/sendMessage/${token}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, message }),
+      }
+    );
+    const data = await response.json();
+    if (data.idMessage) {
+      return { success: true };
+    }
+    return { success: false, error: data.message || 'שליחה נכשלה' };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+/** Send a file via WhatsApp using Green API */
+export const sendWhatsAppFile = async (
+  phone: string,
+  fileUrl: string,
+  fileName: string,
+  caption?: string,
+): Promise<{ success: boolean; error?: string }> => {
+  const instanceId = localStorage.getItem('whatsapp-instance-id');
+  const token = localStorage.getItem('whatsapp-api-token');
+
+  if (!instanceId || !token) {
+    return { success: false, error: 'WhatsApp לא מוגדר — הגדר פרטי חיבור בהגדרות' };
+  }
+
+  const chatId = normalizePhone(phone);
+
+  try {
+    const response = await fetch(
+      `https://api.green-api.com/waInstance${instanceId}/sendFileByUrl/${token}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, urlFile: fileUrl, fileName, caption: caption || '' }),
+      }
+    );
+    const data = await response.json();
+    if (data.idMessage) {
+      return { success: true };
+    }
+    return { success: false, error: data.message || 'שליחה נכשלה' };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
+
+// Send document via WhatsApp (high-level, tries edge function first, then direct)
 export const sendWhatsAppDocument = async (
   phone: string,
   message: string,
   fileUrl?: string,
   fileName?: string
 ): Promise<{ success: boolean; error?: string }> => {
-  if (await isMockMode()) {
-    // Mock mode
-    console.log('Mock: sending WhatsApp to', phone, message);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true };
+  // Try direct Green API first (works in both mock and real mode)
+  if (fileUrl && fileName) {
+    return sendWhatsAppFile(phone, fileUrl, fileName, message);
   }
-
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    const accessToken = session?.session?.access_token;
-
-    if (!accessToken) {
-      return { success: false, error: 'לא מחובר' };
-    }
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const response = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ phone, message, fileUrl, fileName }),
-    });
-
-    return await response.json();
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
+  return sendWhatsAppMessage(phone, message);
 };

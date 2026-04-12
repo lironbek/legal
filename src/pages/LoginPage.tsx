@@ -3,13 +3,80 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCompanyBySlug, getUserCompanyAssignments, getCompanies, Company } from '@/lib/dataManager';
 import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Scale, Loader2, Eye, EyeOff, AlertTriangle, Info, ShieldCheck, ArrowRight, RefreshCw } from 'lucide-react';
+
+import { Scale, Loader2, Eye, EyeOff, AlertTriangle, ShieldCheck, ArrowRight, RefreshCw, Briefcase, Shield, Users } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Shared brand panel for all login states
+function BrandPanel({ company }: { company: Company | null }) {
+  return (
+    <div
+      className="hidden lg:flex lg:w-[480px] xl:w-[520px] flex-col relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #4338ca 0%, #5b4fd4 40%, #7c6be6 100%)' }}
+    >
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
+      <div className="absolute top-1/2 left-1/4 w-32 h-32 bg-white/5 rounded-full" />
+
+      <div className="relative z-10 flex flex-col justify-between h-full p-10 text-white">
+        {/* Top: Logo */}
+        <div className="flex items-center gap-3">
+          {company?.logo_url ? (
+            <img src={company.logo_url} alt={company.name} className="h-10 w-10 object-contain rounded-lg bg-white/10 p-1" />
+          ) : (
+            <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center">
+              <Scale className="h-5 w-5" />
+            </div>
+          )}
+          <span className="text-lg font-bold tracking-tight">
+            {company?.name || 'Legal Nexus'}
+          </span>
+        </div>
+
+        {/* Center: Hero text */}
+        <div className="space-y-6">
+          <h2 className="text-4xl xl:text-5xl font-bold leading-tight tracking-tight">
+            {company ? 'ברוכים הבאים\nלמערכת המשרד' : 'ניהול משרד\nעורכי דין\nמהדור הבא'}
+          </h2>
+          <p className="text-white/70 text-lg max-w-xs leading-relaxed">
+            מערכת חכמה לניהול תיקים, לקוחות ומסמכים במקום אחד
+          </p>
+
+          {/* Feature highlights */}
+          <div className="space-y-3 pt-4">
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <Briefcase className="h-4 w-4" />
+              </div>
+              <span className="text-sm">ניהול תיקים ומעקב התקדמות</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <Shield className="h-4 w-4" />
+              </div>
+              <span className="text-sm">אבטחה מתקדמת ואימות דו-שלבי</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <Users className="h-4 w-4" />
+              </div>
+              <span className="text-sm">ניהול לקוחות ומשתמשים</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom: Footer */}
+        <p className="text-white/40 text-xs">
+          Legal Nexus Israel &copy; {new Date().getFullYear()}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const { signIn, signOut, user, pending2FA, verify2FA, cancel2FA, resend2FA } = useAuth();
@@ -22,7 +89,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [company, setCompany] = useState<Company | null>(null);
   const [companyNotFound, setCompanyNotFound] = useState(false);
-  const [showMockHint, setShowMockHint] = useState(!supabase);
+
   const [signingOut, setSigningOut] = useState(false);
 
   // 2FA state
@@ -83,16 +150,9 @@ export default function LoginPage() {
     const result = await signIn(email, password, company?.id);
 
     if (result.requires2FA) {
-      // 2FA was triggered — show code notification for testing
-      // In production, the code would be sent server-side
       const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
       const mockUser = mockUsers.find((u: any) => u.email === email);
       if (mockUser?.two_factor_method) {
-        // Access the code from mock storage for notification
-        // The AuthContext generates the code — we show it as a toast for demo/testing
-        const pendingData = localStorage.getItem('mock-auth-user');
-        // Since the user isn't logged in yet, we get the code from the toast
-        // The code is stored internally in AuthContext — use resend to get it visible
         const newCode = resend2FA();
         if (newCode) {
           showCodeNotification(newCode, mockUser.two_factor_method);
@@ -105,10 +165,8 @@ export default function LoginPage() {
 
     if (result.error) {
       setError(result.error);
-      setShowMockHint(true);
-      setLoading(false);
+setLoading(false);
     } else {
-      // Determine where to redirect after login
       if (company) {
         navigate(`/org/${company.slug}/`, { replace: true });
       } else if (result.error === null) {
@@ -132,7 +190,6 @@ export default function LoginPage() {
       setTwoFACode('');
       codeInputRef.current?.focus();
     } else {
-      // Login complete — redirect
       if (company) {
         navigate(`/org/${company.slug}/`, { replace: true });
       } else {
@@ -159,10 +216,13 @@ export default function LoginPage() {
   // Still signing out — show loader
   if (signingOut) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4" dir="rtl">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">מתנתק...</p>
+      <div className="min-h-screen flex" dir="rtl">
+        <BrandPanel company={company} />
+        <div className="flex-1 flex items-center justify-center bg-background">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">מתנתק...</p>
+          </div>
         </div>
       </div>
     );
@@ -171,18 +231,21 @@ export default function LoginPage() {
   // Company slug provided but not found
   if (companySlug && companyNotFound) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4" dir="rtl">
-        <div className="w-full max-w-md text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/10 mb-4">
-            <AlertTriangle className="h-8 w-8 text-destructive" />
+      <div className="min-h-screen flex" dir="rtl">
+        <BrandPanel company={null} />
+        <div className="flex-1 flex items-center justify-center bg-background p-8">
+          <div className="w-full max-w-sm text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/10 mb-5 ring-1 ring-destructive/10">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">ארגון לא נמצא</h1>
+            <p className="text-muted-foreground mb-6">
+              הכתובת שהזנת אינה משויכת לארגון פעיל במערכת.
+            </p>
+            <Button variant="outline" onClick={() => navigate('/login')}>
+              חזרה לדף התחברות
+            </Button>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">ארגון לא נמצא</h1>
-          <p className="text-muted-foreground mb-6">
-            הכתובת שהזנת אינה משויכת לארגון פעיל במערכת.
-          </p>
-          <Button variant="outline" onClick={() => navigate('/login')}>
-            חזרה לדף התחברות
-          </Button>
         </div>
       </div>
     );
@@ -191,209 +254,190 @@ export default function LoginPage() {
   // 2FA Verification Screen
   if (pending2FA) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4" dir="rtl">
-        <div className="w-full max-w-md">
-          {/* Logo / Brand */}
-          <div className="text-center mb-8">
-            {company?.logo_url ? (
-              <div className="inline-flex items-center justify-center w-28 h-28 rounded-2xl mb-4">
-                <img src={company.logo_url} alt={company.name} className="max-w-full max-h-full object-contain" />
+      <div className="min-h-screen flex" dir="rtl">
+        <BrandPanel company={company} />
+        <div className="flex-1 flex items-center justify-center bg-background p-8">
+          <div className="w-full max-w-sm">
+            {/* Mobile-only brand */}
+            <div className="lg:hidden text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <ShieldCheck className="h-8 w-8 text-primary" />
               </div>
-            ) : (
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-4">
-                <ShieldCheck className="h-10 w-10 text-primary" />
-              </div>
-            )}
-            <h1 className="text-2xl font-bold text-foreground">אימות דו-שלבי</h1>
-            <p className="text-muted-foreground mt-1">
-              {pending2FA.method === 'whatsapp'
-                ? `קוד אימות נשלח ב-WhatsApp אל ${pending2FA.userName}`
-                : `קוד אימות נשלח לאימייל ${pending2FA.userEmail}`
-              }
-            </p>
-          </div>
+              <h1 className="text-2xl font-bold text-foreground">אימות דו-שלבי</h1>
+            </div>
 
-          <Card className="shadow-lg border-0">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-xl">הזן קוד אימות</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handle2FAVerify} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="2fa-code">קוד בן 6 ספרות</Label>
-                  <Input
-                    ref={codeInputRef}
-                    id="2fa-code"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={twoFACode}
-                    onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="text-center text-2xl tracking-[0.5em] font-mono"
-                    dir="ltr"
-                    autoComplete="one-time-code"
-                  />
+            {/* Desktop title */}
+            <div className="hidden lg:block mb-8">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">אימות דו-שלבי</h1>
+              <p className="text-muted-foreground mt-2 text-sm">
+                {pending2FA.method === 'whatsapp'
+                  ? `קוד אימות נשלח ב-WhatsApp אל ${pending2FA.userName}`
+                  : `קוד אימות נשלח לאימייל ${pending2FA.userEmail}`
+                }
+              </p>
+            </div>
+
+            <form onSubmit={handle2FAVerify} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="2fa-code" className="text-sm font-medium">קוד בן 6 ספרות</Label>
+                <Input
+                  ref={codeInputRef}
+                  id="2fa-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={twoFACode}
+                  onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="text-center text-2xl tracking-[0.5em] font-mono h-14"
+                  dir="ltr"
+                  autoComplete="one-time-code"
+                />
+              </div>
+
+              {twoFAError && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                  {twoFAError}
                 </div>
+              )}
 
-                {twoFAError && (
-                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
-                    {twoFAError}
-                  </div>
-                )}
+              <Button type="submit" className="w-full h-11 text-base font-medium" disabled={twoFACode.length !== 6}>
+                <ShieldCheck className="h-4 w-4 ml-2" />
+                אמת קוד
+              </Button>
 
-                <Button type="submit" className="w-full" disabled={twoFACode.length !== 6}>
-                  <ShieldCheck className="h-4 w-4 ml-2" />
-                  אמת קוד
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel2FA}
+                  className="gap-1 text-muted-foreground"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  חזרה
                 </Button>
 
-                <div className="flex items-center justify-between pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCancel2FA}
-                    className="gap-1 text-muted-foreground"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    חזרה
-                  </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0}
+                  className="gap-1 text-muted-foreground"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {resendCooldown > 0 ? `שלח שוב (${resendCooldown}s)` : 'שלח קוד חדש'}
+                </Button>
+              </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleResend}
-                    disabled={resendCooldown > 0}
-                    className="gap-1 text-muted-foreground"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    {resendCooldown > 0 ? `שלח שוב (${resendCooldown}s)` : 'שלח קוד חדש'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            הקוד בתוקף ל-5 דקות
-          </p>
+              <p className="text-center text-xs text-muted-foreground pt-2">
+                הקוד בתוקף ל-5 דקות
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4" dir="rtl">
-      <div className="w-full max-w-md">
-        {/* Logo / Brand */}
-        <div className="text-center mb-8">
-          {company?.logo_url ? (
-            <div className="inline-flex items-center justify-center w-28 h-28 rounded-2xl mb-4">
-              <img src={company.logo_url} alt={company.name} className="max-w-full max-h-full object-contain" />
-            </div>
-          ) : (
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-4">
-              <Scale className="h-10 w-10 text-primary" />
-            </div>
-          )}
-          {company ? (
-            <>
-              <h1 className="text-2xl font-bold text-foreground">{company.name}</h1>
-              <p className="text-muted-foreground mt-1">התחברות למערכת</p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold text-foreground">Legal Nexus</h1>
-              <p className="text-muted-foreground mt-1">מערכת ניהול משרד עורכי דין</p>
-            </>
-          )}
-        </div>
+    <div className="min-h-screen flex" dir="rtl">
+      <BrandPanel company={company} />
 
-        {/* Login Card */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">התחברות למערכת</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">אימייל</Label>
+      {/* Form Panel */}
+      <div className="flex-1 flex items-center justify-center bg-background p-8">
+        <div className="w-full max-w-sm">
+          {/* Mobile-only brand header */}
+          <div className="lg:hidden text-center mb-8">
+            {company?.logo_url ? (
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4">
+                <img src={company.logo_url} alt={company.name} className="max-w-full max-h-full object-contain" />
+              </div>
+            ) : (
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <Scale className="h-8 w-8 text-primary" />
+              </div>
+            )}
+            <h1 className="text-2xl font-bold text-foreground">
+              {company?.name || 'Legal Nexus'}
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm">מערכת ניהול משרד עורכי דין</p>
+          </div>
+
+          {/* Desktop title */}
+          <div className="hidden lg:block mb-8">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">התחברות למערכת</h1>
+            <p className="text-muted-foreground mt-2 text-sm">הזן את פרטי ההתחברות שלך כדי להמשיך</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">אימייל</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                dir="ltr"
+                className="text-left h-11"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">סיסמה</Label>
+              <div className="relative">
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="הזן סיסמה"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="email"
+                  autoComplete="current-password"
                   dir="ltr"
-                  className="text-left"
+                  className="text-left pl-10 h-11"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                </Button>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">סיסמה</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="הזן סיסמה"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    dir="ltr"
-                    className="text-left pl-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute left-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                  </Button>
-                </div>
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
+                {error}
               </div>
+            )}
 
-              {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center">
-                  {error}
-                </div>
+            <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  מתחבר...
+                </>
+              ) : (
+                'התחבר'
               )}
+            </Button>
+          </form>
 
-              {/* Show credentials hint in mock mode or after failed login (Supabase unreachable) */}
-              {!company && showMockHint && (
-                <Alert className="border-blue-200 bg-blue-50">
-                  <Info className="h-4 w-4" />
-                  <AlertDescription className="text-blue-800 text-sm">
-                    <strong>מצב לא מקוון:</strong> השתמש באימייל של משתמש קיים במערכת.<br />
-                    סיסמה: הסיסמה שהוגדרה או מספר הטלפון
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                    מתחבר...
-                  </>
-                ) : (
-                  'התחבר'
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Legal Nexus Israel &copy; {new Date().getFullYear()}
-        </p>
+          {/* Mobile footer */}
+          <p className="lg:hidden text-center text-xs text-muted-foreground/60 mt-8">
+            Legal Nexus Israel &copy; {new Date().getFullYear()}
+          </p>
+        </div>
       </div>
     </div>
   );

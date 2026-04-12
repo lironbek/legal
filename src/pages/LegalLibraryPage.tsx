@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -181,28 +181,23 @@ export default function LegalLibraryPage() {
   const bookmarkedResources = legalResources.filter(r => r.bookmarked).length;
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="ספרייה משפטית"
         subtitle="מאגר חקיקה, פסיקה ומידע משפטי מקיף"
         actions={
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button className="gap-2">
+          <Button className="gap-2">
               <BookOpen className="h-4 w-4" /> הוסף למועדפים
             </Button>
-          </motion.div>
         }
       />
 
       {/* Stats Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+      <div
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -216,7 +211,7 @@ export default function LegalLibraryPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -230,7 +225,7 @@ export default function LegalLibraryPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -243,22 +238,15 @@ export default function LegalLibraryPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Quick Access */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+      <div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         {quickAccess.map((item, index) => (
-          <motion.div
+          <div
             key={item.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            whileHover={{ scale: 1.02 }}
             className="cursor-pointer"
           >
             <Card className="bg-primary/5 border-border hover:shadow-md transition-shadow">
@@ -273,28 +261,21 @@ export default function LegalLibraryPage() {
                 </Badge>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Legal Categories */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="border-border shadow-sm">
+      <div>
+        <Card className="border-border">
           <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">תחומי משפט</CardTitle>
+            <CardTitle className="text-base font-semibold">תחומי משפט</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {legalCategories.map((category, index) => (
-                <motion.div
+                <div
                   key={category.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
                   className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <div className={`w-10 h-10 ${category.color} rounded-lg flex items-center justify-center`}>
@@ -304,27 +285,24 @@ export default function LegalLibraryPage() {
                     <h3 className="font-semibold text-foreground">{category.name}</h3>
                     <p className="text-sm text-muted-foreground">{category.count} מסמכים</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+      <div
         className="flex flex-col sm:flex-row gap-4"
       >
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="חפש חוקים, פסיקה או תקנות..."
             value={searchTerm}
             onChange={handleSearch}
-            className="w-full pl-9 pr-4 border-border"
+            className="w-full pr-9 pl-4 border-border"
           />
         </div>
         <div className="flex gap-2">
@@ -346,26 +324,19 @@ export default function LegalLibraryPage() {
             <Filter className="h-4 w-4" />
           </Button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Legal Resources */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <Card className="border-border shadow-sm">
+      <div>
+        <Card className="border-border">
           <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">מסמכים משפטיים</CardTitle>
+            <CardTitle className="text-base font-semibold">מסמכים משפטיים</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
               {filteredResources.map((resource, index) => (
-                <motion.div
+                <div
                   key={resource.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
                   className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                 >
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -419,12 +390,12 @@ export default function LegalLibraryPage() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }

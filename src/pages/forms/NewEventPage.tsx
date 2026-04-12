@@ -25,8 +25,7 @@ export default function NewEventPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // כאן יהיה הלוגיקה לשמירת האירוע
-    console.log('Saving event:', formData);
+    // TODO: save event to dataManager
     navigate('/calendar');
   };
 
@@ -35,7 +34,7 @@ export default function NewEventPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="אירוע חדש"
         subtitle="צור אירוע חדש ביומן"
@@ -47,9 +46,9 @@ export default function NewEventPage() {
         }
       />
 
-      <Card className="max-w-2xl shadow-sm">
+      <Card className="max-w-3xl border-border">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             פרטי האירוע
           </CardTitle>
@@ -57,7 +56,7 @@ export default function NewEventPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-foreground">כותרת האירוע</Label>
+              <Label htmlFor="title" className="text-foreground">כותרת האירוע *</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -102,7 +101,7 @@ export default function NewEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date" className="text-foreground">תאריך</Label>
+                <Label htmlFor="date" className="text-foreground">תאריך *</Label>
                 <Input
                   id="date"
                   type="date"
@@ -113,7 +112,7 @@ export default function NewEventPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="startTime" className="text-foreground">שעת התחלה</Label>
+                <Label htmlFor="startTime" className="text-foreground">שעת התחלה *</Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -126,7 +125,7 @@ export default function NewEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="endTime" className="text-foreground">שעת סיום</Label>
+                <Label htmlFor="endTime" className="text-foreground">שעת סיום *</Label>
                 <Input
                   id="endTime"
                   type="time"

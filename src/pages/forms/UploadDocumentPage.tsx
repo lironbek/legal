@@ -140,7 +140,7 @@ export default function UploadDocumentPage() {
   };
 
   const getFileIcon = (file: File) => {
-    if (file.type === 'application/pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    if (file.type === 'application/pdf') return <FileText className="h-5 w-5 text-destructive" />;
     if (file.type.startsWith('image/')) return <ImageIcon className="h-5 w-5 text-blue-500" />;
     return <File className="h-5 w-5 text-muted-foreground" />;
   };
@@ -150,7 +150,7 @@ export default function UploadDocumentPage() {
       case 'pending':
         return <Badge variant="outline" className="text-muted-foreground">ממתין</Badge>;
       case 'uploading':
-        return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">מעלה</Badge>;
+        return <Badge className="bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950 dark:text-sky-300 dark:border-sky-800">מעלה</Badge>;
       case 'processing':
         return (
           <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
@@ -180,7 +180,7 @@ export default function UploadDocumentPage() {
   const processingCount = files.filter(f => f.status === 'processing').length;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="סריקת מסמכים"
         subtitle="העלה מסמכים לסריקה אוטומטית באמצעות בינה מלאכותית"
@@ -199,7 +199,7 @@ export default function UploadDocumentPage() {
       />
 
       {/* Drop Zone */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardContent className="pt-6">
           <div
             onDragOver={handleDragOver}
@@ -243,10 +243,10 @@ export default function UploadDocumentPage() {
 
       {/* File List */}
       {files.length > 0 && (
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-foreground flex items-center gap-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Scan className="h-5 w-5" />
                 קבצים ({files.length})
                 {completedCount > 0 && (
@@ -409,7 +409,7 @@ export default function UploadDocumentPage() {
                           ? 'border-emerald-500 text-emerald-700'
                           : reviewDoc.result.data.confidence === 'medium'
                           ? 'border-amber-500 text-amber-700'
-                          : 'border-red-500 text-red-700'
+                          : 'border-destructive text-destructive'
                       }
                     >
                       {reviewDoc.result.data.confidence === 'high' ? 'גבוהה' :

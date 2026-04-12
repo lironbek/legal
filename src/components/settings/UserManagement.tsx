@@ -22,16 +22,16 @@ export function UserManagement() {
   return (
     <div className="space-y-6" dir="rtl">
       {/* Header */}
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
-          <CardTitle className="flex items-center gap-2 text-black justify-end">
+      <Card className="bg-background border border-border">
+        <CardHeader className="bg-muted/50 border-b border-border">
+          <CardTitle className="flex items-center gap-2 text-foreground justify-end">
             <Users className="h-5 w-5" />
             ניהול משתמשים והרשאות
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 bg-white">
+        <CardContent className="space-y-4 bg-background">
           <div className="flex items-center justify-between">
-            <p className="text-black text-right">
+            <p className="text-foreground text-right">
               ניהול משתמשים, הרשאות ותפריטים במערכת
             </p>
             <div className="flex gap-2">
@@ -83,11 +83,11 @@ export function UserManagement() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 transition-colors">
+                <Card className="border-dashed border-2 border-input hover:border-primary transition-colors">
                   <CardContent className="p-6 text-center">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                     <h3 className="font-medium mb-2">הוסף משתמש חדש</h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-muted-foreground mb-4">
                       צור משתמש חדש עם הרשאות מותאמות
                     </p>
                     <Button
@@ -100,11 +100,11 @@ export function UserManagement() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-dashed border-2 border-gray-300 hover:border-blue-400 transition-colors">
+                <Card className="border-dashed border-2 border-input hover:border-primary transition-colors">
                   <CardContent className="p-6 text-center">
-                    <Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                     <h3 className="font-medium mb-2">צור קבוצת הרשאות</h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-muted-foreground mb-4">
                       הגדר קבוצת הרשאות לשימוש חוזר
                     </p>
                     <Button
@@ -117,11 +117,11 @@ export function UserManagement() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-dashed border-2 border-gray-300">
+                <Card className="border-dashed border-2 border-input">
                   <CardContent className="p-6 text-center">
-                    <Settings className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                     <h3 className="font-medium mb-2">הגדרות מערכת</h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       השתמש בטאבים למעלה לניהול הגדרות המערכת
                     </p>
                   </CardContent>
@@ -139,18 +139,18 @@ export function UserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 text-center">
-                <Database className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-black mb-2">
+              <div className="bg-muted/50 p-6 rounded-lg border-2 border-dashed border-input text-center">
+                <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   נדרש חיבור למסד נתונים
                 </h3>
-                <p className="text-black mb-4">
+                <p className="text-foreground mb-4">
                   כדי לנהל משתמשים והרשאות, יש צורך בחיבור ל-Supabase לאחסון המידע במסד הנתונים
                 </p>
                 <div className="space-y-3">
-                  <div className="bg-white p-4 rounded-lg border border-gray-200 text-right">
-                    <h4 className="font-medium text-black">תכונות זמינות עם Supabase:</h4>
-                    <ul className="text-sm text-black mt-2 space-y-1">
+                  <div className="bg-background p-4 rounded-lg border border-border text-right">
+                    <h4 className="font-medium text-foreground">תכונות זמינות עם Supabase:</h4>
+                    <ul className="text-sm text-foreground mt-2 space-y-1">
                       <li>• מערכת התחברות (email/password)</li>
                       <li>• ניהול משתמשים והרשאות מתקדם</li>
                       <li>• קבוצות הרשאות לשימוש חוזר</li>
@@ -159,7 +159,7 @@ export function UserManagement() {
                       <li>• APIs לניהול המשתמשים</li>
                     </ul>
                   </div>
-                  <Button variant="outline" className="flex items-center gap-2 bg-white text-black border-gray-300 hover:bg-gray-50">
+                  <Button variant="outline" className="flex items-center gap-2 bg-background text-foreground border-input hover:bg-muted/50">
                     <ExternalLink className="h-4 w-4" />
                     חיבור ל-Supabase
                   </Button>
@@ -296,8 +296,8 @@ function PermissionGroupsManager() {
         </CardHeader>
         <CardContent>
           {permissionGroups.length === 0 ? (
-            <div className="bg-gray-50 p-8 rounded-lg border-2 border-dashed border-gray-300 text-center">
-              <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <div className="bg-muted/50 p-8 rounded-lg border-2 border-dashed border-input text-center">
+              <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">אין קבוצות הרשאות</h3>
               <p className="text-muted-foreground mb-4">
                 צור קבוצות הרשאות כדי להקצות הרשאות בקלות למשתמשים חדשים

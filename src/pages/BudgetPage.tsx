@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -277,33 +277,28 @@ export default function BudgetPage() {
   };
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="תקציב"
         subtitle="תכנון ומעקב תקציבי"
         actions={
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button className="gap-2" onClick={handleAdd}>
+          <Button className="gap-2" onClick={handleAdd}>
               <Plus className="h-4 w-4" /> + סעיף תקציב
             </Button>
-          </motion.div>
         }
       />
 
       {/* Summary Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+      <div
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
         {/* Total Budget */}
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Target className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-[hsl(var(--accent-blue-light))] rounded-xl flex items-center justify-center">
+                <Target className="h-6 w-6 text-[hsl(var(--accent-blue))]" />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(plannedTotal)}</p>
@@ -314,11 +309,11 @@ export default function BudgetPage() {
         </Card>
 
         {/* Actual Spending */}
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isOverBudget ? 'bg-rose-100' : 'bg-emerald-100'}`}>
-                <Receipt className={`h-6 w-6 ${isOverBudget ? 'text-rose-600' : 'text-emerald-600'}`} />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isOverBudget ? 'bg-[hsl(var(--accent-rose-light))]' : 'bg-[hsl(var(--accent-emerald-light))]'}`}>
+                <Receipt className={`h-6 w-6 ${isOverBudget ? 'text-[hsl(var(--accent-rose))]' : 'text-[hsl(var(--accent-emerald))]'}`} />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{formatCurrency(actualTotal)}</p>
@@ -329,14 +324,14 @@ export default function BudgetPage() {
         </Card>
 
         {/* Utilization Percent */}
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                utilizationPercent > 100 ? 'bg-rose-100' : utilizationPercent > 80 ? 'bg-amber-100' : 'bg-emerald-100'
+                utilizationPercent > 100 ? 'bg-[hsl(var(--accent-rose-light))]' : utilizationPercent > 80 ? 'bg-[hsl(var(--accent-amber-light))]' : 'bg-[hsl(var(--accent-emerald-light))]'
               }`}>
                 <Percent className={`h-6 w-6 ${
-                  utilizationPercent > 100 ? 'text-rose-600' : utilizationPercent > 80 ? 'text-amber-600' : 'text-emerald-600'
+                  utilizationPercent > 100 ? 'text-[hsl(var(--accent-rose))]' : utilizationPercent > 80 ? 'text-[hsl(var(--accent-amber))]' : 'text-[hsl(var(--accent-emerald))]'
                 }`} />
               </div>
               <div className="mr-4">
@@ -346,15 +341,11 @@ export default function BudgetPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Period Controls */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="border-border shadow-sm">
+      <div>
+        <Card className="border-border">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               {/* Period Type Tabs */}
@@ -405,25 +396,21 @@ export default function BudgetPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Budget Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="border-border shadow-sm">
+      <div>
+        <Card className="border-border">
           <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">סעיפי תקציב</CardTitle>
+            <CardTitle className="text-base font-semibold">סעיפי תקציב</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש לפי קטגוריה או תיאור..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 border-border"
+                  className="w-full pr-9 pl-4 border-border"
                 />
               </div>
             </div>
@@ -434,13 +421,13 @@ export default function BudgetPage() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="border-border">
-                    <TableHead className="text-foreground font-semibold">קטגוריה</TableHead>
-                    <TableHead className="text-foreground font-semibold">תיאור</TableHead>
-                    <TableHead className="text-foreground font-semibold">תקציב מתוכנן</TableHead>
-                    <TableHead className="text-foreground font-semibold">ביצוע בפועל</TableHead>
-                    <TableHead className="text-foreground font-semibold">הפרש</TableHead>
-                    <TableHead className="text-foreground font-semibold">ניצול %</TableHead>
-                    <TableHead className="text-foreground font-semibold">פעולות</TableHead>
+                    <TableHead>קטגוריה</TableHead>
+                    <TableHead>תיאור</TableHead>
+                    <TableHead>תקציב מתוכנן</TableHead>
+                    <TableHead>ביצוע בפועל</TableHead>
+                    <TableHead>הפרש</TableHead>
+                    <TableHead>ניצול %</TableHead>
+                    <TableHead>פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -460,11 +447,8 @@ export default function BudgetPage() {
                       const isItemOver = pct > 100;
 
                       return (
-                        <motion.tr
+                        <tr
                           key={item.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
                           className="hover:bg-muted/50 border-border transition-colors group"
                         >
                           <TableCell>
@@ -519,7 +503,7 @@ export default function BudgetPage() {
                               </Button>
                             </div>
                           </TableCell>
-                        </motion.tr>
+                        </tr>
                       );
                     })
                   )}
@@ -528,7 +512,7 @@ export default function BudgetPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

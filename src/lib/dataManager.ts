@@ -2,6 +2,7 @@
 // Companies & assignments are synced to Supabase for persistence across browsers
 
 import { pushCompaniesToSupabase, pushAssignmentsToSupabase } from './companyService';
+import { supabase, isSupabaseReachable } from './supabase';
 
 // ============ Company Types ============
 
@@ -40,12 +41,64 @@ export interface Case {
   company_id: string;
   title: string;
   client: string;
+  clientId?: string;
+  caseNumber?: string;
   caseType: string;
   priority: string;
   description: string;
   estimatedDuration: string;
   budget: string;
   status: string;
+  assignedTo: string;
+  claimDate?: string;
+  claimDescription?: string;
+  insuranceCaseNumber?: string;
+  insuranceHandler?: string;
+  eventDate?: string;
+  openingDate?: string;
+  civilCaseNumber?: string;
+  court?: string;
+  judge?: string;
+  detailedStatus?: string;
+  classification?: string;
+  opposingParty?: string;
+  vehicleNumber?: string;
+  policyNumber?: string;
+  mandatoryInsurer?: string;
+  driverName?: string;
+  driverIdNumber?: string;
+  thirdPartyVehicle?: string;
+  thirdPartyPolicy?: string;
+  thirdPartyInsurer?: string;
+  thirdPartyDriver?: string;
+  thirdPartyDriverId?: string;
+  estimatedFee?: number;
+  feeEstimationDate?: string;
+  serialNumber?: string;
+  lastHearingDate?: string;
+  nextHearingDate?: string;
+  valuation?: number;
+  claimAmount?: number;
+  realDamageAmount?: number;
+  finalPayment?: number;
+  agreedFee?: number;
+  riskRate?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Task {
+  id: string;
+  company_id: string;
+  title: string;
+  description: string;
+  caseId?: string;
+  clientName?: string;
+  assignedTo: string;
+  assignedToEmail: string;
+  dueDate: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +117,13 @@ export interface Client {
   notes: string;
   status: string;
   activeCases: number;
+  secondaryPhone?: string;
+  familyStatus?: string;
+  childrenUnder18?: number;
+  healthFund?: string;
+  healthFundBranch?: string;
+  lifeInsurance?: string;
+  religion?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -149,7 +209,7 @@ export interface BudgetItem {
 
 // ============ Data Category Types ============
 
-export type DataCategory = 'cases' | 'clients' | 'invoices' | 'events' | 'documents' | 'cashFlowEntries' | 'budgetItems';
+export type DataCategory = 'cases' | 'clients' | 'invoices' | 'events' | 'documents' | 'cashFlowEntries' | 'budgetItems' | 'tasks' | 'tortClaims';
 
 export const DATA_CATEGORY_LABELS: Record<DataCategory, string> = {
   cases: 'תיקים',
@@ -159,6 +219,8 @@ export const DATA_CATEGORY_LABELS: Record<DataCategory, string> = {
   documents: 'מסמכים',
   cashFlowEntries: 'תזרים מזומנים',
   budgetItems: 'תקציב',
+  tasks: 'משימות',
+  tortClaims: 'כתבי תביעה',
 };
 
 // ============ Current Company State ============
@@ -276,7 +338,7 @@ export const deleteCompany = (id: string): boolean => {
   pushCompaniesToSupabase(); // async sync to Supabase
 
   // Also delete all data belonging to this company
-  const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
+  const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems', 'tasks', 'tortClaims'];
   entityKeys.forEach(key => {
     const items = readAll<{ company_id: string }>(key);
     const remaining = items.filter(item => item.company_id !== id);
@@ -647,10 +709,56 @@ export const deleteBudgetItem = (id: string): boolean => {
   return true;
 };
 
+// ============ Tasks ============
+
+export const getTasks = (): Task[] => {
+  return filterByCompany(readAll<Task>('tasks'));
+};
+
+export const getTasksByCase = (caseId: string): Task[] => {
+  return getTasks().filter(t => t.caseId === caseId);
+};
+
+export const getTasksByAssignee = (assignedTo: string): Task[] => {
+  return getTasks().filter(t => t.assignedTo === assignedTo);
+};
+
+export const addTask = (taskData: Omit<Task, 'id' | 'company_id' | 'createdAt' | 'updatedAt'>): Task => {
+  const allTasks = readAll<Task>('tasks');
+  const companyId = getCurrentCompany();
+  const newTask: Task = {
+    ...taskData,
+    id: generateId(),
+    company_id: companyId || '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  allTasks.push(newTask);
+  localStorage.setItem('tasks', JSON.stringify(allTasks));
+  return newTask;
+};
+
+export const updateTask = (id: string, updates: Partial<Task>): Task | null => {
+  const allTasks = readAll<Task>('tasks');
+  const index = allTasks.findIndex(t => t.id === id);
+  if (index === -1) return null;
+  allTasks[index] = { ...allTasks[index], ...updates, updatedAt: new Date().toISOString() };
+  localStorage.setItem('tasks', JSON.stringify(allTasks));
+  return allTasks[index];
+};
+
+export const deleteTask = (id: string): boolean => {
+  const allTasks = readAll<Task>('tasks');
+  const filtered = allTasks.filter(t => t.id !== id);
+  if (filtered.length === allTasks.length) return false;
+  localStorage.setItem('tasks', JSON.stringify(filtered));
+  return true;
+};
+
 // ============ Bulk Purge ============
 
 export const getCompanyDataCounts = (companyId: string): Record<DataCategory, number> => {
-  const categories: DataCategory[] = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
+  const categories: DataCategory[] = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems', 'tasks', 'tortClaims'];
   const counts = {} as Record<DataCategory, number>;
   categories.forEach(key => {
     const items = readAll<{ company_id: string }>(key);
@@ -707,7 +815,7 @@ export const migrateToMultiTenant = () => {
   setCurrentCompany(companyIdToUse);
 
   // Add company_id to all existing entities
-  const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems'];
+  const entityKeys = ['cases', 'clients', 'invoices', 'events', 'documents', 'cashFlowEntries', 'budgetItems', 'tasks', 'tortClaims'];
   entityKeys.forEach(key => {
     const items = readAll<any>(key);
     let changed = false;
@@ -723,7 +831,7 @@ export const migrateToMultiTenant = () => {
   });
 
   localStorage.setItem('multi-tenant-migrated', 'true');
-  console.log('Multi-tenant migration completed');
+  // migration completed
 };
 
 // ============ Fix Case Numbers ============
@@ -758,9 +866,203 @@ export const fixCaseNumbers = () => {
 
     if (hasChanges) {
       localStorage.setItem('cases', JSON.stringify(cases));
-      console.log(`Fixed ${casesToFix.length} case numbers to start from 1000+`);
+      // fixed case numbers
     }
   }
+};
+
+// ============ Supabase Sync ============
+
+let _syncPromise: Promise<void> | null = null;
+
+export const syncFromSupabase = async (): Promise<void> => {
+  if (_syncPromise) return _syncPromise;
+  _syncPromise = _doSync();
+  return _syncPromise;
+};
+
+const SPERGER_COMPANY_ID = 'a0000000-0000-0000-0000-000000000002';
+
+const _doSync = async () => {
+  // start sync
+  if (!supabase) {
+    // no client - skip sync
+    return;
+  }
+
+  // Use current company or default to Sperger
+  const companyId = getCurrentCompany() || SPERGER_COMPANY_ID;
+  // sync for company
+
+  try {
+    // Helper to fetch all rows via REST API (bypasses JS client issues)
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const fetchAll = async (table: string) => {
+      const allRows: any[] = [];
+      const pageSize = 1000;
+      let offset = 0;
+      try {
+        while (true) {
+          const res = await fetch(
+            `${supabaseUrl}/rest/v1/${table}?select=*&offset=${offset}&limit=${pageSize}`,
+            {
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+              },
+            }
+          );
+          if (!res.ok) {
+            const errText = await res.text();
+            // REST fetch failed
+            return { data: allRows.length > 0 ? allRows : null, error: errText };
+          }
+          const data = await res.json();
+          if (!data || data.length === 0) break;
+          allRows.push(...data);
+          if (data.length < pageSize) break;
+          offset += pageSize;
+        }
+      } catch (err) {
+        // REST fetch error
+        return { data: allRows.length > 0 ? allRows : null, error: err };
+      }
+      return { data: allRows, error: null };
+    };
+
+    // Sync clients
+    const { data: sbClients, error: clientsErr } = await fetchAll('clients');
+    // clients fetched
+
+    if (!clientsErr && sbClients && sbClients.length > 0) {
+      const existingClients = readAll<Client>('clients');
+
+      const mapped: Client[] = sbClients.map((c: any) => ({
+        id: c.id,
+        company_id: companyId,
+        name: c.full_name || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        idNumber: c.id_number || '',
+        address: c.address || '',
+        city: '',
+        postalCode: '',
+        clientType: 'individual',
+        notes: c.notes || '',
+        status: c.is_active ? 'פעיל' : 'לא פעיל',
+        activeCases: 0,
+        secondaryPhone: c.secondary_phone || undefined,
+        familyStatus: c.family_status || undefined,
+        childrenUnder18: c.children_under_18 || undefined,
+        healthFund: c.health_fund || undefined,
+        healthFundBranch: c.health_fund_branch || undefined,
+        lifeInsurance: c.life_insurance || undefined,
+        religion: c.religion || undefined,
+        createdAt: c.created_at || new Date().toISOString(),
+        updatedAt: c.updated_at || new Date().toISOString(),
+      }));
+
+      // Replace localStorage with Supabase data (keep non-Supabase items)
+      const supabaseIds = new Set(mapped.map(c => c.id));
+      const localOnly = existingClients.filter(c => !supabaseIds.has(c.id));
+      const merged = [...localOnly, ...mapped];
+      localStorage.setItem('clients', JSON.stringify(merged));
+      // clients synced
+    }
+
+    // Sync cases
+    const { data: sbCases, error: casesErr } = await fetchAll('cases');
+    // cases fetched
+
+    if (!casesErr && sbCases && sbCases.length > 0) {
+      const existingCases = readAll<Case>('cases');
+
+      const mapped: Case[] = sbCases.map((c: any) => ({
+        id: c.id,
+        company_id: companyId,
+        title: c.title || '',
+        client: c.client_name || '',
+        clientId: c.client_id || undefined,
+        caseNumber: c.case_number || '',
+        caseType: c.classification || 'כללי',
+        priority: c.priority || 'medium',
+        description: c.description || '',
+        estimatedDuration: '',
+        budget: c.claim_amount ? String(c.claim_amount) : '',
+        status: c.status || 'פעיל',
+        assignedTo: c.assigned_to || '',
+        claimDate: c.claim_date || undefined,
+        claimDescription: c.claim_description || undefined,
+        insuranceCaseNumber: c.insurance_case_number || undefined,
+        insuranceHandler: c.insurance_handler || undefined,
+        eventDate: c.event_date || undefined,
+        openingDate: c.opening_date || undefined,
+        civilCaseNumber: c.civil_case_number || undefined,
+        court: c.court || undefined,
+        judge: c.judge || undefined,
+        detailedStatus: c.detailed_status || undefined,
+        classification: c.classification || undefined,
+        opposingParty: c.opposing_party || undefined,
+        vehicleNumber: c.vehicle_number || undefined,
+        policyNumber: c.policy_number || undefined,
+        mandatoryInsurer: c.mandatory_insurer || undefined,
+        driverName: c.driver_name || undefined,
+        driverIdNumber: c.driver_id_number || undefined,
+        thirdPartyVehicle: c.third_party_vehicle || undefined,
+        thirdPartyPolicy: c.third_party_policy || undefined,
+        thirdPartyInsurer: c.third_party_insurer || undefined,
+        thirdPartyDriver: c.third_party_driver || undefined,
+        thirdPartyDriverId: c.third_party_driver_id || undefined,
+        estimatedFee: c.estimated_fee || undefined,
+        feeEstimationDate: c.fee_estimation_date || undefined,
+        serialNumber: c.serial_number || undefined,
+        lastHearingDate: c.last_hearing_date || undefined,
+        nextHearingDate: c.next_hearing_date || undefined,
+        valuation: c.valuation || undefined,
+        claimAmount: c.claim_amount || undefined,
+        realDamageAmount: c.real_damage_amount || undefined,
+        finalPayment: c.final_payment || undefined,
+        agreedFee: c.agreed_fee || undefined,
+        riskRate: c.risk_rate || undefined,
+        createdAt: c.created_at || new Date().toISOString(),
+        updatedAt: c.updated_at || new Date().toISOString(),
+      }));
+
+      const supabaseIds = new Set(mapped.map(c => c.id));
+      const localOnly = existingCases.filter(c => !supabaseIds.has(c.id));
+      const merged = [...localOnly, ...mapped];
+      localStorage.setItem('cases', JSON.stringify(merged));
+      // cases synced
+    }
+
+    // Update active_cases count on clients
+    const allCases = readAll<Case>('cases');
+    const allClients = readAll<Client>('clients');
+    const caseCountMap: Record<string, number> = {};
+    allCases.forEach(c => {
+      if (c.clientId) {
+        caseCountMap[c.clientId] = (caseCountMap[c.clientId] || 0) + 1;
+      }
+    });
+    let updated = false;
+    allClients.forEach(c => {
+      const count = caseCountMap[c.id] || 0;
+      if (c.activeCases !== count) {
+        c.activeCases = count;
+        updated = true;
+      }
+    });
+    if (updated) {
+      localStorage.setItem('clients', JSON.stringify(allClients));
+    }
+  } catch (err) {
+    // sync failed
+  }
+
+  // Notify pages that data has been synced
+  window.dispatchEvent(new Event('supabase-sync-complete'));
 };
 
 // ============ Initialize Sample Data ============
@@ -771,6 +1073,9 @@ export const initializeSampleData = () => {
 
   // Fix existing case numbers
   fixCaseNumbers();
+
+  // Sync from Supabase (async, non-blocking)
+  syncFromSupabase();
 
   // Initialize cases
   if (getCases().length === 0) {
@@ -785,7 +1090,8 @@ export const initializeSampleData = () => {
         description: 'תביעה בגין תאונת דרכים',
         estimatedDuration: '6 חודשים',
         budget: '15000',
-        status: 'בטיפול'
+        status: 'הכנת כתבי טענות',
+        assignedTo: 'לירון בק'
       },
       {
         title: 'הסכם מקרקעין - משפחת לוי',
@@ -795,7 +1101,8 @@ export const initializeSampleData = () => {
         description: 'הכנת הסכם מכירה לדירה',
         estimatedDuration: '2 חודשים',
         budget: '8000',
-        status: 'בהמתנה'
+        status: 'בדיקת נכס',
+        assignedTo: 'לירון בק'
       }
     ];
 
@@ -992,8 +1299,17 @@ export const initializeSampleData = () => {
   initializeDefaultAdmin();
 };
 
+const DEFAULT_ADMIN_PASSWORD = '301551644';
+
 export const initializeDefaultAdmin = () => {
   const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+
+  // Always ensure admin password is set to known value
+  const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
+  if (!mockPasswords['lironbek88@gmail.com'] || mockPasswords['lironbek88@gmail.com'] !== DEFAULT_ADMIN_PASSWORD) {
+    mockPasswords['lironbek88@gmail.com'] = DEFAULT_ADMIN_PASSWORD;
+    localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords));
+  }
 
   // Ensure lironbek88@gmail.com always exists as admin
   const hasLiron = existingUsers.some((u: any) => u.email === 'lironbek88@gmail.com');
@@ -1012,11 +1328,6 @@ export const initializeDefaultAdmin = () => {
       updated_at: now
     });
     localStorage.setItem('mock-users', JSON.stringify(existingUsers));
-
-    // Store password
-    const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
-    mockPasswords['lironbek88@gmail.com'] = '123456';
-    localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords));
 
     // Create admin permissions
     const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]');
@@ -1067,10 +1378,10 @@ export const initializeDefaultAdmin = () => {
 
   localStorage.setItem('mock-users', JSON.stringify([defaultAdmin]));
 
-  // Store default password
-  const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
-  mockPasswords['lironbek88@gmail.com'] = '123456';
-  localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords));
+  // Ensure admin password is set
+  const pwds = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
+  pwds['lironbek88@gmail.com'] = DEFAULT_ADMIN_PASSWORD;
+  localStorage.setItem('mock-passwords', JSON.stringify(pwds));
 
   // Create admin permissions
   const adminPermissions = {

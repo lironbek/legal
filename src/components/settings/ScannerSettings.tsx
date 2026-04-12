@@ -7,12 +7,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Scan, 
-  Settings, 
-  TestTube, 
-  CheckCircle, 
-  XCircle, 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import {
+  Scan,
+  Settings,
+  TestTube,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Monitor,
   Printer
@@ -47,6 +58,7 @@ export function ScannerSettings() {
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Load scanner settings from localStorage
   useEffect(() => {
@@ -59,63 +71,66 @@ export function ScannerSettings() {
   // Save scanner settings to localStorage
   const saveConfig = () => {
     localStorage.setItem('scannerConfig', JSON.stringify(config));
-    alert('הגדרות הסורק נשמרו בהצלחה!');
+    toast.success('הגדרות הסורק נשמרו בהצלחה!');
   };
 
   // Test scanner connection
   const testScanner = async () => {
     setIsTesting(true);
     setIsConnected(null);
-    
+
     try {
       // Simulate scanner test
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Mock result - in real implementation, this would test actual scanner
       const success = Math.random() > 0.3; // 70% success rate for demo
       setIsConnected(success);
-      
+
       if (success) {
-        alert('הסורק מחובר ופועל תקין!');
+        toast.success('הסורק מחובר ופועל תקין!');
       } else {
-        alert('לא ניתן להתחבר לסורק. אנא בדוק את החיבור והגדרות.');
+        toast.error('לא ניתן להתחבר לסורק. אנא בדוק את החיבור והגדרות.');
       }
     } catch (error) {
       setIsConnected(false);
-      alert('שגיאה בבדיקת הסורק');
+      toast.error('שגיאה בבדיקת הסורק');
     } finally {
       setIsTesting(false);
     }
   };
 
   const resetToDefaults = () => {
-    const confirmed = window.confirm('האם אתה בטוח שברצונך לאפס את הגדרות הסורק לברירת המחדל?');
-    if (confirmed) {
-      setConfig({
-        scannerPath: 'C:\\Windows\\System32\\WiaAcmgr.exe',
-        resolution: '300',
-        colorMode: 'color',
-        fileFormat: 'pdf',
-        autoSave: true,
-        outputFolder: 'C:\\Users\\Documents\\ScannedDocuments',
-        enableOCR: false,
-        ocrLanguage: 'hebrew',
-        compressionLevel: 'medium',
-        scannerName: 'ברירת מחדל'
-      });
-    }
+    setShowResetConfirm(true);
+  };
+
+  const confirmReset = () => {
+    setConfig({
+      scannerPath: 'C:\\Windows\\System32\\WiaAcmgr.exe',
+      resolution: '300',
+      colorMode: 'color',
+      fileFormat: 'pdf',
+      autoSave: true,
+      outputFolder: 'C:\\Users\\Documents\\ScannedDocuments',
+      enableOCR: false,
+      ocrLanguage: 'hebrew',
+      compressionLevel: 'medium',
+      scannerName: 'ברירת מחדל'
+    });
+    toast.success('ההגדרות אופסו לברירת מחדל');
+    setShowResetConfirm(false);
   };
 
   const getConnectionStatus = () => {
     if (isConnected === null) return null;
     
     return isConnected ? (
-      <Badge className="bg-green-500 text-white">
+      <Badge className="bg-emerald-500 text-white">
         <CheckCircle className="h-3 w-3 ml-1" />
         מחובר
       </Badge>
     ) : (
-      <Badge className="bg-red-500 text-white">
+      <Badge className="bg-destructive text-destructive-foreground">
         <XCircle className="h-3 w-3 ml-1" />
         לא מחובר
       </Badge>
@@ -132,12 +147,12 @@ export function ScannerSettings() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Scanner Connection Status */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
           <div className="flex items-center gap-3">
-            <Monitor className="h-5 w-5 text-gray-600" />
+            <Monitor className="h-5 w-5 text-muted-foreground" />
             <div className="text-right">
               <p className="font-medium">סטטוס סורק</p>
-              <p className="text-sm text-gray-600">{config.scannerName}</p>
+              <p className="text-sm text-muted-foreground">{config.scannerName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -150,7 +165,7 @@ export function ScannerSettings() {
             >
               {isTesting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 ml-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary ml-2"></div>
                   בודק...
                 </>
               ) : (
@@ -182,7 +197,7 @@ export function ScannerSettings() {
                 placeholder="C:\\Windows\\System32\\WiaAcmgr.exe"
                 className="text-right"
               />
-              <p className="text-xs text-gray-500 text-right">
+              <p className="text-xs text-muted-foreground text-right">
                 נתיב לתוכנה שתבצע את הסריקה (WIA או TWAIN)
               </p>
             </div>
@@ -283,7 +298,7 @@ export function ScannerSettings() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5 text-right">
                 <Label>שמירה אוטומטית</Label>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   שמור מסמכים סרוקים אוטומטית בתיקייה
                 </p>
               </div>
@@ -296,7 +311,7 @@ export function ScannerSettings() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5 text-right">
                 <Label>זיהוי טקסט (OCR)</Label>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   המר טקסט במסמכים סרוקים לטקסט ניתן לחיפוש
                 </p>
               </div>
@@ -329,7 +344,7 @@ export function ScannerSettings() {
 
         {/* Action Buttons */}
         <div className="flex gap-4 pt-4">
-          <Button onClick={saveConfig} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={saveConfig} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Settings className="h-4 w-4 ml-2" />
             שמור הגדרות
           </Button>
@@ -339,24 +354,41 @@ export function ScannerSettings() {
         </div>
 
         {/* Help Text */}
-        <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="bg-primary/5 p-4 rounded-lg">
           <div className="flex items-start gap-2">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
             <div className="space-y-1 text-right">
-              <p className="text-sm font-medium text-blue-900">עזרה</p>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm font-medium text-primary">עזרה</p>
+              <p className="text-sm text-primary">
                 • וודא שהסורק מחובר למחשב ומותקנים דרייברים מתאימים
               </p>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-primary">
                 • לסריקה ישירה, המערכת תשתמש בתוכנת WIA של Windows
               </p>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-primary">
                 • ניתן להתאים את הגדרות הסריקה בהתאם לסוג המסמכים
               </p>
             </div>
           </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>איפוס הגדרות סורק</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך לאפס את הגדרות הסורק לברירת המחדל?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReset}>
+              אפס הגדרות
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

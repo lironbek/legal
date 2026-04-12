@@ -169,7 +169,7 @@ export function AddUserForm() {
                     type="checkbox"
                     checked={usePhoneAsPassword}
                     onChange={(e) => setUsePhoneAsPassword(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="rounded border-input"
                   />
                   <span className="text-sm text-muted-foreground">
                     השתמש במספר טלפון כסיסמה ראשונית
@@ -191,7 +191,7 @@ export function AddUserForm() {
                         required
                         className="pl-10 text-right"
                       />
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Button
                         type="button"
                         variant="ghost"
@@ -220,7 +220,7 @@ export function AddUserForm() {
                         required
                         className="pl-10 text-right"
                       />
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Button
                         type="button"
                         variant="ghost"
@@ -415,12 +415,12 @@ export function AddUserForm() {
             </div>
           </div>
           
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2 justify-end">
+          <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
+            <h4 className="font-medium text-primary mb-2 flex items-center gap-2 justify-end">
               <AlertTriangle className="h-4 w-4" />
               מידע חשוב:
             </h4>
-            <ul className="text-sm text-blue-800 space-y-1 text-right">
+            <ul className="text-sm text-primary space-y-1 text-right">
               <li>• המשתמש יקבל אימייל עם פרטי התחברות</li>
               <li>• סיסמה זמנית תהיה: tempPassword123!</li>
               <li>• המשתמש יידרש להחליף סיסמה בהתחברות הראשונה</li>

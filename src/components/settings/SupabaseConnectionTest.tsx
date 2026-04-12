@@ -80,7 +80,7 @@ export function SupabaseConnectionTest() {
 
     if (status.isConnected && status.isRealSupabase) {
       return (
-        <Badge className="bg-green-500 text-white">
+        <Badge className="bg-emerald-500 text-white">
           <CheckCircle className="h-3 w-3 ml-1" />
           מחובר לSupabase
         </Badge>
@@ -97,7 +97,7 @@ export function SupabaseConnectionTest() {
     }
 
     return (
-      <Badge className="bg-red-500 text-white">
+      <Badge className="bg-destructive text-destructive-foreground">
         <XCircle className="h-3 w-3 ml-1" />
         שגיאה בחיבור
       </Badge>
@@ -116,7 +116,7 @@ export function SupabaseConnectionTest() {
         <div className="flex items-center justify-between">
           <div className="space-y-1 text-right">
             <p className="text-sm font-medium">סטטוס חיבור</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               בדוק את החיבור למסד הנתונים
             </p>
           </div>
@@ -146,9 +146,9 @@ export function SupabaseConnectionTest() {
         {status && (
           <>
             {status.isConnected && status.isRealSupabase && (
-              <Alert className="border-green-200 bg-green-50">
+              <Alert className="border-emerald-200 bg-emerald-50">
                 <CheckCircle className="h-4 w-4" />
-                <AlertDescription className="text-green-800 text-right">
+                <AlertDescription className="text-emerald-800 text-right">
                   <strong>החיבור תקין!</strong>
                   <br />
                   המערכת מחוברת בהצלחה לSupabase.
@@ -183,9 +183,9 @@ export function SupabaseConnectionTest() {
             )}
 
             {status.error && status.isRealSupabase && (
-              <Alert className="border-red-200 bg-red-50">
+              <Alert className="border-destructive/20 bg-destructive/5">
                 <XCircle className="h-4 w-4" />
-                <AlertDescription className="text-red-800 text-right">
+                <AlertDescription className="text-destructive text-right">
                   <strong>שגיאה בחיבור</strong>
                   <br />
                   {status.error}
@@ -201,10 +201,10 @@ export function SupabaseConnectionTest() {
 
         <div className="space-y-2 pt-4 border-t">
           <h4 className="text-sm font-medium text-right">הגדרת Supabase</h4>
-          <div className="text-xs text-gray-600 space-y-1 text-right">
-            <p>• צור קובץ <code className="bg-gray-100 px-1 rounded">.env</code> בשורש הפרויקט</p>
-            <p>• הוסף: <code className="bg-gray-100 px-1 rounded">VITE_SUPABASE_URL=your-url</code></p>
-            <p>• הוסף: <code className="bg-gray-100 px-1 rounded">VITE_SUPABASE_ANON_KEY=your-key</code></p>
+          <div className="text-xs text-muted-foreground space-y-1 text-right">
+            <p>• צור קובץ <code className="bg-muted px-1 rounded">.env</code> בשורש הפרויקט</p>
+            <p>• הוסף: <code className="bg-muted px-1 rounded">VITE_SUPABASE_URL=your-url</code></p>
+            <p>• הוסף: <code className="bg-muted px-1 rounded">VITE_SUPABASE_ANON_KEY=your-key</code></p>
             <p>
               • עיין במדריך המלא: 
               <Button 
@@ -212,8 +212,7 @@ export function SupabaseConnectionTest() {
                 size="sm" 
                 className="h-auto p-0 text-xs"
                 onClick={() => {
-                  // This would open the setup guide
-                  console.log('Opening SUPABASE_SETUP.md')
+                  // TODO: open setup guide
                 }}
               >
                 <ExternalLink className="h-3 w-3 ml-1" />

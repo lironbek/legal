@@ -24,9 +24,10 @@ export function WhatsAppSettings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // Load from localStorage
+    // Load from localStorage only — tokens must NOT be in client-side env vars
     const savedInstanceId = localStorage.getItem('whatsapp-instance-id') || '';
     const savedToken = localStorage.getItem('whatsapp-api-token') || '';
+
     setInstanceId(savedInstanceId);
     setApiToken(savedToken);
   }, []);
@@ -81,7 +82,7 @@ export function WhatsAppSettings() {
   return (
     <div className="space-y-6">
       {/* Connection Credentials */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
@@ -157,7 +158,7 @@ export function WhatsAppSettings() {
       </Card>
 
       {/* Webhook URL */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Link className="h-5 w-5" />
@@ -198,7 +199,7 @@ export function WhatsAppSettings() {
       </Card>
 
       {/* Instructions */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />

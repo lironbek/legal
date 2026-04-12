@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import {
   FileText,
-  Plus,
   Calendar,
   User,
   Download,
@@ -167,88 +165,74 @@ export default function DocumentsPage() {
   }, 0);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="ניהול מסמכים"
         subtitle="ארגון, אחסון וניהול מסמכים משפטיים"
         actions={
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button className="gap-2" onClick={handleUploadDocument}>
+          <Button className="gap-2" onClick={handleUploadDocument}>
               <Upload className="h-4 w-4" /> העלה מסמך
             </Button>
-          </motion.div>
         }
       />
 
       {/* Stats Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-      >
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                <FileText className="h-6 w-6 text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <Card className="border-border">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground tracking-wide">סה"כ מסמכים</p>
+                <p className="text-2xl font-semibold text-foreground mt-1">{totalDocuments}</p>
               </div>
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-foreground">{totalDocuments}</p>
-                <p className="text-muted-foreground text-sm">סה"כ מסמכים</p>
+              <div className="w-10 h-10 rounded-xl bg-[hsl(var(--accent-blue-light))] flex items-center justify-center">
+                <FileText className="h-5 w-5 text-[hsl(var(--accent-blue))]" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <FolderOpen className="h-6 w-6 text-purple-600" />
+        <Card className="border-border">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground tracking-wide">קטגוריות</p>
+                <p className="text-2xl font-semibold text-foreground mt-1">{documentCategories.length}</p>
               </div>
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-foreground">{documentCategories.length}</p>
-                <p className="text-muted-foreground text-sm">קטגוריות</p>
+              <div className="w-10 h-10 rounded-xl bg-[hsl(var(--accent-violet-light))] flex items-center justify-center">
+                <FolderOpen className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <Download className="h-6 w-6 text-green-600" />
+        <Card className="border-border">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground tracking-wide">נפח כולל</p>
+                <p className="text-2xl font-semibold text-foreground mt-1">{totalSize.toFixed(1)} MB</p>
               </div>
-              <div className="mr-4">
-                <p className="text-2xl font-bold text-foreground">{totalSize.toFixed(1)} MB</p>
-                <p className="text-muted-foreground text-sm">נפח כולל</p>
+              <div className="w-10 h-10 rounded-xl bg-[hsl(var(--accent-emerald-light))] flex items-center justify-center">
+                <Download className="h-5 w-5 text-[hsl(var(--accent-emerald))]" />
               </div>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Document Categories */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="border-border shadow-sm">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">קטגוריות מסמכים</CardTitle>
+      <div>
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">קטגוריות מסמכים</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documentCategories.map((category, index) => (
-                <motion.div
+              {documentCategories.map((category) => (
+                <div
                   key={category.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
                   className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -258,30 +242,26 @@ export default function DocumentsPage() {
                     <h3 className="font-semibold text-foreground">{category.name}</h3>
                     <p className="text-sm text-muted-foreground">{category.count} מסמכים</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Documents Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="border-border shadow-sm">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">מסמכים אחרונים</CardTitle>
+      <div>
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">מסמכים אחרונים</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש לפי שם מסמך, לקוח או תיק..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="w-full pl-9 pr-4 border-border"
+                  className="w-full pr-9 pl-4 border-border"
                 />
               </div>
               <div className="flex gap-2">
@@ -317,78 +297,87 @@ export default function DocumentsPage() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="border-border">
-                    <TableHead className="text-foreground font-semibold">מסמך</TableHead>
-                    <TableHead className="text-foreground font-semibold">לקוח</TableHead>
-                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תיק</TableHead>
-                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">קטגוריה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">תאריך העלאה</TableHead>
-                    <TableHead className="hidden xl:table-cell text-foreground font-semibold">גודל</TableHead>
-                    <TableHead className="text-foreground font-semibold">סטטוס</TableHead>
-                    <TableHead className="text-right text-foreground font-semibold">פעולות</TableHead>
+                    <TableHead>מסמך</TableHead>
+                    <TableHead>לקוח</TableHead>
+                    <TableHead className="hidden md:table-cell">תיק</TableHead>
+                    <TableHead className="hidden lg:table-cell">קטגוריה</TableHead>
+                    <TableHead className="hidden lg:table-cell">תאריך העלאה</TableHead>
+                    <TableHead className="hidden xl:table-cell">גודל</TableHead>
+                    <TableHead>סטטוס</TableHead>
+                    <TableHead>פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDocuments.map((document, index) => (
-                    <motion.tr
-                      key={document.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="hover:bg-muted/50 border-border transition-colors group"
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          {getFileIcon(document.type)}
-                          <div>
-                            <span className="text-foreground font-medium">{document.name}</span>
-                            <p className="text-xs text-muted-foreground">{document.lastModified}</p>
+                  {filteredDocuments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-32 text-center">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <Search className="h-8 w-8" />
+                          <p className="text-sm font-medium">לא נמצאו מסמכים</p>
+                          <p className="text-xs">נסה לשנות את מילות החיפוש או הסינון</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredDocuments.map((document) => (
+                      <tr
+                        key={document.id}
+                        className="hover:bg-muted/50 border-border transition-colors"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {getFileIcon(document.type)}
+                            <div>
+                              <span className="text-foreground font-medium">{document.name}</span>
+                              <p className="text-xs text-muted-foreground">{document.lastModified}</p>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-foreground font-medium">{document.client}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{document.case}</TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge variant="outline" className="border-border text-muted-foreground">
-                          {document.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{document.uploadDate}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell text-muted-foreground">{document.fileSize}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`${document.statusColor} text-white`}
-                        >
-                          {document.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
-                            <Eye className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
-                            <Download className="h-4 w-4 text-primary" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-foreground font-medium">{document.client}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">{document.case}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <Badge variant="outline" className="border-border text-muted-foreground">
+                            {document.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{document.uploadDate}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell text-muted-foreground">{document.fileSize}</TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`${document.statusColor} text-white`}
+                          >
+                            {document.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                              <Eye className="h-4 w-4 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                              <Download className="h-4 w-4 text-primary" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </tr>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }

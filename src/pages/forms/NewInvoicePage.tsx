@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { getClients, Client } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { toast } from 'sonner';
 
 interface InvoiceItem {
   id: string;
@@ -126,12 +128,12 @@ export default function NewInvoicePage() {
     e.preventDefault();
 
     if (!formData.clientId) {
-      alert('יש לבחור לקוח');
+      toast.error('יש לבחור לקוח');
       return;
     }
 
     if (!formData.dueDate) {
-      alert('יש למלא תאריך פירעון');
+      toast.error('יש למלא תאריך פירעון');
       return;
     }
 
@@ -146,8 +148,7 @@ export default function NewInvoicePage() {
       createdAt: new Date().toISOString()
     };
 
-    console.log('Invoice created:', invoiceData);
-    alert('החשבונית נוצרה בהצלחה!');
+    toast.success('החשבונית נוצרה בהצלחה!');
     navigate('/billing');
   };
 
@@ -170,9 +171,9 @@ export default function NewInvoicePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Invoice Header */}
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
               <FileText className="h-5 w-5" />
               פרטי החשבונית
             </CardTitle>
@@ -216,9 +217,9 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Client Selection */}
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
               <User className="h-5 w-5" />
               פרטי לקוח
             </CardTitle>
@@ -226,22 +227,18 @@ export default function NewInvoicePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="client" className="text-foreground">בחר לקוח *</Label>
-              <Select value={formData.clientId} onValueChange={handleClientSelect} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר לקוח מהרשימה" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>{client.name}</span>
-                        {client.email && <span className="text-muted-foreground">({client.email})</span>}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={formData.clientId}
+                onValueChange={handleClientSelect}
+                options={clients.map((client) => ({
+                  value: client.id,
+                  label: client.name,
+                  subtitle: client.email || client.phone,
+                }))}
+                placeholder="בחר לקוח מהרשימה"
+                searchPlaceholder="חיפוש לקוח..."
+                emptyMessage="לא נמצאו לקוחות"
+              />
               {formData.clientName && (
                 <div className="mt-2">
                   <Badge className="bg-primary/10 text-primary">
@@ -272,9 +269,9 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Invoice Items */}
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-foreground flex items-center justify-between">
+            <CardTitle className="text-base font-semibold flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calculator className="h-5 w-5" />
                 פריטי החשבונית
@@ -336,7 +333,7 @@ export default function NewInvoicePage() {
                       variant="outline"
                       size="icon"
                       onClick={() => removeItem(item.id)}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/5"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -366,9 +363,9 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Notes */}
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-foreground">הערות נוספות</CardTitle>
+            <CardTitle className="text-base font-semibold">הערות נוספות</CardTitle>
           </CardHeader>
           <CardContent>
             <Textarea

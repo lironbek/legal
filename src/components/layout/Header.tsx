@@ -1,11 +1,9 @@
 
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useTheme } from 'next-themes';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Bell, Search, LogOut, User, Settings, Moon, Sun, ChevronLeft } from 'lucide-react';
-import { CompanySwitcher } from './CompanySwitcher';
+import { Bell, LogOut, Settings, ChevronLeft, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import {
@@ -16,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
 
 const pageTitles: Record<string, { title: string; breadcrumbs: string[] }> = {
   '/': { title: 'לוח הבקרה', breadcrumbs: ['ראשי'] },
@@ -37,19 +34,25 @@ const pageTitles: Record<string, { title: string; breadcrumbs: string[] }> = {
   '/budget': { title: 'תקציב', breadcrumbs: ['פיננסי', 'תקציב'] },
   '/legal-library': { title: 'ספרייה משפטית', breadcrumbs: ['כלים', 'ספרייה'] },
   '/disability-calculator': { title: 'מחשבון נכות', breadcrumbs: ['כלים', 'מחשבון'] },
+  '/tort-claims': { title: 'כתבי תביעה', breadcrumbs: ['כלים', 'כתבי תביעה'] },
+  '/tort-claims/new': { title: 'כתב תביעה חדש', breadcrumbs: ['כלים', 'כתבי תביעה', 'חדש'] },
+  '/nizkin': { title: 'נזיקין', breadcrumbs: ['כלים', 'נזיקין'] },
+  '/nizkin/new': { title: 'כתב תביעה חדש', breadcrumbs: ['כלים', 'נזיקין', 'חדש'] },
   '/settings': { title: 'הגדרות', breadcrumbs: ['הגדרות'] },
 };
 
 function getPageInfo(pathname: string) {
-  // Strip /org/:slug prefix before lookup
   const stripped = pathname.replace(/^\/org\/[^/]+/, '') || '/';
   if (pageTitles[stripped]) return pageTitles[stripped];
-  // Handle dynamic routes
   if (stripped.match(/^\/cases\/[^/]+\/documents$/)) return { title: 'מסמכי תיק', breadcrumbs: ['ראשי', 'תיקים', 'מסמכים'] };
   if (stripped.match(/^\/cases\/[^/]+\/documents\/upload$/)) return { title: 'העלאת מסמך לתיק', breadcrumbs: ['ראשי', 'תיקים', 'העלאה'] };
   if (stripped.match(/^\/cases\/[^/]+\/view$/)) return { title: 'צפייה בתיק', breadcrumbs: ['ראשי', 'תיקים', 'צפייה'] };
   if (stripped.match(/^\/cases\/[^/]+\/edit$/)) return { title: 'עריכת תיק', breadcrumbs: ['ראשי', 'תיקים', 'עריכה'] };
   if (stripped.match(/^\/clients\/[^/]+\/edit$/)) return { title: 'עריכת לקוח', breadcrumbs: ['ראשי', 'לקוחות', 'עריכה'] };
+  if (stripped.match(/^\/tort-claims\/[^/]+\/view$/)) return { title: 'צפייה בכתב תביעה', breadcrumbs: ['כלים', 'כתבי תביעה', 'צפייה'] };
+  if (stripped.match(/^\/tort-claims\/[^/]+\/edit$/)) return { title: 'עריכת כתב תביעה', breadcrumbs: ['כלים', 'כתבי תביעה', 'עריכה'] };
+  if (stripped.match(/^\/nizkin\/[^/]+\/edit$/)) return { title: 'עריכת כתב תביעה', breadcrumbs: ['כלים', 'נזיקין', 'עריכה'] };
+  if (stripped.match(/^\/nizkin\/[^/]+$/)) return { title: 'צפייה בכתב תביעה', breadcrumbs: ['כלים', 'נזיקין', 'צפייה'] };
   return { title: '', breadcrumbs: [] };
 }
 
@@ -65,7 +68,6 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const orgNavigate = useOrgNavigate();
-  const { theme, setTheme } = useTheme();
   const { user, profile, signOut } = useAuth();
   const pageInfo = getPageInfo(location.pathname);
 
@@ -79,88 +81,66 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="flex h-16 items-center justify-between px-6">
-        {/* Left side - Sidebar trigger + Breadcrumbs */}
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-lg border-b border-border shadow-xs">
+      <div className="flex h-14 items-center justify-between px-5">
+        {/* Right side - Sidebar trigger + Breadcrumbs */}
         <div className="flex items-center gap-3">
           <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-foreground" />
-          <Separator orientation="vertical" className="h-5" />
-          <nav className="flex items-center gap-1.5 text-sm">
+          <div className="hidden sm:block h-5 w-px bg-border" />
+          <nav className="hidden sm:flex items-center gap-1.5 text-[13px]">
             {pageInfo.breadcrumbs.map((crumb, index) => (
               <span key={index} className="flex items-center gap-1.5">
-                {index > 0 && <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/50" />}
+                {index > 0 && <ChevronLeft className="h-3 w-3 text-muted-foreground/40" />}
                 <span className={index === pageInfo.breadcrumbs.length - 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}>
                   {crumb}
                 </span>
               </span>
             ))}
           </nav>
+          {/* Mobile: just show page title */}
+          <span className="sm:hidden text-sm font-medium text-foreground">
+            {pageInfo.title}
+          </span>
         </div>
 
-        {/* Center - Search */}
-        <div className="hidden md:flex items-center">
-          <button className="flex items-center gap-3 h-9 px-4 rounded-lg border border-border bg-muted/50 text-muted-foreground text-sm hover:bg-muted transition-colors min-w-[280px]">
-            <Search className="h-4 w-4" />
-            <span>חיפוש...</span>
-            <kbd className="mr-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-              ⌘K
-            </kbd>
-          </button>
-        </div>
-
-        {/* Right side - Actions */}
-        <div className="flex items-center gap-2">
-          {/* Company Switcher */}
-          <CompanySwitcher />
-
-          <Separator orientation="vertical" className="h-5 mx-1" />
-
-          {/* Dark Mode Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-
+        {/* Left side - Actions */}
+        <div className="flex items-center gap-1">
           {/* Notifications */}
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+            className="relative h-9 w-9 text-muted-foreground hover:text-foreground rounded-lg"
             onClick={() => orgNavigate('/settings')}
             title="התראות"
           >
             <Bell className="h-4 w-4" />
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center">
-              3
-            </span>
           </Button>
-
-          <Separator orientation="vertical" className="h-5 mx-1" />
 
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 hover:bg-muted rounded-lg">
-                <Avatar className="h-7 w-7">
+              <Button variant="ghost" className="h-9 w-9 p-0 rounded-full ring-2 ring-primary/10 hover:ring-primary/20 transition-all">
+                <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-foreground hidden lg:inline">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56" dir="rtl">
               <DropdownMenuLabel>
                 <div>
-                  <p className="text-sm font-semibold">{displayName}</p>
+                  <p className="text-sm font-medium">{displayName}</p>
                   <p className="text-xs text-muted-foreground" dir="ltr">{displayEmail}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {profile?.role === 'admin' && (
+                <DropdownMenuItem onClick={() => navigate('/')}>
+                  <LayoutGrid className="h-4 w-4 ml-2" />
+                  חזרה ל-Backoffice
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => orgNavigate('/settings')}>
                 <Settings className="h-4 w-4 ml-2" />
                 הגדרות

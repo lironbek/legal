@@ -165,7 +165,7 @@ export function CompanyManagement() {
     <div className="space-y-6" dir="rtl">
       {/* Header */}
       <Card>
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
+        <CardHeader className="bg-muted/50 border-b border-border">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />

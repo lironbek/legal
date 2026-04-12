@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -148,29 +148,23 @@ export default function TimeTrackingPage() {
     }, 0);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="מעקב זמנים"
         subtitle="רישום ומעקב שעות עבודה לתיקים ולקוחות"
         actions={
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button className="gap-2">
+          <Button className="gap-2">
               <Plus className="h-4 w-4" /> רישום ידני
             </Button>
-          </motion.div>
         }
       />
 
       {/* Time Tracker Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <Card className="bg-primary/5 border-border shadow-sm">
+      <div>
+        <Card className="bg-primary/5 border-border">
           <CardHeader>
-            <CardTitle className="text-foreground font-display flex items-center gap-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Timer className="h-5 w-5" />
               מד זמן פעיל
             </CardTitle>
@@ -223,33 +217,26 @@ export default function TimeTrackingPage() {
               </div>
 
               <div className="flex gap-2">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
+                <Button
                     onClick={() => setIsTracking(!isTracking)}
                     className={isTracking ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}
                   >
                     {isTracking ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                   </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="outline" className="border-border">
+                <Button variant="outline" className="border-border">
                     <Square className="h-4 w-4" />
                   </Button>
-                </motion.div>
               </div>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Stats Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+      <div
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -263,11 +250,11 @@ export default function TimeTrackingPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-green-600" />
+              <div className="w-12 h-12 bg-[hsl(var(--accent-emerald-light))] rounded-xl flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-[hsl(var(--accent-emerald))]" />
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">{billableHours.toFixed(1)}</p>
@@ -277,11 +264,11 @@ export default function TimeTrackingPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+        <Card className="border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <span className="text-green-600 font-bold">₪</span>
+              <div className="w-12 h-12 bg-[hsl(var(--accent-amber-light))] rounded-xl flex items-center justify-center">
+                <span className="text-[hsl(var(--accent-amber))] font-bold">₪</span>
               </div>
               <div className="mr-4">
                 <p className="text-2xl font-bold text-foreground">₪{totalRevenue.toLocaleString()}</p>
@@ -290,25 +277,21 @@ export default function TimeTrackingPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
 
       {/* Time Entries Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card className="border-border shadow-sm">
+      <div>
+        <Card className="border-border">
           <CardHeader className="bg-muted/50">
-            <CardTitle className="text-foreground font-display">רישומי זמן</CardTitle>
+            <CardTitle className="text-base font-semibold">רישומי זמן</CardTitle>
             <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
               <div className="relative w-full sm:max-w-sm">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש לפי לקוח, תיק או משימה..."
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="w-full pl-9 pr-4 border-border"
+                  className="w-full pr-9 pl-4 border-border"
                 />
               </div>
               <div className="flex gap-2">
@@ -342,24 +325,21 @@ export default function TimeTrackingPage() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="border-border">
-                    <TableHead className="text-foreground font-semibold">תאריך</TableHead>
-                    <TableHead className="text-foreground font-semibold">לקוח</TableHead>
-                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תיק</TableHead>
-                    <TableHead className="text-foreground font-semibold">משימה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">זמן התחלה</TableHead>
-                    <TableHead className="hidden lg:table-cell text-foreground font-semibold">זמן סיום</TableHead>
-                    <TableHead className="text-foreground font-semibold">משך</TableHead>
-                    <TableHead className="hidden md:table-cell text-foreground font-semibold">תעריף</TableHead>
-                    <TableHead className="text-foreground font-semibold">סטטוס</TableHead>
+                    <TableHead>תאריך</TableHead>
+                    <TableHead>לקוח</TableHead>
+                    <TableHead className="hidden md:table-cell">תיק</TableHead>
+                    <TableHead>משימה</TableHead>
+                    <TableHead className="hidden lg:table-cell">זמן התחלה</TableHead>
+                    <TableHead className="hidden lg:table-cell">זמן סיום</TableHead>
+                    <TableHead>משך</TableHead>
+                    <TableHead className="hidden md:table-cell">תעריף</TableHead>
+                    <TableHead>סטטוס</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredEntries.map((entry, index) => (
-                    <motion.tr
+                    <tr
                       key={entry.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
                       className="hover:bg-muted/50 border-border transition-colors"
                     >
                       <TableCell>
@@ -399,19 +379,19 @@ export default function TimeTrackingPage() {
                       <TableCell>
                         <Badge
                           variant={entry.billable ? "default" : "secondary"}
-                          className={entry.billable ? "bg-green-500" : ""}
+                          className={entry.billable ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800" : ""}
                         >
                           {entry.billable ? 'חיובי' : 'לא חיובי'}
                         </Badge>
                       </TableCell>
-                    </motion.tr>
+                    </tr>
                   ))}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }

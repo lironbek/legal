@@ -3,6 +3,7 @@ import mammoth from 'mammoth';
 import html2canvas from 'html2canvas';
 import DOMPurify from 'dompurify';
 import { FileText, Loader2, Eye, Download, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,7 +92,7 @@ export function WordTemplateProcessor({ file, onDocumentReady, onBack }: WordTem
         vars.forEach(v => { initial[v] = ''; });
         setValues(initial);
       } catch {
-        alert('שגיאה בקריאת קובץ Word');
+        toast.error('שגיאה בקריאת קובץ Word');
       } finally {
         setParsing(false);
       }
@@ -120,7 +121,7 @@ export function WordTemplateProcessor({ file, onDocumentReady, onBack }: WordTem
 
       canvas.toBlob((blob) => {
         if (!blob) {
-          alert('שגיאה ביצירת המסמך');
+          toast.error('שגיאה ביצירת המסמך');
           setGenerating(false);
           return;
         }
@@ -130,14 +131,14 @@ export function WordTemplateProcessor({ file, onDocumentReady, onBack }: WordTem
         setGenerating(false);
       }, 'image/png');
     } catch {
-      alert('שגיאה ביצירת המסמך');
+      toast.error('שגיאה ביצירת המסמך');
       setGenerating(false);
     }
   }, [file, onDocumentReady]);
 
   if (parsing) {
     return (
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardContent className="flex flex-col items-center justify-center py-16">
           <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">מפרק את מסמך ה-Word...</p>
@@ -149,13 +150,13 @@ export function WordTemplateProcessor({ file, onDocumentReady, onBack }: WordTem
   return (
     <div className="space-y-4">
       {/* Header */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
-                <CardTitle className="text-lg">{file.name}</CardTitle>
+                <CardTitle className="text-base font-semibold">{file.name}</CardTitle>
                 <CardDescription>
                   {variables.length > 0
                     ? `נמצאו ${variables.length} משתנים למילוי`
@@ -173,9 +174,9 @@ export function WordTemplateProcessor({ file, onDocumentReady, onBack }: WordTem
 
       {/* Variable Form */}
       {variables.length > 0 && (
-        <Card className="shadow-sm">
+        <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-base">מילוי משתנים</CardTitle>
+            <CardTitle className="text-base font-semibold">מילוי משתנים</CardTitle>
             <CardDescription>
               מלא את הפרטים הבאים עבור המסמך. משתנים מסומנים בתבנית {'{{שם_המשתנה}}'} במסמך המקורי.
             </CardDescription>
@@ -205,10 +206,10 @@ export function WordTemplateProcessor({ file, onDocumentReady, onBack }: WordTem
       )}
 
       {/* Preview + Generate */}
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">תצוגה מקדימה</CardTitle>
+            <CardTitle className="text-base font-semibold">תצוגה מקדימה</CardTitle>
             <div className="flex gap-2">
               <Button
                 variant="outline"

@@ -9,6 +9,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { cancelSigningRequest, resendSigningRequest, getSignedDocumentUrl, deleteSigningRequest } from '@/services/signingService';
 import type { SigningRequest } from '@/services/signingService';
+import { toast } from 'sonner';
 
 export default function SigningPage() {
   const navigate = useOrgNavigate();
@@ -34,10 +35,10 @@ export default function SigningPage() {
   const handleResend = async (req: SigningRequest) => {
     try {
       await resendSigningRequest(req.id);
-      alert('הבקשה נשלחה שוב בהצלחה');
+      toast.success('הבקשה נשלחה שוב בהצלחה');
       invalidateRequests();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'שגיאה בשליחה חוזרת');
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשליחה חוזרת');
     }
   };
 
@@ -45,10 +46,10 @@ export default function SigningPage() {
     if (!confirm('האם לבטל את בקשת החתימה?')) return;
     try {
       await cancelSigningRequest(req.id);
-      alert('הבקשה בוטלה');
+      toast.success('הבקשה בוטלה');
       invalidateRequests();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'שגיאה בביטול');
+      toast.error(error instanceof Error ? error.message : 'שגיאה בביטול');
     }
   };
 
@@ -57,7 +58,7 @@ export default function SigningPage() {
       const url = await getSignedDocumentUrl(req.id);
       window.open(url, '_blank');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'שגיאה בהורדה');
+      toast.error(error instanceof Error ? error.message : 'שגיאה בהורדה');
     }
   };
 
@@ -66,10 +67,10 @@ export default function SigningPage() {
     if (!confirm('האם אתה בטוח שברצונך למחוק את בקשת החתימה? פעולה זו אינה ניתנת לביטול.')) return;
     try {
       await deleteSigningRequest(req.id, user.id);
-      alert('הבקשה נמחקה בהצלחה');
+      toast.success('הבקשה נמחקה בהצלחה');
       invalidateRequests();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'שגיאה במחיקה');
+      toast.error(error instanceof Error ? error.message : 'שגיאה במחיקה');
     }
   };
 
@@ -92,7 +93,7 @@ export default function SigningPage() {
         </Button>
       </div>
 
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle>בקשות חתימה</CardTitle>
           <CardDescription>

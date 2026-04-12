@@ -75,17 +75,17 @@ export function FirstUserSetup() {
   }
 
   return (
-    <Card className="mb-6 bg-white border border-gray-200" dir="rtl">
+    <Card className="mb-6 bg-background border border-border" dir="rtl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-black justify-end">
+        <CardTitle className="flex items-center gap-2 text-foreground justify-end">
           <AlertCircle className="h-5 w-5" />
           הגדרת משתמש ראשון
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Alert className="mb-4 border-gray-200 bg-gray-100">
+        <Alert className="mb-4 border-border bg-muted">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-black text-right">
+          <AlertDescription className="text-foreground text-right">
             לא נמצאו משתמשים במערכת. יש ליצור משתמש מנהל ראשון כדי להתחיל לעבוד עם המערכת.
           </AlertDescription>
         </Alert>
@@ -131,7 +131,7 @@ export function FirstUserSetup() {
                   required
                   className="pl-10 text-right"
                 />
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Button
                   type="button"
                   variant="ghost"
@@ -160,7 +160,7 @@ export function FirstUserSetup() {
                   required
                   className="pl-10 text-right"
                 />
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Button
                   type="button"
                   variant="ghost"
@@ -182,11 +182,11 @@ export function FirstUserSetup() {
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
                   יוצר משתמש...
                 </>
               ) : (

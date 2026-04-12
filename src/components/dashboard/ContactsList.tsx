@@ -25,7 +25,7 @@ export function ContactsList() {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-display font-semibold text-foreground">צוות המשרד</CardTitle>
+          <CardTitle className="text-base font-semibold">צוות המשרד</CardTitle>
           <Button variant="ghost" size="sm" className="text-primary text-sm">
             צפה עוד
           </Button>
@@ -43,7 +43,7 @@ export function ContactsList() {
                     </AvatarFallback>
                   </Avatar>
                   <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${
-                    contact.status === 'online' ? 'bg-emerald-500' : 'bg-slate-300'
+                    contact.status === 'online' ? 'bg-emerald-500' : 'bg-muted-foreground/40'
                   }`}></div>
                 </div>
                 <div>

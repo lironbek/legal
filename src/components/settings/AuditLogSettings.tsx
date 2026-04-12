@@ -68,7 +68,7 @@ export function AuditLogSettings() {
   return (
     <div className="space-y-6" dir="rtl">
       <Card>
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
+        <CardHeader className="bg-muted/50 border-b border-border">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="gap-1" onClick={loadLog}>
@@ -118,11 +118,11 @@ export function AuditLogSettings() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="text-right font-semibold">תאריך ושעה</TableHead>
-                  <TableHead className="text-right font-semibold">משתמש</TableHead>
-                  <TableHead className="text-right font-semibold">אימייל</TableHead>
-                  <TableHead className="text-right font-semibold">פעולה</TableHead>
-                  <TableHead className="text-right font-semibold">פרטים</TableHead>
+                  <TableHead>תאריך ושעה</TableHead>
+                  <TableHead>משתמש</TableHead>
+                  <TableHead>אימייל</TableHead>
+                  <TableHead>פעולה</TableHead>
+                  <TableHead>פרטים</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

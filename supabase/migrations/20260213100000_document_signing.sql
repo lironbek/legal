@@ -1,5 +1,8 @@
 -- Document Signing System Tables
 
+-- Enable pgcrypto for gen_random_bytes (in extensions schema on Supabase)
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- Main table for signing requests
 CREATE TABLE IF NOT EXISTS public.signing_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,8 +23,8 @@ CREATE TABLE IF NOT EXISTS public.signing_requests (
   recipient_phone TEXT NOT NULL,
   recipient_email TEXT,
 
-  -- Public access token
-  access_token TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+  -- Public access token (use two UUIDs concatenated as hex for 64-char token)
+  access_token TEXT NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''),
 
   -- Status
   status TEXT NOT NULL DEFAULT 'draft'

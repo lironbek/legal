@@ -38,3 +38,4 @@ test-login.mjs
 *.njsproj
 *.sln
 *.sw?
+.vercel

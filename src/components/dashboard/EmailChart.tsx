@@ -15,7 +15,7 @@ export function EmailChart() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-display font-semibold text-foreground">
+        <CardTitle className="text-base font-semibold">
           התפלגות תיקים
         </CardTitle>
         <p className="text-sm text-muted-foreground">חלוקה לפי תחום משפטי</p>

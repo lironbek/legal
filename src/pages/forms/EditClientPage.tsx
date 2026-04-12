@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, X, User } from 'lucide-react';
+import { Save, X, User, Loader2 } from 'lucide-react';
 import { getClients, updateClient } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { toast } from 'sonner';
 
 export default function EditClientPage() {
   const navigate = useOrgNavigate();
@@ -24,6 +25,7 @@ export default function EditClientPage() {
     city: '',
     postalCode: '',
     clientType: 'individual',
+    religion: '',
     notes: '',
     status: 'פעיל'
   });
@@ -43,33 +45,33 @@ export default function EditClientPage() {
           city: client.city,
           postalCode: client.postalCode,
           clientType: client.clientType,
+          religion: client.religion || '',
           notes: client.notes,
           status: client.status
         });
         setLoading(false);
       } else {
         // Client not found, redirect back
-        alert('לקוח לא נמצא');
+        toast.error('לקוח לא נמצא');
         navigate('/clients');
       }
     }
   }, [clientId, navigate]);
 
+  const [saving, setSaving] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!clientId || saving) return;
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) return;
 
-    if (!clientId) return;
-
-    // Update the client using dataManager
+    setSaving(true);
     const updatedClient = updateClient(clientId, formData);
 
     if (updatedClient) {
-      console.log('Client updated:', updatedClient);
-      alert('הלקוח עודכן בהצלחה');
-      // Navigate back to clients page
       navigate('/clients');
     } else {
-      alert('שגיאה בעדכון הלקוח');
+      setSaving(false);
     }
   };
 
@@ -79,7 +81,7 @@ export default function EditClientPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6">
         <div className="text-center">
           <p>טוען נתוני לקוח...</p>
         </div>
@@ -88,7 +90,7 @@ export default function EditClientPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="עריכת לקוח"
         subtitle="עדכן פרטי הלקוח במערכת"
@@ -100,9 +102,9 @@ export default function EditClientPage() {
         }
       />
 
-      <Card className="max-w-2xl shadow-sm">
+      <Card className="max-w-3xl border-border">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
             <User className="h-5 w-5" />
             פרטי הלקוח
           </CardTitle>
@@ -111,7 +113,7 @@ export default function EditClientPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground">שם מלא</Label>
+                <Label htmlFor="name" className="text-foreground">שם מלא *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -122,7 +124,7 @@ export default function EditClientPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">אימייל</Label>
+                <Label htmlFor="email" className="text-foreground">אימייל *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -136,7 +138,7 @@ export default function EditClientPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-foreground">טלפון</Label>
+                <Label htmlFor="phone" className="text-foreground">טלפון *</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -147,7 +149,7 @@ export default function EditClientPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="idNumber" className="text-foreground">תעודת זהות</Label>
+                <Label htmlFor="idNumber" className="text-foreground">תעודת זהות *</Label>
                 <Input
                   id="idNumber"
                   value={formData.idNumber}
@@ -168,7 +170,7 @@ export default function EditClientPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="city" className="text-foreground">עיר</Label>
                 <Input
@@ -188,19 +190,35 @@ export default function EditClientPage() {
                   placeholder="12345"
                 />
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="clientType" className="text-foreground">סוג לקוח</Label>
-                <Select value={formData.clientType} onValueChange={(value) => setFormData({...formData, clientType: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="individual">פרטי</SelectItem>
-                    <SelectItem value="business">עסקי</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="clientType" className="text-foreground">סוג לקוח</Label>
+              <Select value={formData.clientType} onValueChange={(value) => setFormData({...formData, clientType: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">פרטי</SelectItem>
+                  <SelectItem value="business">עסקי</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="religion" className="text-foreground">דת</Label>
+              <Select value={formData.religion} onValueChange={(value) => setFormData({...formData, religion: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר דת" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="יהודי">יהודי</SelectItem>
+                  <SelectItem value="מוסלמי">מוסלמי</SelectItem>
+                  <SelectItem value="נוצרי">נוצרי</SelectItem>
+                  <SelectItem value="דרוזי">דרוזי</SelectItem>
+                  <SelectItem value="אחר">אחר</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -228,9 +246,9 @@ export default function EditClientPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit">
-                <Save className="h-4 w-4 ml-2" />
-                עדכן לקוח
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Save className="h-4 w-4 ml-2" />}
+                {saving ? 'שומר...' : 'עדכן לקוח'}
               </Button>
               <Button type="button" variant="outline" onClick={handleCancel}>
                 ביטול

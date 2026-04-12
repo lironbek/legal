@@ -50,6 +50,7 @@ interface ExtractedData {
 interface UserCompany {
   company_id: string;
   company_name: string;
+  system_group: string | null;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -127,9 +128,10 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   other: "מסמך אחר",
 };
 
-function buildSummaryMessage(data: ExtractedData): string {
+function buildSummaryMessage(data: ExtractedData, systemName?: string): string {
   const docType = DOC_TYPE_LABELS[data.document_type] || data.document_type;
-  const lines = [`Legal Nexus ✅ המסמך עובד בהצלחה`, "", `סוג: ${docType}`];
+  const prefix = systemName || "✅";
+  const lines = [`${prefix} ✅ המסמך עובד בהצלחה`, "", `סוג: ${docType}`];
   if (data.title) lines.push(`כותרת: ${data.title}`);
   if (data.document_date) lines.push(`תאריך: ${data.document_date}`);
   if (data.case_number) lines.push(`מס' תיק: ${data.case_number}`);
@@ -147,6 +149,7 @@ async function lookupUserByPhone(phone: string): Promise<{ userId: string; compa
   const supabase = getSupabase();
   const normalized = normalizePhone(phone);
 
+  // 1. Find user by phone in profiles table (must have whatsapp_authorized = true)
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, phone")
@@ -161,16 +164,18 @@ async function lookupUserByPhone(phone: string): Promise<{ userId: string; compa
 
   if (!matchedProfile) return null;
 
+  // 2. Get companies from SQL tables only (single source of truth)
   const { data: memberships } = await supabase
     .from("user_company_assignments")
-    .select("company_id, companies!inner(name)")
+    .select("company_id, companies!inner(name, system_group)")
     .eq("user_id", matchedProfile.id);
 
   if (!memberships || memberships.length === 0) return null;
 
-  const companies: UserCompany[] = memberships.map((m: any) => ({
+  const companies: UserCompany[] = (memberships as any[]).map((m) => ({
     company_id: m.company_id,
     company_name: m.companies.name,
+    system_group: m.companies.system_group || null,
   }));
 
   return { userId: matchedProfile.id, companies };
@@ -182,6 +187,7 @@ async function processDocument(
   base64: string, mediaType: string, fileName: string,
   companyId: string, userId: string | null,
   chatId: string, senderName: string, messageId: string,
+  systemName?: string,
 ): Promise<void> {
   const supabase = getSupabase();
   const anthropicKey = getEnvOrThrow("ANTHROPIC_API_KEY");
@@ -265,14 +271,15 @@ async function processDocument(
     whatsapp_sender_name: senderName,
   });
 
-  await sendWhatsAppMessage(chatId, buildSummaryMessage(extractedData));
+  await sendWhatsAppMessage(chatId, buildSummaryMessage(extractedData, systemName));
 }
 
-// ── Multi-company selection helpers ─────────────────────────────────────────
+// ── Multi-step selection helpers ──────────────────────────────────────────────
 
 async function savePendingSelection(
   chatId: string, phone: string, userId: string, companies: UserCompany[],
   base64: string, mediaType: string, fileName: string, messageId: string,
+  step: "system" | "company", systemGroups?: string[],
 ): Promise<void> {
   const supabase = getSupabase();
 
@@ -288,15 +295,17 @@ async function savePendingSelection(
     chat_id: chatId,
     phone_number: phone,
     user_id: userId,
-    organizations: companies.map((c) => ({ id: c.company_id, name: c.company_name })),
+    organizations: companies.map((c) => ({ id: c.company_id, name: c.company_name, system_group: c.system_group })),
     message_id: messageId,
     file_storage_path: tempPath,
     media_type: mediaType,
     file_name: fileName,
+    selection_step: step,
+    system_groups: systemGroups || null,
   });
 }
 
-async function handleCompanySelectionReply(
+async function handleSelectionReply(
   chatId: string, text: string, senderName: string,
 ): Promise<boolean> {
   const supabase = getSupabase();
@@ -312,23 +321,100 @@ async function handleCompanySelectionReply(
 
   if (!pending) return false;
 
-  const choice = parseInt(text.trim(), 10);
-  const orgs = pending.organizations as Array<{ id: string; name: string }>;
+  const trimmed = text.trim();
+  const step = pending.selection_step || "company";
+
+  // ── "0" = Back: return to system selection ──
+  if (trimmed === "0" && step === "company") {
+    const allOrgsBackup = pending.all_organizations || pending.organizations;
+    const groups = [...new Set((allOrgsBackup as Array<{ system_group?: string }>).map(o => o.system_group || "").filter(Boolean))];
+
+    if (groups.length > 1) {
+      await supabase.from("whatsapp_pending_org_selection").update({
+        selection_step: "system",
+        organizations: allOrgsBackup,
+        system_groups: groups,
+        selected_system: null,
+      }).eq("id", pending.id);
+
+      const systemList = groups.map((g, i) => `${i + 1}. ${g}`).join("\n");
+      await sendWhatsAppMessage(
+        chatId,
+        `אני רואה שאתה מחובר ליותר ממערכת אחת.\nלאיזה מערכת ברצונך להעביר את המסמך?\n\n${systemList}\n\nהשב עם המספר המתאים.`,
+      );
+      return true;
+    }
+  }
+
+  const choice = parseInt(trimmed, 10);
+
+  // ── Step 1: System selection ──
+  if (step === "system") {
+    const groups = pending.system_groups as string[];
+    if (isNaN(choice) || choice < 1 || choice > groups.length) {
+      await sendWhatsAppMessage(chatId, `בחירה לא תקינה. השב עם מספר בין 1 ל-${groups.length}.`);
+      return true;
+    }
+
+    const selectedGroup = groups[choice - 1];
+    const allOrgs = pending.organizations as Array<{ id: string; name: string; system_group: string }>;
+    const companiesInGroup = allOrgs.filter(o => o.system_group === selectedGroup);
+
+    // If only one company in this system → process directly
+    if (companiesInGroup.length === 1) {
+      await sendWhatsAppMessage(chatId, `${selectedGroup} ⏳ מעבד את המסמך...`);
+
+      const { data: fileData, error: dlError } = await supabase.storage.from("documents").download(pending.file_storage_path);
+      if (dlError || !fileData) {
+        await sendWhatsAppMessage(chatId, "❌ הקובץ פג תוקף. שלח שוב את המסמך.");
+        await supabase.from("whatsapp_pending_org_selection").delete().eq("id", pending.id);
+        return true;
+      }
+
+      const buffer = await fileData.arrayBuffer();
+      const base64 = arrayBufferToBase64(buffer);
+      await processDocument(base64, pending.media_type, pending.file_name, companiesInGroup[0].id, pending.user_id, chatId, senderName, pending.message_id, selectedGroup);
+
+      await supabase.from("whatsapp_pending_org_selection").delete().eq("id", pending.id);
+      await supabase.storage.from("documents").remove([pending.file_storage_path]);
+      return true;
+    }
+
+    // Multiple companies in this system → move to step 2, save all_organizations for "back"
+    await supabase.from("whatsapp_pending_org_selection").update({
+      selection_step: "company",
+      all_organizations: allOrgs,
+      organizations: companiesInGroup,
+      system_groups: null,
+      selected_system: selectedGroup,
+    }).eq("id", pending.id);
+
+    const companyList = companiesInGroup.map((c, i) => `${i + 1}. ${c.name}`).join("\n");
+    await sendWhatsAppMessage(
+      chatId,
+      `אני רואה שאתה משויך למספר ארגונים ב-${selectedGroup}.\nלאיזה ארגון תרצה להעביר את המסמך?\n\n${companyList}\n\n0. חזרה לבחירת מערכת\n\nהשב עם המספר המתאים.`,
+    );
+    return true;
+  }
+
+  // ── Step 2: Company selection ──
+  const orgs = pending.organizations as Array<{ id: string; name: string; system_group?: string }>;
+  const systemName = pending.selected_system || orgs[0]?.system_group || "";
 
   if (isNaN(choice) || choice < 1 || choice > orgs.length) {
-    await sendWhatsAppMessage(chatId, `בחירה לא תקינה. השב עם מספר בין 1 ל-${orgs.length}.`);
+    await sendWhatsAppMessage(chatId, `בחירה לא תקינה. השב עם מספר בין 1 ל-${orgs.length}, או 0 לחזרה.`);
     return true;
   }
 
   const selected = orgs[choice - 1];
-  await sendWhatsAppMessage(chatId, `Legal Nexus ⏳ מעבד את המסמך עבור "${selected.name}"...`);
+  await sendWhatsAppMessage(chatId, `${systemName} ⏳ מעבד את המסמך עבור ${selected.name}...`);
 
   const { data: fileData, error: dlError } = await supabase.storage
     .from("documents")
     .download(pending.file_storage_path);
 
   if (dlError || !fileData) {
-    await sendWhatsAppMessage(chatId, "Legal Nexus ❌ הקובץ פג תוקף. שלח שוב את המסמך.");
+    await sendWhatsAppMessage(chatId, "❌ הקובץ פג תוקף. שלח שוב את המסמך.");
     await supabase.from("whatsapp_pending_org_selection").delete().eq("id", pending.id);
     return true;
   }
@@ -336,7 +422,7 @@ async function handleCompanySelectionReply(
   const buffer = await fileData.arrayBuffer();
   const base64 = arrayBufferToBase64(buffer);
 
-  await processDocument(base64, pending.media_type, pending.file_name, selected.id, pending.user_id, chatId, senderName, pending.message_id);
+  await processDocument(base64, pending.media_type, pending.file_name, selected.id, pending.user_id, chatId, senderName, pending.message_id, systemName);
 
   await supabase.from("whatsapp_pending_org_selection").delete().eq("id", pending.id);
   await supabase.storage.from("documents").remove([pending.file_storage_path]);
@@ -387,22 +473,22 @@ Deno.serve(async (req) => {
     if (!userInfo) {
       await sendWhatsAppMessage(
         chatId,
-        "Legal Nexus - מספר הטלפון שלך לא מורשה לשליחת מסמכים.\n\nפנה למנהל המערכת להפעלת הרשאת וואטסאפ בפרופיל שלך.",
+        "מספר הטלפון שלך לא מורשה לשליחת מסמכים.\n\nפנה למנהל המערכת להפעלת הרשאת WhatsApp בפרופיל שלך.",
       );
       return new Response(JSON.stringify({ ok: true, skipped: "unauthorized_phone" }));
     }
 
     const { userId, companies } = userInfo;
 
-    // Text message: check for company selection reply
+    // Text message: check for selection reply (system or company)
     if (typeMessage === "textMessage") {
       const text = messageData.textMessageData?.textMessage || "";
-      const handled = await handleCompanySelectionReply(chatId, text, senderName);
+      const handled = await handleSelectionReply(chatId, text, senderName);
       if (handled) return new Response(JSON.stringify({ ok: true }));
 
       await sendWhatsAppMessage(
         chatId,
-        "Legal Nexus - שלום! 👋\n\nשלח תמונה או PDF של מסמך משפטי ואעבד אותו אוטומטית.\n\nסוגי קבצים נתמכים: JPG, PNG, PDF",
+        "שלום! 👋\n\nשלח תמונה או PDF של מסמך ואעבד אותו אוטומטית.\n\nסוגי קבצים נתמכים: JPG, PNG, PDF",
       );
       return new Response(JSON.stringify({ ok: true }));
     }
@@ -412,7 +498,7 @@ Deno.serve(async (req) => {
     const isDocument = typeMessage === "documentMessage" && messageData.fileMessageData;
 
     if (!isImage && !isDocument) {
-      await sendWhatsAppMessage(chatId, "Legal Nexus - סוג קובץ לא נתמך.\n\nשלח תמונה (JPG, PNG) או מסמך PDF.");
+      await sendWhatsAppMessage(chatId, "סוג קובץ לא נתמך.\n\nשלח תמונה (JPG, PNG) או מסמך PDF.");
       return new Response(JSON.stringify({ ok: true, skipped: "unsupported_type" }));
     }
 
@@ -422,7 +508,7 @@ Deno.serve(async (req) => {
 
     const supportedTypes = ["application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp"];
     if (!supportedTypes.includes(mimeType)) {
-      await sendWhatsAppMessage(chatId, "Legal Nexus - סוג קובץ לא נתמך.\n\nשלח תמונה (JPG, PNG) או PDF.");
+      await sendWhatsAppMessage(chatId, "סוג קובץ לא נתמך.\n\nשלח תמונה (JPG, PNG) או PDF.");
       return new Response(JSON.stringify({ ok: true, skipped: "unsupported_mime" }));
     }
 
@@ -431,21 +517,45 @@ Deno.serve(async (req) => {
 
     // Single company: process directly
     if (companies.length === 1) {
-      await sendWhatsAppMessage(chatId, "Legal Nexus ⏳ מעבד את המסמך...");
-      await processDocument(base64, mimeType, fileName, companies[0].company_id, userId, chatId, senderName, idMessage);
+      const sysName = companies[0].system_group || companies[0].company_name;
+      await sendWhatsAppMessage(chatId, `${sysName} ⏳ מעבד את המסמך...`);
+      await processDocument(base64, mimeType, fileName, companies[0].company_id, userId, chatId, senderName, idMessage, sysName);
       return new Response(JSON.stringify({ ok: true }));
     }
 
-    // Multiple companies: ask user to choose
-    await savePendingSelection(chatId, senderPhone, userId, companies, base64, mimeType, fileName, idMessage);
+    // Group companies by system_group
+    const systemGroupMap = new Map<string, UserCompany[]>();
+    for (const c of companies) {
+      const group = c.system_group || c.company_name;
+      if (!systemGroupMap.has(group)) systemGroupMap.set(group, []);
+      systemGroupMap.get(group)!.push(c);
+    }
 
-    const companyList = companies.map((c, i) => `${i + 1}. ${c.company_name}`).join("\n");
+    const systemGroups = Array.from(systemGroupMap.keys());
+
+    // Single system with multiple companies → ask company directly
+    if (systemGroups.length === 1) {
+      await savePendingSelection(chatId, senderPhone, userId, companies, base64, mimeType, fileName, idMessage, "company");
+
+      const sysName = systemGroups[0];
+      const companyList = companies.map((c, i) => `${i + 1}. ${c.company_name}`).join("\n");
+      await sendWhatsAppMessage(
+        chatId,
+        `אני רואה שאתה משויך למספר ארגונים ב-${sysName}.\nלאיזה ארגון תרצה להעביר את המסמך?\n\n${companyList}\n\nהשב עם המספר המתאים.`,
+      );
+      return new Response(JSON.stringify({ ok: true, pending_company_selection: true }));
+    }
+
+    // Multiple systems → Step 1: ask which system
+    await savePendingSelection(chatId, senderPhone, userId, companies, base64, mimeType, fileName, idMessage, "system", systemGroups);
+
+    const systemList = systemGroups.map((g, i) => `${i + 1}. ${g}`).join("\n");
     await sendWhatsAppMessage(
       chatId,
-      `Legal Nexus - לאיזה משרד שייך המסמך?\n\n${companyList}\n\nהשב עם המספר המתאים.`,
+      `אני רואה שאתה מחובר ליותר ממערכת אחת.\nלאיזה מערכת ברצונך להעביר את המסמך?\n\n${systemList}\n\nהשב עם המספר המתאים.`,
     );
 
-    return new Response(JSON.stringify({ ok: true, pending_company_selection: true }));
+    return new Response(JSON.stringify({ ok: true, pending_system_selection: true }));
 
   } catch (error) {
     console.error("Webhook error:", error);
@@ -456,7 +566,7 @@ Deno.serve(async (req) => {
       if (errorBody?.senderData?.chatId) {
         await sendWhatsAppMessage(
           errorBody.senderData.chatId,
-          "Legal Nexus ❌ שגיאה בעיבוד המסמך.\n\nאנא נסה שוב או העלה דרך המערכת.",
+          "❌ שגיאה בעיבוד המסמך.\n\nאנא נסה שוב או העלה דרך המערכת.",
         );
       }
     } catch {

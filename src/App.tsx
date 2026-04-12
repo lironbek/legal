@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { OrgShell } from "./components/layout/OrgShell";
 import { Dashboard } from "./pages/Dashboard";
 import CasesPage from "./pages/CasesPage";
@@ -39,6 +40,14 @@ import ScannedDocumentsPage from "./pages/ScannedDocumentsPage";
 import SigningPage from "./pages/SigningPage";
 import SigningEditorPage from "./pages/SigningEditorPage";
 import PublicSigningPage from "./pages/PublicSigningPage";
+import TortClaimsPage from "./pages/TortClaimsPage";
+import NewTortClaimPage from "./pages/forms/NewTortClaimPage";
+import ViewTortClaimPage from "./pages/forms/ViewTortClaimPage";
+import EditTortClaimPage from "./pages/forms/EditTortClaimPage";
+import NizkinDashboard from "./pages/nizkin/NizkinDashboard";
+import NizkinNewClaim from "./pages/nizkin/NizkinNewClaim";
+import NizkinClaimView from "./pages/nizkin/NizkinClaimView";
+import NizkinEditClaim from "./pages/nizkin/NizkinEditClaim";
 
 // Data manager
 import { initializeSampleData, getUserCompanyAssignments, getCompanies } from "./lib/dataManager";
@@ -96,7 +105,7 @@ const AppRoutes = () => {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    // Initialize sample data when app loads
+    // Initialize sample data and sync from Supabase
     initializeSampleData();
   }, []);
 
@@ -149,6 +158,14 @@ const AppRoutes = () => {
         <Route path="signing" element={<SigningPage />} />
         <Route path="signing/new" element={<SigningEditorPage />} />
         <Route path="signing/:id" element={<SigningEditorPage />} />
+        <Route path="tort-claims" element={<TortClaimsPage />} />
+        <Route path="tort-claims/new" element={<NewTortClaimPage />} />
+        <Route path="tort-claims/:claimId/view" element={<ViewTortClaimPage />} />
+        <Route path="tort-claims/:claimId/edit" element={<EditTortClaimPage />} />
+        <Route path="nizkin" element={<NizkinDashboard />} />
+        <Route path="nizkin/new" element={<NizkinNewClaim />} />
+        <Route path="nizkin/:claimId" element={<NizkinClaimView />} />
+        <Route path="nizkin/:claimId/edit" element={<NizkinEditClaim />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="cash-flow" element={<CashFlowPage />} />
         <Route path="budget" element={<BudgetPage />} />
@@ -168,21 +185,23 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
-            <CompanyProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <AppRoutes />
-              </TooltipProvider>
-            </CompanyProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AuthProvider>
+              <CompanyProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <AppRoutes />
+                </TooltipProvider>
+              </CompanyProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -21,6 +21,17 @@ import {
 } from 'lucide-react';
 import { getDocumentsByCase, Document, deleteDocument, updateDocument } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 export default function CaseDocumentsPage() {
   const navigate = useOrgNavigate();
@@ -31,6 +42,7 @@ export default function CaseDocumentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [allDocuments, setAllDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const loadDocuments = () => {
     if (caseId) {
@@ -87,7 +99,7 @@ export default function CaseDocumentsPage() {
         doc.description ? `תיאור: ${doc.description}` : '',
         `תאריך: ${new Date(doc.createdAt).toLocaleDateString('he-IL')}`,
       ].filter(Boolean).join('\n');
-      alert(details);
+      toast.info(details, { duration: 8000 });
     }
   };
 
@@ -103,16 +115,20 @@ export default function CaseDocumentsPage() {
   };
 
   const handleDeleteDocument = (documentId: string, documentTitle: string) => {
-    const confirmed = window.confirm(`האם אתה בטוח שברצונך למחוק את המסמך "${documentTitle}"?`);
-    if (confirmed) {
-      const success = deleteDocument(documentId);
+    setDeleteTarget({ id: documentId, title: documentTitle });
+  };
+
+  const confirmDeleteDocument = () => {
+    if (deleteTarget) {
+      const success = deleteDocument(deleteTarget.id);
       if (success) {
-        loadDocuments(); // Refresh the list
-        alert('המסמך נמחק בהצלחה');
+        loadDocuments();
+        toast.success('המסמך נמחק בהצלחה');
       } else {
-        alert('שגיאה במחיקת המסמך');
+        toast.error('שגיאה במחיקת המסמך');
       }
     }
+    setDeleteTarget(null);
   };
 
   const handleDownloadDocument = (_documentId: string, fileName: string) => {
@@ -120,7 +136,7 @@ export default function CaseDocumentsPage() {
     const link = document.createElement('a');
     link.href = '#';
     link.download = fileName;
-    alert(`הקובץ "${fileName}" אינו זמין להורדה במצב לא מקוון`);
+    toast.info(`הקובץ "${fileName}" אינו זמין להורדה במצב לא מקוון`);
   };
 
   const getFileIcon = (fileType: string) => {
@@ -148,7 +164,7 @@ export default function CaseDocumentsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={handleBack}>
@@ -156,7 +172,7 @@ export default function CaseDocumentsPage() {
             חזרה לתיקים
           </Button>
           <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">מסמכי התיק</h1>
+            <h1 className="text-2xl font-bold text-foreground">מסמכי התיק</h1>
             <p className="text-muted-foreground mt-1">
               {caseTitle ? `תיק: ${caseTitle}` : 'מסמכי התיק'}
             </p>
@@ -170,19 +186,19 @@ export default function CaseDocumentsPage() {
         </Button>
       </div>
 
-      <Card className="shadow-sm">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <CardTitle className="text-foreground">
+            <CardTitle className="text-base font-semibold">
               מסמכים ({filteredDocuments.length})
             </CardTitle>
             <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="חפש במסמכים..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="w-full pl-9 pr-4"
+                className="w-full pr-9 pl-4"
               />
             </div>
           </div>
@@ -193,12 +209,12 @@ export default function CaseDocumentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-semibold">סוג</TableHead>
-                  <TableHead className="font-semibold">שם המסמך</TableHead>
-                  <TableHead className="hidden md:table-cell font-semibold">קטגוריה</TableHead>
-                  <TableHead className="hidden md:table-cell font-semibold">גודל</TableHead>
-                  <TableHead className="hidden lg:table-cell font-semibold">תאריך העלאה</TableHead>
-                  <TableHead className="font-semibold">פעולות</TableHead>
+                  <TableHead>סוג</TableHead>
+                  <TableHead>שם המסמך</TableHead>
+                  <TableHead className="hidden md:table-cell">קטגוריה</TableHead>
+                  <TableHead className="hidden md:table-cell">גודל</TableHead>
+                  <TableHead className="hidden lg:table-cell">תאריך העלאה</TableHead>
+                  <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -257,7 +273,7 @@ export default function CaseDocumentsPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 text-green-600 hover:text-green-700"
+                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
                             onClick={() => handleDownloadDocument(document.id, document.fileName)}
                             title="הורדת מסמך"
                           >
@@ -275,7 +291,7 @@ export default function CaseDocumentsPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
                             onClick={() => handleDeleteDocument(document.id, document.title)}
                             title="מחיקת מסמך"
                           >
@@ -291,6 +307,26 @@ export default function CaseDocumentsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת מסמך</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך למחוק את המסמך "{deleteTarget?.title}"? פעולה זו אינה ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeleteDocument}
+            >
+              מחק מסמך
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

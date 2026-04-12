@@ -129,13 +129,13 @@ export function SigningRequestList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-right">שם מסמך</TableHead>
-              <TableHead className="text-right">נמען</TableHead>
-              <TableHead className="text-right">טלפון</TableHead>
-              <TableHead className="text-right">סטטוס</TableHead>
-              <TableHead className="text-right">נשלח</TableHead>
-              <TableHead className="text-right">נחתם</TableHead>
-              <TableHead className="text-right">פעולות</TableHead>
+              <TableHead>שם מסמך</TableHead>
+              <TableHead>נמען</TableHead>
+              <TableHead>טלפון</TableHead>
+              <TableHead>סטטוס</TableHead>
+              <TableHead>נשלח</TableHead>
+              <TableHead>נחתם</TableHead>
+              <TableHead>פעולות</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

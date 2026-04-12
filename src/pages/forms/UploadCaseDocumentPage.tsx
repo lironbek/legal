@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, X, Upload, FileText, Image, File, Scan } from 'lucide-react';
 import { addDocument } from '@/lib/dataManager';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { toast } from 'sonner';
 
 export default function UploadCaseDocumentPage() {
   const navigate = useOrgNavigate();
@@ -104,8 +105,6 @@ export default function UploadCaseDocumentPage() {
 
       // In a real implementation, this would execute the scanner command
       // For example: exec(config.scannerPath + ' /scan')
-      console.log('Starting scan with config:', config);
-
       // Simulate scanning process with realistic timing
       const scanDuration = parseInt(config.resolution) > 300 ? 5000 : 3000;
       await new Promise(resolve => setTimeout(resolve, scanDuration));
@@ -138,11 +137,11 @@ export default function UploadCaseDocumentPage() {
         title: formData.title || `מסמך סרוק ${new Date().toLocaleDateString('he-IL')}`
       });
 
-      alert(`הסריקה הושלמה בהצלחה!\nרזולוציה: ${config.resolution} DPI\nמצב: ${config.colorMode}\nפורמט: ${extension.toUpperCase()}`);
+      toast.success(`הסריקה הושלמה בהצלחה! רזולוציה: ${config.resolution} DPI, פורמט: ${extension.toUpperCase()}`);
 
     } catch (error) {
       console.error('Scanning error:', error);
-      alert('שגיאה בסריקה. אנא בדוק את הגדרות הסורק בדף ההגדרות.');
+      toast.error('שגיאה בסריקה. אנא בדוק את הגדרות הסורק בדף ההגדרות.');
     } finally {
       setIsScanning(false);
     }
@@ -165,12 +164,12 @@ export default function UploadCaseDocumentPage() {
     e.preventDefault();
 
     if (!selectedFile) {
-      alert('אנא בחר קובץ להעלאה');
+      toast.error('אנא בחר קובץ להעלאה');
       return;
     }
 
     if (!caseId) {
-      alert('מזהה תיק לא נמצא');
+      toast.error('מזהה תיק לא נמצא');
       return;
     }
 
@@ -182,8 +181,7 @@ export default function UploadCaseDocumentPage() {
       status: 'פעיל'
     });
 
-    console.log('Document saved:', newDocument);
-    alert(`המסמך "${formData.title}" נוסף בהצלחה לתיק!`);
+    toast.success(`המסמך "${formData.title}" נוסף בהצלחה לתיק!`);
 
     // Navigate back to cases page
     navigate('/cases');
@@ -194,7 +192,7 @@ export default function UploadCaseDocumentPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="תיוק מסמך חדש"
         subtitle={caseTitle ? `העלה מסמך לתיק: ${caseTitle}` : 'העלה מסמך לתיק'}
@@ -209,9 +207,9 @@ export default function UploadCaseDocumentPage() {
         <p className="text-sm text-muted-foreground -mt-4">מספר תיק: {caseId}</p>
       )}
 
-      <Card className="max-w-2xl shadow-sm">
+      <Card className="max-w-3xl border-border">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Upload className="h-5 w-5" />
             פרטי המסמך
           </CardTitle>
@@ -283,13 +281,13 @@ export default function UploadCaseDocumentPage() {
 
               {/* Scan Mode */}
               {scanMode === 'scan' && (
-                <div className="border-2 border-dashed border-green-300 rounded-lg p-6 text-center">
+                <div className="border-2 border-dashed border-emerald-300 dark:border-emerald-700 rounded-lg p-6 text-center">
                   {isScanning ? (
                     <div className="space-y-4">
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
                       </div>
-                      <p className="text-green-900 font-medium">סורק מסמך...</p>
+                      <p className="text-emerald-800 dark:text-emerald-300 font-medium">סורק מסמך...</p>
                       <p className="text-sm text-muted-foreground">אנא המתן עד לסיום הסריקה</p>
                       <Button
                         type="button"
@@ -305,7 +303,7 @@ export default function UploadCaseDocumentPage() {
                       <div className="flex items-center justify-center">
                         {getFileIcon(formData.fileType)}
                       </div>
-                      <p className="text-green-900 font-medium">מסמך סרוק בהצלחה!</p>
+                      <p className="text-emerald-800 dark:text-emerald-300 font-medium">מסמך סרוק בהצלחה!</p>
                       <p className="text-sm text-muted-foreground">{formData.fileName}</p>
                       <p className="text-sm text-muted-foreground">{formData.fileSize}</p>
                       <Button
@@ -320,13 +318,13 @@ export default function UploadCaseDocumentPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <Scan className="h-12 w-12 text-green-400 mx-auto" />
-                      <p className="text-green-900">לחץ להתחלת סריקה</p>
+                      <Scan className="h-12 w-12 text-emerald-400 mx-auto" />
+                      <p className="text-emerald-800 dark:text-emerald-300">לחץ להתחלת סריקה</p>
                       <p className="text-sm text-muted-foreground">וודא שהמסמך ממוקם בסורק</p>
                       <Button
                         type="button"
                         onClick={handleStartScan}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
                       >
                         <Scan className="h-4 w-4 ml-2" />
                         התחל סריקה

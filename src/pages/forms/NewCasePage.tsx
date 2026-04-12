@@ -5,11 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Save, X, Users, Plus } from 'lucide-react';
+import { Save, X, Plus } from 'lucide-react';
 import { addCase, getClients, Client, addClient } from '@/lib/dataManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from '@/components/layout/PageHeader';
+import { CASE_TYPES, getStatusesForCaseType } from '@/lib/caseTypeConfig';
+import { toast } from 'sonner';
 
 export default function NewCasePage() {
   const navigate = useOrgNavigate();
@@ -20,11 +23,14 @@ export default function NewCasePage() {
     priority: 'medium',
     description: '',
     estimatedDuration: '',
-    budget: ''
+    budget: '',
+    assignedTo: '',
   });
 
   const [clients, setClients] = useState<Client[]>([]);
+  const [users, setUsers] = useState<{ id: string; full_name: string }[]>([]);
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [newClientData, setNewClientData] = useState({
     name: '',
     email: '',
@@ -37,58 +43,53 @@ export default function NewCasePage() {
     notes: ''
   });
 
-  // Load clients on component mount
   useEffect(() => {
-    const loadedClients = getClients();
-    setClients(loadedClients);
+    setClients(getClients());
+    const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+    setUsers(mockUsers.filter((u: any) => u.is_active));
   }, []);
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.caseType) newErrors.caseType = 'סוג תיק הוא שדה חובה';
+    if (!formData.assignedTo) newErrors.assignedTo = 'מטפל הוא שדה חובה';
+    if (!formData.title) newErrors.title = 'כותרת התיק היא שדה חובה';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
 
-    // Save the case using dataManager
-    const newCase = addCase({
+    const statuses = getStatusesForCaseType(formData.caseType);
+    const firstStatus = statuses[0] || 'חדש';
+    addCase({
       ...formData,
-      status: 'בטיפול'
+      status: firstStatus,
     });
 
-    console.log('Case saved:', newCase);
-
-    // Navigate back to cases page
     navigate('/cases');
   };
 
-  const handleCancel = () => {
-    navigate('/cases');
-  };
+  const handleCancel = () => navigate('/cases');
 
   const handleCreateNewClient = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       const newClient = addClient(newClientData);
       setClients([...clients, newClient]);
       setFormData({ ...formData, client: newClient.name });
       setShowNewClientDialog(false);
-      setNewClientData({
-        name: '',
-        email: '',
-        phone: '',
-        idNumber: '',
-        address: '',
-        city: '',
-        postalCode: '',
-        clientType: 'individual',
-        notes: ''
-      });
+      setNewClientData({ name: '', email: '', phone: '', idNumber: '', address: '', city: '', postalCode: '', clientType: 'individual', notes: '' });
     } catch (error) {
       console.error('Error creating client:', error);
-      alert('שגיאה ביצירת הלקוח');
+      toast.error('שגיאה ביצירת הלקוח');
     }
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <PageHeader
         title="תיק חדש"
         subtitle="צור תיק משפטי חדש"
@@ -100,42 +101,41 @@ export default function NewCasePage() {
         }
       />
 
-      <Card className="max-w-2xl shadow-sm">
+      <Card className="max-w-3xl border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">פרטי התיק</CardTitle>
+          <CardTitle className="text-base font-semibold">פרטי התיק</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-foreground">כותרת התיק</Label>
+                <Label htmlFor="title" className="text-foreground">כותרת התיק *</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   placeholder="כותרת התיק"
-                  required
+                  className={errors.title ? 'border-destructive' : ''}
                 />
+                {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="client" className="text-foreground">שם הלקוח</Label>
                 <div className="flex gap-2">
-                  <Select value={formData.client} onValueChange={(value) => setFormData({...formData, client: value})}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="בחר לקוח קיים או צור חדש" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.name}>
-                          <div className="flex items-center gap-2">
-                            <span>{client.name}</span>
-                            <span className="text-xs text-muted-foreground">({client.phone})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={formData.client}
+                    onValueChange={(value) => setFormData({...formData, client: value})}
+                    options={clients.map((client) => ({
+                      value: client.name,
+                      label: client.name,
+                      subtitle: client.phone,
+                    }))}
+                    placeholder="בחר לקוח קיים או צור חדש"
+                    searchPlaceholder="חיפוש לקוח..."
+                    emptyMessage="לא נמצאו לקוחות"
+                    className="flex-1"
+                  />
 
                   <Dialog open={showNewClientDialog} onOpenChange={setShowNewClientDialog}>
                     <DialogTrigger asChild>
@@ -255,23 +255,39 @@ export default function NewCasePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="caseType" className="text-foreground">סוג התיק</Label>
+                <Label htmlFor="caseType" className="text-foreground">סוג התיק *</Label>
                 <Select value={formData.caseType} onValueChange={(value) => setFormData({...formData, caseType: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.caseType ? 'border-destructive' : ''}>
                     <SelectValue placeholder="בחר סוג תיק" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="civil">תביעה אזרחית</SelectItem>
-                    <SelectItem value="real-estate">עסקאות מקרקעין</SelectItem>
-                    <SelectItem value="criminal">פלילי</SelectItem>
-                    <SelectItem value="tax">מיסים</SelectItem>
-                    <SelectItem value="labor">דיני עבודה</SelectItem>
-                    <SelectItem value="family">דיני משפחה</SelectItem>
-                    <SelectItem value="corporate">חברות</SelectItem>
+                    {CASE_TYPES.map((ct) => (
+                      <SelectItem key={ct.key} value={ct.key}>{ct.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {errors.caseType && <p className="text-xs text-destructive">{errors.caseType}</p>}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="assignedTo" className="text-foreground">עו"ד מטפל *</Label>
+                <SearchableSelect
+                  value={formData.assignedTo}
+                  onValueChange={(value) => setFormData({...formData, assignedTo: value})}
+                  options={users.map((u) => ({
+                    value: u.full_name,
+                    label: u.full_name,
+                  }))}
+                  placeholder="בחר מטפל"
+                  searchPlaceholder="חיפוש מטפל..."
+                  emptyMessage="לא נמצאו משתמשים"
+                  className={errors.assignedTo ? 'border-destructive' : ''}
+                />
+                {errors.assignedTo && <p className="text-xs text-destructive">{errors.assignedTo}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="priority" className="text-foreground">עדיפות</Label>
                 <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
@@ -286,6 +302,16 @@ export default function NewCasePage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="budget" className="text-foreground">תקציב משוער</Label>
+                <Input
+                  id="budget"
+                  value={formData.budget}
+                  onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                  placeholder="₪"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -299,26 +325,14 @@ export default function NewCasePage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="estimatedDuration" className="text-foreground">משך משוער</Label>
-                <Input
-                  id="estimatedDuration"
-                  value={formData.estimatedDuration}
-                  onChange={(e) => setFormData({...formData, estimatedDuration: e.target.value})}
-                  placeholder="למשל: 3 חודשים"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="budget" className="text-foreground">תקציב משוער</Label>
-                <Input
-                  id="budget"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({...formData, budget: e.target.value})}
-                  placeholder="₪"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="estimatedDuration" className="text-foreground">משך משוער</Label>
+              <Input
+                id="estimatedDuration"
+                value={formData.estimatedDuration}
+                onChange={(e) => setFormData({...formData, estimatedDuration: e.target.value})}
+                placeholder="למשל: 3 חודשים"
+              />
             </div>
 
             <div className="flex gap-4 pt-4">

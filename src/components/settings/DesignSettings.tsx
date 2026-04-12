@@ -156,17 +156,17 @@ export function DesignSettings() {
   return (
     <div className="space-y-6" dir="rtl">
       {/* Logo Upload */}
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
-          <CardTitle className="flex items-center gap-2 text-black justify-end">
+      <Card className="bg-background border border-border">
+        <CardHeader className="bg-muted/50 border-b border-border">
+          <CardTitle className="flex items-center gap-2 text-foreground justify-end">
             <Upload className="h-5 w-5" />
             לוגו המערכת
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 bg-white">
+        <CardContent className="space-y-4 bg-background">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <Label htmlFor="logo-upload" className="text-black text-right block">העלאת לוגו (PNG, JPG - מקסימום 2MB)</Label>
+              <Label htmlFor="logo-upload" className="text-foreground text-right block">העלאת לוגו (PNG, JPG - מקסימום 2MB)</Label>
               <input
                 ref={fileInputRef}
                 id="logo-upload"
@@ -178,7 +178,7 @@ export function DesignSettings() {
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 variant="outline"
-                className="w-full mt-2 bg-white text-black border-gray-300 hover:bg-gray-50"
+                className="w-full mt-2 bg-background text-foreground border-input hover:bg-muted/50"
               >
                 <Upload className="h-4 w-4 ml-2" />
                 בחר קובץ
@@ -186,7 +186,7 @@ export function DesignSettings() {
             </div>
             
             {logo && (
-              <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+              <div className="w-32 h-32 border-2 border-dashed border-input rounded-lg flex items-center justify-center bg-muted/50">
                 <img
                   src={logo}
                   alt="Logo preview"
@@ -197,7 +197,7 @@ export function DesignSettings() {
           </div>
 
           {logo && (
-            <Button onClick={removeLogo} variant="destructive" className="bg-red-600 hover:bg-red-700">
+            <Button onClick={removeLogo} variant="destructive" className="bg-destructive hover:bg-destructive/90">
               הסר לוגו
             </Button>
           )}
@@ -205,97 +205,97 @@ export function DesignSettings() {
       </Card>
 
       {/* Color Customization */}
-      <Card className="bg-white border border-gray-200">
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
-          <CardTitle className="flex items-center gap-2 text-black justify-end">
+      <Card className="bg-background border border-border">
+        <CardHeader className="bg-muted/50 border-b border-border">
+          <CardTitle className="flex items-center gap-2 text-foreground justify-end">
             <Palette className="h-5 w-5" />
             צבעי המערכת
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 bg-white">
+        <CardContent className="space-y-6 bg-background">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="primary-color" className="text-black text-right block">צבע ראשי</Label>
+              <Label htmlFor="primary-color" className="text-foreground text-right block">צבע ראשי</Label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="primary-color"
                   type="color"
                   value={colors.primary}
                   onChange={(e) => handleColorChange('primary', e.target.value)}
-                  className="w-16 h-10 p-1 border-2 border-gray-300"
+                  className="w-16 h-10 p-1 border-2 border-input"
                 />
                 <Input
                   type="text"
                   value={colors.primary}
                   onChange={(e) => handleColorChange('primary', e.target.value)}
-                  className="flex-1 bg-white text-black border-gray-300 text-right"
+                  className="flex-1 bg-background text-foreground border-input text-right"
                   placeholder="#6366f1"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="secondary-color" className="text-black text-right block">צבע משני</Label>
+              <Label htmlFor="secondary-color" className="text-foreground text-right block">צבע משני</Label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="secondary-color"
                   type="color"
                   value={colors.secondary}
                   onChange={(e) => handleColorChange('secondary', e.target.value)}
-                  className="w-16 h-10 p-1 border-2 border-gray-300"
+                  className="w-16 h-10 p-1 border-2 border-input"
                 />
                 <Input
                   type="text"
                   value={colors.secondary}
                   onChange={(e) => handleColorChange('secondary', e.target.value)}
-                  className="flex-1 bg-white text-black border-gray-300 text-right"
+                  className="flex-1 bg-background text-foreground border-input text-right"
                   placeholder="#ffffff"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="accent-color" className="text-black text-right block">צבע הדגשה</Label>
+              <Label htmlFor="accent-color" className="text-foreground text-right block">צבע הדגשה</Label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="accent-color"
                   type="color"
                   value={colors.accent}
                   onChange={(e) => handleColorChange('accent', e.target.value)}
-                  className="w-16 h-10 p-1 border-2 border-gray-300"
+                  className="w-16 h-10 p-1 border-2 border-input"
                 />
                 <Input
                   type="text"
                   value={colors.accent}
                   onChange={(e) => handleColorChange('accent', e.target.value)}
-                  className="flex-1 bg-white text-black border-gray-300 text-right"
+                  className="flex-1 bg-background text-foreground border-input text-right"
                   placeholder="#f8fafc"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="background-color" className="text-black text-right block">רקע ראשי</Label>
+              <Label htmlFor="background-color" className="text-foreground text-right block">רקע ראשי</Label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="background-color"
                   type="color"
                   value={colors.background}
                   onChange={(e) => handleColorChange('background', e.target.value)}
-                  className="w-16 h-10 p-1 border-2 border-gray-300"
+                  className="w-16 h-10 p-1 border-2 border-input"
                 />
                 <Input
                   type="text"
                   value={colors.background}
                   onChange={(e) => handleColorChange('background', e.target.value)}
-                  className="flex-1 bg-white text-black border-gray-300 text-right"
+                  className="flex-1 bg-background text-foreground border-input text-right"
                   placeholder="#ffffff"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-border">
             <Button
               onClick={() => {
                 setPreviewMode(!previewMode);
@@ -304,17 +304,17 @@ export function DesignSettings() {
                 }
               }}
               variant="outline"
-              className="flex items-center gap-2 bg-white text-black border-gray-300 hover:bg-gray-50"
+              className="flex items-center gap-2 bg-background text-foreground border-input hover:bg-muted/50"
             >
               <Eye className="h-4 w-4" />
               {previewMode ? 'עצור תצוגה מקדימה' : 'תצוגה מקדימה'}
             </Button>
             
-            <Button onClick={saveColors} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={saveColors} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               שמור צבעים
             </Button>
             
-            <Button onClick={resetColors} variant="destructive" className="flex items-center gap-2 bg-red-600 hover:bg-red-700">
+            <Button onClick={resetColors} variant="destructive" className="flex items-center gap-2 bg-destructive hover:bg-destructive/90">
               <RotateCcw className="h-4 w-4" />
               איפוס לברירת מחדל
             </Button>

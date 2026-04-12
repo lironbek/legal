@@ -20,12 +20,12 @@ export function ProjectStats() {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-display font-semibold text-foreground">מגמת הכנסות</CardTitle>
+            <CardTitle className="text-base font-semibold">מגמת הכנסות</CardTitle>
             <p className="text-sm text-muted-foreground mt-0.5">סקירה חודשית של הכנסות המשרד</p>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+              <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>
               <span className="text-muted-foreground">הכנסות</span>
             </div>
           </div>
