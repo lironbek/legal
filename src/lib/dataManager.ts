@@ -1304,21 +1304,20 @@ const DEFAULT_ADMIN_PASSWORD = '301551644';
 
 export const initializeDefaultAdmin = () => {
   const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+  const now = new Date().toISOString();
 
   // Always ensure admin password is set to known value
   const mockPasswords = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
-  if (!mockPasswords['lironbek88@gmail.com'] || mockPasswords['lironbek88@gmail.com'] !== DEFAULT_ADMIN_PASSWORD) {
+  if (mockPasswords['lironbek88@gmail.com'] !== DEFAULT_ADMIN_PASSWORD) {
     mockPasswords['lironbek88@gmail.com'] = DEFAULT_ADMIN_PASSWORD;
     localStorage.setItem('mock-passwords', JSON.stringify(mockPasswords));
   }
 
-  // Ensure lironbek88@gmail.com always exists as admin
-  const hasLiron = existingUsers.some((u: any) => u.email === 'lironbek88@gmail.com');
-  if (!hasLiron && existingUsers.length > 0) {
-    const now = new Date().toISOString();
-    const lironId = generateId();
-    existingUsers.push({
-      id: lironId,
+  // --- Step 1: Ensure admin user exists ---
+  let liron = existingUsers.find((u: any) => u.email === 'lironbek88@gmail.com');
+  if (!liron) {
+    liron = {
+      id: generateId(),
       email: 'lironbek88@gmail.com',
       full_name: 'לירון בק',
       role: 'admin',
@@ -1327,14 +1326,15 @@ export const initializeDefaultAdmin = () => {
       is_active: true,
       created_at: now,
       updated_at: now
-    });
+    };
+    existingUsers.push(liron);
     localStorage.setItem('mock-users', JSON.stringify(existingUsers));
 
     // Create admin permissions
     const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]');
     existingPermissions.push({
       id: generateId(),
-      user_id: lironId,
+      user_id: liron.id,
       can_view_dashboard: true,
       can_view_cases: true, can_edit_cases: true, can_delete_cases: true,
       can_view_clients: true, can_edit_clients: true,
@@ -1352,19 +1352,12 @@ export const initializeDefaultAdmin = () => {
       created_at: now, updated_at: now
     });
     localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions));
-
-    // Assign to default company
-    const companies = getCompanies();
-    if (companies.length > 0) {
-      addUserCompanyAssignment(lironId, companies[0].id, 'admin', true);
-    }
   }
 
-  // Ensure "שפרגר ושות'" company exists
+  // --- Step 2: Ensure "שפרגר ושות'" company exists ---
   const companies = getCompanies();
   let spergerCompany = companies.find(c => c.slug === 'sperger-law');
   if (!spergerCompany) {
-    const now = new Date().toISOString();
     spergerCompany = {
       id: generateId(),
       slug: 'sperger-law',
@@ -1382,13 +1375,11 @@ export const initializeDefaultAdmin = () => {
     localStorage.setItem('companies', JSON.stringify(allCompanies));
   }
 
-  // Ensure "טל שפרגר" user exists
-  const hasTal = existingUsers.some((u: any) => u.email === 'ts@sperger-law.co.il');
-  if (!hasTal) {
-    const now = new Date().toISOString();
-    const talId = generateId();
-    existingUsers.push({
-      id: talId,
+  // --- Step 3: Ensure "טל שפרגר" user exists ---
+  let tal = existingUsers.find((u: any) => u.email === 'ts@sperger-law.co.il');
+  if (!tal) {
+    tal = {
+      id: generateId(),
       email: 'ts@sperger-law.co.il',
       full_name: 'טל שפרגר',
       role: 'lawyer',
@@ -1397,10 +1388,11 @@ export const initializeDefaultAdmin = () => {
       is_active: true,
       created_at: now,
       updated_at: now
-    });
+    };
+    existingUsers.push(tal);
     localStorage.setItem('mock-users', JSON.stringify(existingUsers));
 
-    // Set password (phone number as default)
+    // Set password
     const talPwds = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
     if (!talPwds['ts@sperger-law.co.il']) {
       talPwds['ts@sperger-law.co.il'] = '0523755556';
@@ -1411,7 +1403,7 @@ export const initializeDefaultAdmin = () => {
     const existingPermissions = JSON.parse(localStorage.getItem('mock-permissions') || '[]');
     existingPermissions.push({
       id: generateId(),
-      user_id: talId,
+      user_id: tal.id,
       can_view_dashboard: true,
       can_view_cases: true, can_edit_cases: true, can_delete_cases: true,
       can_view_clients: true, can_edit_clients: true,
@@ -1429,62 +1421,17 @@ export const initializeDefaultAdmin = () => {
       created_at: now, updated_at: now
     });
     localStorage.setItem('mock-permissions', JSON.stringify(existingPermissions));
-
-    // Assign to שפרגר company
-    if (spergerCompany) {
-      addUserCompanyAssignment(talId, spergerCompany.id, 'owner', true);
-    }
   }
 
-  if (existingUsers.length > 0) return; // Users already exist (beyond the ones we just added)
-
-  const adminId = generateId();
-  const now = new Date().toISOString();
-
-  const defaultAdmin = {
-    id: adminId,
-    email: 'lironbek88@gmail.com',
-    full_name: 'לירון בק',
-    role: 'admin',
-    phone: '',
-    department: 'הנהלה',
-    is_active: true,
-    created_at: now,
-    updated_at: now
-  };
-
-  localStorage.setItem('mock-users', JSON.stringify([defaultAdmin]));
-
-  // Ensure admin password is set
-  const pwds = JSON.parse(localStorage.getItem('mock-passwords') || '{}');
-  pwds['lironbek88@gmail.com'] = DEFAULT_ADMIN_PASSWORD;
-  localStorage.setItem('mock-passwords', JSON.stringify(pwds));
-
-  // Create admin permissions
-  const adminPermissions = {
-    id: generateId(),
-    user_id: adminId,
-    can_view_dashboard: true,
-    can_view_cases: true, can_edit_cases: true, can_delete_cases: true,
-    can_view_clients: true, can_edit_clients: true,
-    can_view_reports: true, can_edit_reports: true,
-    can_view_documents: true, can_edit_documents: true,
-    can_view_calendar: true, can_edit_calendar: true,
-    can_view_billing: true, can_edit_billing: true,
-    can_view_time_tracking: true, can_edit_time_tracking: true,
-    can_view_legal_library: true, can_edit_legal_library: true,
-    can_view_disability_calculator: true, can_edit_disability_calculator: true,
-    can_view_cash_flow: true, can_edit_cash_flow: true,
-    can_view_budget: true, can_edit_budget: true,
-    can_manage_users: true, can_manage_permission_groups: true,
-    can_manage_system_settings: true, can_view_audit_logs: true,
-    created_at: now, updated_at: now
-  };
-  localStorage.setItem('mock-permissions', JSON.stringify([adminPermissions]));
-
-  // Assign admin to all companies
+  // --- Step 4: Always ensure company assignments exist (idempotent) ---
+  // Admin → all companies
   const allCompanies = getCompanies();
   allCompanies.forEach((company, i) => {
-    addUserCompanyAssignment(adminId, company.id, 'admin', i === 0);
+    addUserCompanyAssignment(liron.id, company.id, 'admin', i === 0);
   });
+
+  // Tal → שפרגר company
+  if (spergerCompany) {
+    addUserCompanyAssignment(tal.id, spergerCompany.id, 'owner', true);
+  }
 };
