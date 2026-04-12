@@ -1302,6 +1302,11 @@ export const initializeSampleData = () => {
 
 const DEFAULT_ADMIN_PASSWORD = '301551644';
 
+// Fixed IDs for seed users/companies — never change these
+const SEED_ADMIN_ID = 'seed-admin-liron';
+const SEED_TAL_ID = 'seed-user-tal';
+const SEED_SPERGER_COMPANY_ID = 'seed-company-sperger';
+
 export const initializeDefaultAdmin = () => {
   const existingUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
   const now = new Date().toISOString();
@@ -1317,7 +1322,7 @@ export const initializeDefaultAdmin = () => {
   let liron = existingUsers.find((u: any) => u.email === 'lironbek88@gmail.com');
   if (!liron) {
     liron = {
-      id: generateId(),
+      id: SEED_ADMIN_ID,
       email: 'lironbek88@gmail.com',
       full_name: 'לירון בק',
       role: 'admin',
@@ -1359,7 +1364,7 @@ export const initializeDefaultAdmin = () => {
   let spergerCompany = companies.find(c => c.slug === 'sperger-law');
   if (!spergerCompany) {
     spergerCompany = {
-      id: generateId(),
+      id: SEED_SPERGER_COMPANY_ID,
       slug: 'sperger-law',
       name: 'שפרגר ושות׳ משרד עורכי דין',
       legal_name: 'שפרגר ושות׳ משרד עורכי דין',
@@ -1379,7 +1384,7 @@ export const initializeDefaultAdmin = () => {
   let tal = existingUsers.find((u: any) => u.email === 'ts@sperger-law.co.il');
   if (!tal) {
     tal = {
-      id: generateId(),
+      id: SEED_TAL_ID,
       email: 'ts@sperger-law.co.il',
       full_name: 'טל שפרגר',
       role: 'lawyer',

@@ -99,34 +99,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Validate mock-auth-user: ensure user still exists in mock-users
+    // (handles case where localStorage was partially cleared or seed IDs changed)
+    const validateAndRestoreMockAuth = () => {
+      const mockAuth = localStorage.getItem('mock-auth-user');
+      if (!mockAuth) return;
+      try {
+        const parsed = JSON.parse(mockAuth);
+        const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+        const stillExists = mockUsers.find((u: any) => u.id === parsed.user?.id && u.email === parsed.user?.email);
+        if (stillExists) {
+          // User still exists - restore but use fresh profile data from mock-users
+          setUser(parsed.user);
+          setProfile(stillExists);
+        } else {
+          // User ID mismatch or user deleted - clear stale auth
+          localStorage.removeItem('mock-auth-user');
+        }
+      } catch {
+        localStorage.removeItem('mock-auth-user');
+      }
+    };
+
     if (!supabase) {
       // No Supabase connection - check localStorage for mock auth
-      const mockAuth = localStorage.getItem('mock-auth-user');
-      if (mockAuth) {
-        try {
-          const parsed = JSON.parse(mockAuth);
-          setUser(parsed.user);
-          setProfile(parsed.profile);
-        } catch {
-          // invalid mock auth
-        }
-      }
+      validateAndRestoreMockAuth();
       setLoading(false);
       return;
     }
 
     // Helper: restore mock auth from localStorage
     const restoreMockAuth = () => {
-      const mockAuth = localStorage.getItem('mock-auth-user');
-      if (mockAuth) {
-        try {
-          const parsed = JSON.parse(mockAuth);
-          setUser(parsed.user);
-          setProfile(parsed.profile);
-        } catch {
-          // invalid mock auth
-        }
-      }
+      validateAndRestoreMockAuth();
     };
 
     // Get initial session with timeout fallback
