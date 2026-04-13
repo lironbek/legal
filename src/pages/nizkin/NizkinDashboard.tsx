@@ -1,7 +1,7 @@
 // NizkinDashboard - /nizkin - Tort claims dashboard with table, filters, search, statute indicator
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, Gavel, FileText, AlertTriangle, Eye, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Gavel, FileText, AlertTriangle, Eye, Edit2, Trash2, ArrowLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { listClaims, removeClaim, getOpenClaimsCount } from '@/lib/nizkin/api';
+import { loadAutosave, clearAutosave } from '@/lib/tortClaimService';
 import { calculateStatuteOfLimitations } from '@/lib/nizkin/questionnaire-engine';
 import { StatuteWarning } from '@/components/nizkin/StatuteWarning';
 import {
@@ -54,6 +55,13 @@ export default function NizkinDashboard() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [claims, setClaims] = useState<TortClaim[]>([]);
+  const [pendingAutosave, setPendingAutosave] = useState<{ data: any; savedAt: string } | null>(null);
+
+  // Check for pending autosave (unfinished work)
+  useEffect(() => {
+    const saved = loadAutosave();
+    setPendingAutosave(saved);
+  }, []);
 
   useEffect(() => {
     listClaims().then(result => {
@@ -114,6 +122,53 @@ export default function NizkinDashboard() {
           כתב תביעה חדש
         </Button>
       </div>
+
+      {/* Pending autosave banner */}
+      {pendingAutosave && (
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                    יש טיוטה שלא הושלמה
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {pendingAutosave.data?.plaintiff_name && `תובע: ${pendingAutosave.data.plaintiff_name} · `}
+                    נשמרה ב-{new Date(pendingAutosave.savedAt).toLocaleDateString('he-IL')}{' '}
+                    {new Date(pendingAutosave.savedAt).toLocaleTimeString('he-IL')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-amber-700 dark:text-amber-400 hover:text-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  onClick={() => {
+                    clearAutosave();
+                    setPendingAutosave(null);
+                  }}
+                >
+                  <X className="h-4 w-4 ml-1" />
+                  מחק
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => navigate('/nizkin/new')}
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  המשך עריכה
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

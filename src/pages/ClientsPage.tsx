@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import {
@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   PlusCircle,
   Search,
@@ -35,6 +37,11 @@ import {
   X,
   Calendar,
   Hash,
+  Upload,
+  FolderOpen,
+  File,
+  Image,
+  Download,
 } from 'lucide-react';
 import {
   Select,
@@ -50,6 +57,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
@@ -68,7 +81,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { getClients, Client, deleteClient, getCases, Case, getDocuments, Document } from '@/lib/dataManager';
+import { getClients, Client, deleteClient, getCases, Case, getDocuments, Document, addDocument, deleteDocument } from '@/lib/dataManager';
+import { storeDocumentFile, getDocumentFileUrl, getDocumentFileUrlAsync, readFileAsDataUrl, deleteDocumentFile } from '@/lib/documentFileStore';
 import { TablePagination, usePagination } from '@/components/shared/TablePagination';
 
 const CLIENT_TYPE_MAP: Record<string, string> = {
@@ -76,6 +90,19 @@ const CLIENT_TYPE_MAP: Record<string, string> = {
   business: 'עסקי',
   government: 'ממשלתי',
   'non-profit': 'מלכ"ר',
+};
+
+const DOC_CATEGORY_LABELS: Record<string, string> = {
+  contract: 'חוזה',
+  'court-document': 'מסמך בית משפט',
+  correspondence: 'התכתבות',
+  evidence: 'ראיה',
+  'legal-opinion': 'חוות דעת',
+  invoice: 'חשבונית',
+  receipt: 'קבלה',
+  identification: 'זיהוי',
+  medical: 'רפואי',
+  other: 'אחר',
 };
 
 function getClientTypeLabel(type: string) {
@@ -92,6 +119,8 @@ export default function ClientsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewClient, setViewClient] = useState<Client | null>(null);
+  const [uploadClient, setUploadClient] = useState<Client | null>(null);
+  const [docRefreshKey, setDocRefreshKey] = useState(0);
 
   const loadClients = () => {
     setAllClients(getClients());
@@ -148,7 +177,39 @@ export default function ClientsPage() {
   const clientDocuments = useMemo(() => {
     if (!viewClient) return [];
     return getDocuments().filter((d: Document) => d.client === viewClient.name);
-  }, [viewClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewClient, docRefreshKey]);
+
+  // Load file URLs from IndexedDB asynchronously
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (clientDocuments.length === 0) { setFileUrls({}); return; }
+    let cancelled = false;
+    (async () => {
+      const urls: Record<string, string> = {};
+      for (const doc of clientDocuments) {
+        // Try sync first (memory), then async (IndexedDB)
+        const sync = getDocumentFileUrl(doc.id);
+        if (sync) {
+          urls[doc.id] = sync;
+        } else {
+          const async_ = await getDocumentFileUrlAsync(doc.id);
+          if (async_) urls[doc.id] = async_;
+        }
+      }
+      if (!cancelled) setFileUrls(urls);
+    })();
+    return () => { cancelled = true; };
+  }, [clientDocuments]);
+
+  const handleDeleteDocument = (docId: string, docTitle: string) => {
+    const success = deleteDocument(docId);
+    if (success) {
+      deleteDocumentFile(docId); // clean up file data from IndexedDB
+      setDocRefreshKey(k => k + 1);
+      toast.success(`המסמך "${docTitle}" הוסר מהתיק`);
+    }
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -412,7 +473,7 @@ export default function ClientsPage() {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" dir="rtl">
+                            <DropdownMenuContent align="start">
                               <DropdownMenuItem onClick={() => setViewClient(client)}>
                                 <Eye className="ml-2 h-4 w-4" />
                                 צפייה בפרטים
@@ -420,6 +481,10 @@ export default function ClientsPage() {
                               <DropdownMenuItem onClick={() => navigate(`/clients/${client.id}/edit`)}>
                                 <Edit className="ml-2 h-4 w-4" />
                                 עריכה
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setUploadClient(client)}>
+                                <Upload className="ml-2 h-4 w-4" />
+                                תיוק מסמך
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -674,45 +739,153 @@ export default function ClientsPage() {
 
               {/* Documents */}
               <div className="space-y-3 py-4">
-                <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  מסמכים ({clientDocuments.length})
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    מסמכים ({clientDocuments.length})
+                  </h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => {
+                      const c = viewClient;
+                      setViewClient(null);
+                      setTimeout(() => setUploadClient(c), 250);
+                    }}
+                  >
+                    <Upload className="h-3 w-3" />
+                    תייק מסמך
+                  </Button>
+                </div>
                 {clientDocuments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">אין מסמכים משויכים ללקוח זה</p>
+                  <div className="text-center py-6">
+                    <FolderOpen className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">אין מסמכים מתוייקים</p>
+                    <p className="text-xs text-muted-foreground mt-1">לחץ על "תייק מסמך" להוספת מסמך ראשון</p>
+                  </div>
                 ) : (
                   <div className="space-y-2">
-                    {clientDocuments.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border"
-                      >
-                        <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
+                    {clientDocuments.map((doc) => {
+                      const fileUrl = fileUrls[doc.id] || null;
+                      const displayTitle = doc.title && doc.title.length < 40 ? doc.title : doc.fileName || doc.title;
+                      const categoryLabel = DOC_CATEGORY_LABELS[doc.category] || doc.category;
+                      const isImage = doc.fileType === 'תמונה' || ['jpg','jpeg','png','gif'].some(ext => doc.fileName?.toLowerCase().endsWith(ext));
+                      const isPdf = doc.fileType === 'PDF' || doc.fileName?.toLowerCase().endsWith('.pdf');
+
+                      return (
+                        <div key={doc.id} className="rounded-lg border border-border overflow-hidden">
+                          {/* Image preview */}
+                          {isImage && fileUrl && (
+                            <div
+                              className="h-32 bg-muted/30 flex items-center justify-center cursor-pointer overflow-hidden"
+                              onClick={() => window.open(fileUrl, '_blank')}
+                            >
+                              <img src={fileUrl} alt={displayTitle} className="max-h-full max-w-full object-contain" />
+                            </div>
+                          )}
+                          {/* PDF preview indicator */}
+                          {isPdf && fileUrl && !isImage && (
+                            <div
+                              className="h-20 bg-red-50 dark:bg-red-950/20 flex items-center justify-center gap-2 cursor-pointer hover:bg-red-100 dark:hover:bg-red-950/30 transition-colors"
+                              onClick={() => window.open(fileUrl, '_blank')}
+                            >
+                              <FileText className="h-8 w-8 text-red-500" />
+                              <div>
+                                <p className="text-sm font-medium text-red-700 dark:text-red-400">מסמך PDF</p>
+                                <p className="text-xs text-red-500/70">לחץ לפתיחה</p>
+                              </div>
+                            </div>
+                          )}
+                          {/* Document info row */}
+                          <div className="flex items-center gap-3 p-3">
+                            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+                              isPdf ? 'bg-red-100 dark:bg-red-900/30' :
+                              isImage ? 'bg-emerald-100 dark:bg-emerald-900/30' :
+                              'bg-muted'
+                            }`}>
+                              {isPdf ? <FileText className="h-4 w-4 text-red-600 dark:text-red-400" /> :
+                               isImage ? <Image className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> :
+                               <File className="h-4 w-4 text-muted-foreground" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{displayTitle}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.fileSize && `${doc.fileSize} · `}
+                                {new Date(doc.createdAt).toLocaleDateString('he-IL')}
+                                {categoryLabel && ` · ${categoryLabel}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {fileUrl ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    title="צפייה במסמך"
+                                    onClick={() => window.open(fileUrl, '_blank')}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    title="הורדה"
+                                    onClick={() => {
+                                      const a = document.createElement('a');
+                                      a.href = fileUrl;
+                                      a.download = doc.fileName || doc.title;
+                                      a.click();
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 opacity-40"
+                                  title="הקובץ לא זמין לצפייה"
+                                  onClick={() => toast.info('הקובץ לא זמין לצפייה — יש להעלות אותו מחדש')}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                title="הסר מהתיק"
+                                onClick={() => handleDeleteDocument(doc.id, displayTitle)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{doc.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {doc.fileType && `${doc.fileType} · `}
-                            {doc.fileSize && `${doc.fileSize} · `}
-                            {new Date(doc.createdAt).toLocaleDateString('he-IL')}
-                          </p>
-                        </div>
-                        {doc.category && (
-                          <Badge variant="outline" className="text-xs shrink-0">{doc.category}</Badge>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Actions */}
               <Separator />
-              <div className="flex gap-2 py-4">
+              <div className="flex gap-2 py-4 flex-wrap">
                 <Button className="flex-1 gap-2" onClick={() => { setViewClient(null); navigate(`/clients/${viewClient.id}/edit`); }}>
                   <Edit className="h-4 w-4" />
                   עריכת לקוח
+                </Button>
+                <Button variant="outline" className="flex-1 gap-2" onClick={() => {
+                  const c = viewClient;
+                  setViewClient(null);
+                  setTimeout(() => setUploadClient(c), 250);
+                }}>
+                  <Upload className="h-4 w-4" />
+                  תיוק מסמך
                 </Button>
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => setViewClient(null)}>
                   סגור
@@ -743,6 +916,270 @@ export default function ClientsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upload Document Dialog */}
+      {uploadClient && (
+        <ClientDocumentUploadDialog
+          client={uploadClient}
+          onClose={() => setUploadClient(null)}
+          onUploaded={() => {
+            loadClients();
+            setDocRefreshKey(k => k + 1);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// ── Upload Document Dialog ──────────────────────────────────────────
+
+interface ClientDocumentUploadDialogProps {
+  client: Client;
+  onClose: () => void;
+  onUploaded: () => void;
+}
+
+function ClientDocumentUploadDialog({ client, onClose, onUploaded }: ClientDocumentUploadDialogProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [caseId, setCaseId] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const clientCases = useMemo(() => {
+    return getCases().filter(c => c.client === client.name || c.clientId === client.id);
+  }, [client]);
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files?.length) {
+      const files = Array.from(e.dataTransfer.files);
+      setSelectedFiles(prev => [...prev, ...files]);
+      if (!title && files[0]) setTitle(files[0].name.replace(/\.[^/.]+$/, ''));
+    }
+  }, [title]);
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...files]);
+      if (!title && files[0]) setTitle(files[0].name.replace(/\.[^/.]+$/, ''));
+    }
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const getFileType = (fileName: string): string => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return 'PDF';
+    if (['doc', 'docx'].includes(ext || '')) return 'Word';
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext || '')) return 'תמונה';
+    if (['xlsx', 'xls'].includes(ext || '')) return 'Excel';
+    return 'אחר';
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const type = getFileType(fileName);
+    if (type === 'תמונה') return <Image className="h-4 w-4 text-emerald-600" />;
+    if (type === 'PDF') return <FileText className="h-4 w-4 text-red-600" />;
+    if (type === 'Word') return <FileText className="h-4 w-4 text-blue-600" />;
+    return <File className="h-4 w-4 text-muted-foreground" />;
+  };
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (selectedFiles.length === 0) {
+      toast.error('יש לבחור לפחות קובץ אחד');
+      return;
+    }
+    if (!title.trim()) {
+      toast.error('יש להזין כותרת למסמך');
+      return;
+    }
+
+    setSaving(true);
+    for (const file of selectedFiles) {
+      const doc = addDocument({
+        title: selectedFiles.length === 1 ? title : `${title} - ${file.name}`,
+        category: category || 'other',
+        client: client.name,
+        case: caseId === '__none' ? '' : caseId,
+        description,
+        tags: '',
+        fileName: file.name,
+        fileSize: formatFileSize(file.size),
+        fileType: getFileType(file.name),
+        status: 'פעיל',
+      });
+      // Store file content for viewing/downloading (await so it's ready before closing)
+      const dataUrl = await readFileAsDataUrl(file);
+      await storeDocumentFile(doc.id, dataUrl);
+    }
+    setSaving(false);
+
+    toast.success(
+      selectedFiles.length === 1
+        ? `המסמך "${title}" תוייק בהצלחה`
+        : `${selectedFiles.length} מסמכים תוייקו בהצלחה`
+    );
+    onUploaded();
+    onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg" dir="rtl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5" />
+            תיוק מסמך — {client.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          {/* Drop zone */}
+          <div
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`
+              border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+              ${dragActive
+                ? 'border-primary bg-primary/5'
+                : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
+              }
+            `}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileInput}
+              className="hidden"
+            />
+            <Upload className={`h-8 w-8 mx-auto mb-2 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+            <p className="text-sm font-medium">{dragActive ? 'שחרר כאן' : 'גרור קבצים לכאן או לחץ לבחירה'}</p>
+            <p className="text-xs text-muted-foreground mt-1">PDF, Word, Excel, תמונות ועוד</p>
+          </div>
+
+          {/* Selected files */}
+          {selectedFiles.length > 0 && (
+            <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
+              {selectedFiles.map((file, i) => (
+                <div key={i} className="flex items-center gap-2 border rounded-md px-3 py-2 text-sm">
+                  {getFileIcon(file.name)}
+                  <span className="flex-1 truncate">{file.name}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{formatFileSize(file.size)}</span>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={(e) => { e.stopPropagation(); removeFile(i); }}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Title */}
+          <div className="space-y-1.5">
+            <Label className="text-sm">כותרת *</Label>
+            <Input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="כותרת המסמך"
+            />
+          </div>
+
+          {/* Category + Case */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-sm">קטגוריה</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר קטגוריה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="contract">חוזה</SelectItem>
+                  <SelectItem value="court-document">מסמך בית משפט</SelectItem>
+                  <SelectItem value="correspondence">התכתבות</SelectItem>
+                  <SelectItem value="evidence">ראיה</SelectItem>
+                  <SelectItem value="legal-opinion">חוות דעת</SelectItem>
+                  <SelectItem value="invoice">חשבונית</SelectItem>
+                  <SelectItem value="receipt">קבלה</SelectItem>
+                  <SelectItem value="identification">זיהוי</SelectItem>
+                  <SelectItem value="medical">רפואי</SelectItem>
+                  <SelectItem value="other">אחר</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">שייך לתיק</Label>
+              <Select value={caseId} onValueChange={setCaseId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="כללי (ללא תיק)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">כללי (ללא תיק)</SelectItem>
+                  {clientCases.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label className="text-sm">תיאור</Label>
+            <Textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="תיאור המסמך (אופציונלי)"
+              rows={2}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-2">
+            <Button
+              className="flex-1 gap-2"
+              onClick={handleSubmit}
+              disabled={selectedFiles.length === 0 || !title.trim() || saving}
+            >
+              <Upload className="h-4 w-4" />
+              {saving ? 'שומר...' : selectedFiles.length > 1 ? `תייק ${selectedFiles.length} מסמכים` : 'תייק מסמך'}
+            </Button>
+            <Button variant="outline" onClick={onClose} disabled={saving}>ביטול</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

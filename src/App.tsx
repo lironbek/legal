@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { OrgShell } from "./components/layout/OrgShell";
 import { Dashboard } from "./pages/Dashboard";
@@ -135,10 +135,29 @@ function BackofficeGuard() {
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     // Initialize sample data and sync from Supabase
     initializeSampleData();
+  }, []);
+
+  // Radix UI modals set pointer-events:none on <body> while open.
+  // Sometimes cleanup doesn't run (unmount during animation, race conditions,
+  // nested modals). This interval checks every 300ms and resets pointer-events
+  // if no modal is actually open — lightweight and catches all edge cases.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.body.style.pointerEvents === 'none') {
+        const hasOpenDialog = document.querySelector(
+          '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'
+        );
+        if (!hasOpenDialog) {
+          document.body.style.pointerEvents = '';
+        }
+      }
+    }, 300);
+    return () => clearInterval(interval);
   }, []);
 
   // Show loading while checking auth

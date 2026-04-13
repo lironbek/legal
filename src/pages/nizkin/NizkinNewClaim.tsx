@@ -1,10 +1,10 @@
 // NizkinNewClaim - /nizkin/new - Wizard with drag-drop attachments and AI analysis
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ArrowLeft, Save, Clock, Gavel, Sparkles, Loader2,
-  Copy, FileText, AlertTriangle, Check, Bot,
+  Copy, FileText, AlertTriangle, Check, Bot, RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,10 +16,22 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useOrgNavigate } from '@/hooks/useOrgNavigate';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { getClients } from '@/lib/dataManager';
 import { DefendantForm } from '@/components/tort/DefendantForm';
 import { DamageHeadsBuilder } from '@/components/nizkin/DamageHeadsBuilder';
 import { AttachmentAnalyzer } from '@/components/nizkin/AttachmentAnalyzer';
@@ -58,7 +70,7 @@ export default function NizkinNewClaim() {
   const { currentCompany } = useCompany();
   const { user } = useAuth();
 
-  // Show onboarding guide first (skip if autosave exists)
+  // Show onboarding guide first
   const [showGuide, setShowGuide] = useState(true);
 
   const [formData, setFormData] = useState(() =>
@@ -70,24 +82,80 @@ export default function NizkinNewClaim() {
   const [draftResult, setDraftResult] = useState<ClaimDraftResult | null>(null);
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [analyses, setAnalyses] = useState<AttachmentAnalysis[]>([]);
-  const [hasRestoredAutosave, setHasRestoredAutosave] = useState(false);
   const [showInterview, setShowInterview] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  // Restore autosave on mount — skip guide if autosave exists
+  // Dialogs
+  const [restoreDialogData, setRestoreDialogData] = useState<{ data: Partial<TortClaim>; savedAt: string } | null>(null);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  // Clients for SearchableSelect
+  const clients = useMemo(() => getClients(), []);
+  const clientOptions = useMemo(() =>
+    clients.map(c => ({ value: c.id, label: c.name, subtitle: c.idNumber || c.phone || undefined })),
+    [clients]
+  );
+
+  const fillPlaintiffFromClient = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    setIsDirty(true);
+    setFormData(prev => ({
+      ...prev,
+      client_id: client.id,
+      plaintiff_name: client.name,
+      plaintiff_id: client.idNumber || '',
+      plaintiff_address: client.address || '',
+      plaintiff_city: client.city || '',
+      plaintiff_contact: {
+        phone: client.phone || '',
+        email: client.email || '',
+        secondary_phone: client.secondaryPhone || prev.plaintiff_contact.secondary_phone,
+      },
+    }));
+  };
+
+  // Check for autosave on mount — show restore dialog instead of auto-restoring
   useEffect(() => {
-    if (hasRestoredAutosave) return;
     const saved = loadAutosave();
     if (saved) {
-      setFormData(prev => ({ ...prev, ...saved.data }));
+      setRestoreDialogData(saved);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleRestoreContinue = () => {
+    if (restoreDialogData) {
+      setFormData(prev => ({ ...prev, ...restoreDialogData.data }));
       setShowGuide(false); // skip guide — user already started before
+      setIsDirty(true);
       toast({
         title: 'טיוטה שוחזרה',
-        description: `נשמר לאחרונה ב-${new Date(saved.savedAt).toLocaleTimeString('he-IL')}`,
+        description: `נשמר לאחרונה ב-${new Date(restoreDialogData.savedAt).toLocaleTimeString('he-IL')}`,
       });
     }
-    setHasRestoredAutosave(true);
-  }, [hasRestoredAutosave, toast]);
+    setRestoreDialogData(null);
+  };
+
+  const handleRestoreFresh = () => {
+    clearAutosave();
+    setFormData(createEmptyTortClaim(currentCompany?.id || '', user?.id || ''));
+    setCurrentStepIndex(0);
+    setIsDirty(false);
+    setRestoreDialogData(null);
+  };
+
+  // Warn before browser close/refresh when dirty
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   const steps = getStepsForClaimType(formData.claim_type);
   const currentStep = steps[currentStepIndex];
@@ -111,6 +179,7 @@ export default function NizkinNewClaim() {
 
   const updateField = <K extends keyof TortClaim>(field: K, value: TortClaim[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setIsDirty(true);
     if (errors[field as string]) {
       setErrors(prev => { const n = { ...prev }; delete n[field as string]; return n; });
     }
@@ -150,9 +219,47 @@ export default function NizkinNewClaim() {
     };
     const result = await createClaim(data);
     clearAutosave();
+    setIsDirty(false);
     if (result.success && result.data) {
       toast({ title: 'כתב תביעה נשמר', description: `${result.data.plaintiff_name || 'כתב תביעה'} נוצר בהצלחה` });
       orgNavigate(`/nizkin/${result.data.id}`);
+    }
+  };
+
+  // Save as draft and navigate away
+  const handleSaveAsDraft = async () => {
+    setSavingDraft(true);
+    const data = {
+      ...formData,
+      status: 'draft' as const,
+      total_claim_amount: totalDamages,
+      statute_of_limitations_date: statute?.deadline,
+    };
+    const result = await createClaim(data);
+    clearAutosave();
+    setIsDirty(false);
+    setSavingDraft(false);
+    setShowExitDialog(false);
+    if (result.success && result.data) {
+      toast({ title: 'נשמר כטיוטה', description: `${result.data.plaintiff_name || 'כתב תביעה'} נשמר כטיוטה` });
+    }
+    orgNavigate('/nizkin');
+  };
+
+  // Discard and navigate away
+  const handleDiscardAndExit = () => {
+    clearAutosave();
+    setIsDirty(false);
+    setShowExitDialog(false);
+    orgNavigate('/nizkin');
+  };
+
+  // Navigate back — check for unsaved changes
+  const handleBack = () => {
+    if (isDirty) {
+      setShowExitDialog(true);
+    } else {
+      orgNavigate('/nizkin');
     }
   };
 
@@ -229,6 +336,20 @@ export default function NizkinNewClaim() {
       case 'plaintiff':
         return (
           <div className="space-y-4">
+            {clientOptions.length > 0 && (
+              <div>
+                <Label>בחר לקוח מהרשימה</Label>
+                <SearchableSelect
+                  value={formData.client_id || ''}
+                  onValueChange={fillPlaintiffFromClient}
+                  options={clientOptions}
+                  placeholder="בחר לקוח למילוי אוטומטי..."
+                  searchPlaceholder="חיפוש לפי שם או ת.ז..."
+                  emptyMessage="לא נמצאו לקוחות"
+                />
+                <p className="text-xs text-muted-foreground mt-1">בחירת לקוח תמלא אוטומטית את כל הפרטים</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>שם מלא {errors.plaintiff_name && <span className="text-destructive text-xs">({errors.plaintiff_name})</span>}</Label>
@@ -324,6 +445,8 @@ export default function NizkinNewClaim() {
                 onAttachmentsChange={a => updateField('attachments', a)}
                 analyses={analyses}
                 onAnalysesChange={setAnalyses}
+                clientId={formData.client_id}
+                clientName={formData.plaintiff_name}
               />
             </div>
           </div>
@@ -497,6 +620,20 @@ export default function NizkinNewClaim() {
           </div>
         );
 
+      case 'document_attachments':
+        return (
+          <div className="space-y-4">
+            <AttachmentAnalyzer
+              attachments={formData.attachments}
+              onAttachmentsChange={a => updateField('attachments', a)}
+              analyses={analyses}
+              onAnalysesChange={setAnalyses}
+              clientId={formData.client_id}
+              clientName={formData.plaintiff_name}
+            />
+          </div>
+        );
+
       case 'summary':
         return (
           <div className="space-y-4">
@@ -572,8 +709,8 @@ export default function NizkinNewClaim() {
     }
   };
 
-  // Show onboarding guide before wizard
-  if (showGuide) {
+  // Show onboarding guide before wizard (but not if restore dialog is showing)
+  if (showGuide && !restoreDialogData) {
     return (
       <OnboardingGuide
         onStart={() => setShowGuide(false)}
@@ -583,81 +720,141 @@ export default function NizkinNewClaim() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Gavel className="h-6 w-6 text-primary" />
-            כתב תביעה חדש
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            שלב {currentStepIndex + 1} מתוך {steps.length}: {currentStep.title}
-          </p>
+    <>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Gavel className="h-6 w-6 text-primary" />
+              כתב תביעה חדש
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              שלב {currentStepIndex + 1} מתוך {steps.length}: {currentStep.title}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {lastAutoSave && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" /> נשמר {lastAutoSave}
+              </span>
+            )}
+            <Button
+              variant={showInterview ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowInterview(v => !v)}
+            >
+              <Bot className="h-4 w-4" />
+              {showInterview ? 'חזור לטופס' : 'ראיון AI'}
+              {!showInterview && <Sparkles className="h-3 w-3" style={{ color: '#a855f7' }} />}
+            </Button>
+            <Button variant="outline" onClick={handleBack}>חזרה לרשימה</Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {lastAutoSave && (
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" /> נשמר {lastAutoSave}
-            </span>
-          )}
-          <Button
-            variant={showInterview ? 'default' : 'outline'}
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowInterview(v => !v)}
-          >
-            <Bot className="h-4 w-4" />
-            {showInterview ? 'חזור לטופס' : 'ראיון AI'}
-            {!showInterview && <Sparkles className="h-3 w-3" style={{ color: '#a855f7' }} />}
-          </Button>
-          <Button variant="outline" onClick={() => orgNavigate('/nizkin')}>חזרה לרשימה</Button>
+
+        {/* Progress */}
+        <div className="space-y-2">
+          <div className="flex gap-1">
+            {steps.map((step, i) => (
+              <button key={step.id} onClick={() => goToStep(i)} className={`flex-1 h-2 rounded-full transition-colors cursor-pointer ${i < currentStepIndex ? 'bg-emerald-500' : i === currentStepIndex ? 'bg-primary' : 'bg-muted'}`} title={step.title} />
+            ))}
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>השלמה: {completeness}%</span>
+            {totalDamages > 0 && <span className="font-medium">סכום: {formatCurrency(totalDamages)}</span>}
+          </div>
         </div>
-      </div>
 
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex gap-1">
-          {steps.map((step, i) => (
-            <button key={step.id} onClick={() => goToStep(i)} className={`flex-1 h-2 rounded-full transition-colors cursor-pointer ${i < currentStepIndex ? 'bg-emerald-500' : i === currentStepIndex ? 'bg-primary' : 'bg-muted'}`} title={step.title} />
-          ))}
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>השלמה: {completeness}%</span>
-          {totalDamages > 0 && <span className="font-medium">סכום: {formatCurrency(totalDamages)}</span>}
-        </div>
-      </div>
-
-      {/* AI Interview Panel */}
-      {showInterview && (
-        <AiInterview
-          claimData={formData}
-          onFieldUpdate={(field, value) => updateField(field as any, value)}
-          onClose={() => setShowInterview(false)}
-        />
-      )}
-
-      {/* Step content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">{currentStep.title}</CardTitle>
-          <p className="text-sm text-muted-foreground">{currentStep.description}</p>
-        </CardHeader>
-        <CardContent className="space-y-4">{renderStep()}</CardContent>
-      </Card>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={goPrev} disabled={currentStepIndex === 0}>
-          <ArrowRight className="ml-2 h-4 w-4" /> הקודם
-        </Button>
-        {currentStepIndex < steps.length - 1 ? (
-          <Button onClick={goNext}>הבא <ArrowLeft className="mr-2 h-4 w-4" /></Button>
-        ) : (
-          <Button onClick={handleSave} className="gap-2"><Save className="h-4 w-4" /> שמור כתב תביעה</Button>
+        {/* AI Interview Panel */}
+        {showInterview && (
+          <AiInterview
+            claimData={formData}
+            onFieldUpdate={(field, value) => updateField(field as any, value)}
+            onClose={() => setShowInterview(false)}
+          />
         )}
+
+        {/* Step content */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">{currentStep.title}</CardTitle>
+            <p className="text-sm text-muted-foreground">{currentStep.description}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">{renderStep()}</CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={goPrev} disabled={currentStepIndex === 0}>
+            <ArrowRight className="ml-2 h-4 w-4" /> הקודם
+          </Button>
+          {currentStepIndex < steps.length - 1 ? (
+            <Button onClick={goNext}>הבא <ArrowLeft className="mr-2 h-4 w-4" /></Button>
+          ) : (
+            <Button onClick={handleSave} className="gap-2"><Save className="h-4 w-4" /> שמור כתב תביעה</Button>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Restore autosave dialog */}
+      <AlertDialog open={!!restoreDialogData} onOpenChange={open => { if (!open) handleRestoreFresh(); }}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-primary" />
+              נמצאה טיוטה קודמת
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {restoreDialogData && (
+                <>
+                  נשמרה טיוטה ב-{new Date(restoreDialogData.savedAt).toLocaleDateString('he-IL')}{' '}
+                  בשעה {new Date(restoreDialogData.savedAt).toLocaleTimeString('he-IL')}.
+                  {(restoreDialogData.data as any)?.plaintiff_name && (
+                    <> תובע: <strong>{(restoreDialogData.data as any).plaintiff_name}</strong>.</>
+                  )}
+                  <br />
+                  האם ברצונך להמשיך לעבוד עליה או להתחיל מחדש?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2 sm:gap-0">
+            <AlertDialogCancel onClick={handleRestoreFresh}>
+              התחל מחדש
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreContinue}>
+              המשך טיוטה
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Exit without save dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              יציאה ללא שמירה
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              יש שינויים שלא נשמרו. מה ברצונך לעשות?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel>חזור לעריכה</AlertDialogCancel>
+            <Button variant="outline" onClick={handleDiscardAndExit}>
+              צא בלי לשמור
+            </Button>
+            <Button onClick={handleSaveAsDraft} disabled={savingDraft} className="gap-2">
+              {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              שמור כטיוטה
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
